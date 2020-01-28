@@ -19,7 +19,7 @@ npm install
 Compile solidity contracts
 
 ```
-npm build
+npm run compile
 ```
 
 Run unit tests
