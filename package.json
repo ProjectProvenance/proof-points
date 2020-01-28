@@ -1,0 +1,36 @@
+{
+  "name": "proof-points",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "build": "truffle compile",
+    "test": "truffle test; mocha --timeout 20000 --exit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ProjectProvenance/ProofPoints.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ProjectProvenance/ProofPoints/issues"
+  },
+  "homepage": "https://github.com/ProjectProvenance/ProofPoints#readme",
+  "dependencies": {
+    "canonicalize": "^1.0.1",
+    "local-iso-dt": "^1.2.2",
+    "web3": "^1.2.5",
+    "ipfs-mini": "1.1.5"
+  },
+  "devDependencies": {
+    "truffle": "5.1.0",
+    "mocha": "6.0.2",
+    "chai": "4.2.0",
+    "blueimp-md5": "2.12.0",
+    "expect-to-be-a-promise": "1.0.2"
+  }
+}
