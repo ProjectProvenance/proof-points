@@ -185,10 +185,6 @@ contract RegistryRoot {
 1. Call the `getOwner` method of the `RegistryRoot` contract at `<registry-root>` to get the address for the current implementation of the `ProofPointRegistry`
 2. Use the `ProofPointRegistry` at the specified address for all `ProofPointRegistry` interactions
 
-# Proof Point Types
-
-As part of the Provenance ontology, Provenance has defined a number of proof point types to describe basic credentials in the supply chain transparency space.
-
 
 
 
