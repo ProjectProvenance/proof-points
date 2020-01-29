@@ -88,6 +88,12 @@ Compile solidity contracts
 npm run compile
 ```
 
+[Install IPFS](https://docs.ipfs.io/guides/guides/install/) then in a separate shell start an IPFS daemon
+
+```
+ipfs daemon
+```
+
 Run unit tests
 
 ```

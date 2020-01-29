@@ -36,8 +36,32 @@ jobs:
       # compile solidity contracts
       - run: npm run compile
 
-      # Start local Ethereum node for testing
-      - run: ./repo/node_modules/.bin/ganache-cli &
+      # Install and run IPFS node
+      - run: tar xvfz go-ipfs.tar.gz
+      - run: cd go-ipfs
+      - run: ./install.sh
+      - run: ipfs daemon &
 
-      # run tests!
+      # Start local Ethereum node for testing
+      - run: ./node_modules/.bin/ganache-cli &
+
+      # run tests
       - run: npm test
+  publish:
+    docker:
+      - image: circleci/<language>:<version TAG>
+    steps:
+      - checkout
+      - run:
+          name: Publish to NPM
+          command: | 
+            npm set //registry.npmjs.org/:_authToken=$NPM_TOKEN
+            npm publish
+workflows:
+  version: 2
+  tagged-build:
+    jobs:
+      - publish:
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*/
