@@ -37,10 +37,10 @@ jobs:
       - run: npm run compile
 
       # Install and run IPFS node
-      - run: tar xvfz go-ipfs.tar.gz
-      - run: cd go-ipfs
-      - run: ./install.sh
-      - run: ipfs daemon &
+      - run: wget https://dist.ipfs.io/go-ipfs/v0.4.22/go-ipfs_v0.4.22_linux-amd64.tar.gz
+      - run: tar xvfz go-ipfs_v0.4.22_linux-amd64.tar.gz 
+      - run: ./go-ipfs/ipfs init
+      - run: ./go-ipfs/ipfs daemon &
 
       # Start local Ethereum node for testing
       - run: ./node_modules/.bin/ganache-cli &
