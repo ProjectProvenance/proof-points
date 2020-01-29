@@ -4,7 +4,7 @@
 #
 version: 2
 jobs:
-  build:
+  test:
     docker:
       # specify the version you desire here
       - image: circleci/node:10.18
@@ -41,41 +41,47 @@ jobs:
       - run: tar xvfz go-ipfs_v0.4.22_linux-amd64.tar.gz 
       - run: ./go-ipfs/ipfs init
 
-      # Run local IPFS node for testing
       - run:
-          name: IPFS
+          name: Start IPFS Daemon
           command: ./go-ipfs/ipfs daemon
           background: true
 
       # allow daemon time to start up
       - run: sleep 5
 
-      # run tests
-      - run: npm test
+      - run:
+          name: Run tests
+          command: npm test
+
+      - persist_to_workspace:
+          root: ~/repo
+          paths: .
   publish:
     docker:
       - image: circleci/node:10.18
     steps:
-      - checkout
+      - attach_workspace:
+          at: ~/repo
       - run:
-          name: Publish to NPM
-          command: | 
-            npm set //registry.npmjs.org/:_authToken=$NPM_TOKEN
-            npm publish
+          name: Authenticate with registry
+          command: echo "//registry.npmjs.org/:_authToken=$npm_TOKEN" > ~/repo/.npmrc
+      - run:
+          name: Publish package
+          command: npm publish
 workflows:
   version: 2
   tagged-build:
     jobs:
-      - build:
+      - test:
           filters:
             tags:
-              only: /.*/
+              only: /^v.*/
       - publish:
           requires:
-            - build
+            - test
           filters:
             tags:
-              only: /^v[0-9]+(\.[0-9]+)*$/
+              only: /^v.*/
   build:
     jobs:
-      - build
+      - test
