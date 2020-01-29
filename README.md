@@ -117,4 +117,15 @@ Note the contract address of the `ProofPointRegistryStorage1` contract. This wil
 
 > For more advanced deployment scenarios look at `truffle-config.js` and read the Truffle documentation.
 
+### Publishing NPM Package
+
+Use the following command substituting the correct version number. A git tag will be created and if the CircleCI build is successful then the package will be published to NPM
+
+```
+npm version 10.0.1
+git push --follow-tags
+```
+
+
+
 
