@@ -3,13 +3,15 @@
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
 #
 version: 2
+
+defaults: &defaults
+  working_directory: ~/repo
+  docker:
+    - image: circleci/node:10.18
+
 jobs:
   build:
-    docker:
-      - image: circleci/node:10.18
-
-    working_directory: ~/repo
-
+    <<: *defaults 
     steps:
       - checkout
 
@@ -34,11 +36,7 @@ jobs:
           root: ~/repo
           paths: .
   test:
-    docker:
-      - image: circleci/node:10.18
-
-    working_directory: ~/repo
-
+    <<: *defaults
     steps:
       - attach_workspace:
           at: ~/repo
@@ -60,8 +58,7 @@ jobs:
           name: Run tests
           command: npm test
   publish:
-    docker:
-      - image: circleci/node:10.18
+    <<: *defaults 
     steps:
       - attach_workspace:
           at: ~/repo
