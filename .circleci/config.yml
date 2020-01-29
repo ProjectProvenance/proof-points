@@ -70,18 +70,17 @@ jobs:
           command: npm publish
 workflows:
   version: 2
-  tagged-build:
+  build:
     jobs:
       - test:
           filters:
             tags:
-              only: /^v.*/
+              only: /.*/
       - publish:
           requires:
             - test
           filters:
             tags:
               only: /^v.*/
-  build:
-    jobs:
-      - test
+          branches:
+              ignore: /.*/
