@@ -36,7 +36,8 @@ jobs:
       # compile solidity contracts
       - run: npm run compile
 
-      - run: ganache-cli &
+      # Start local Ethereum node for testing
+      - run: ./node_modules/.bin/ganache-cli &
 
       # run tests!
       - run: npm test

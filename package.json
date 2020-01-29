@@ -8,7 +8,7 @@
   },
   "scripts": {
     "compile": "truffle compile",
-    "test": "truffle compile; eslint .; truffle test"
+    "test": "eslint .; truffle test"
   },
   "repository": {
     "type": "git",
