@@ -53,6 +53,9 @@ jobs:
           command: ./go-ipfs/ipfs daemon
           background: true
 
+      # allow daemons time to start up
+      - run: sleep 5
+
       # run tests
       - run: npm test
   publish:
