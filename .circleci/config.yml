@@ -43,15 +43,15 @@ jobs:
 
       # Run local Ethereum node for testing
       - run:
-        name: Ganache
-        command: ./node_modules/.bin/ganache-cli
-        background: true
+          name: Ganache
+          command: ./node_modules/.bin/ganache-cli
+          background: true
 
       # Run local IPFS node for testing
       - run:
-        name: IPFS
-        command: ./go-ipfs/ipfs daemon
-        background: true
+          name: IPFS
+          command: ./go-ipfs/ipfs daemon
+          background: true
 
       # run tests
       - run: npm test
