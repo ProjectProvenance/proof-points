@@ -1,5 +1,5 @@
 {
-  "name": "proof-points",
+  "name": "@provenance/proof-points",
   "version": "1.0.0",
   "description": "Library for working with Provenance Proof Points",
   "main": "src/index.js",

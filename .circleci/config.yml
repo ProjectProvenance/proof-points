@@ -54,7 +54,7 @@ jobs:
       - run: npm test
   publish:
     docker:
-      - image: circleci/<language>:<version TAG>
+      - image: circleci/node:10.18
     steps:
       - checkout
       - run:
