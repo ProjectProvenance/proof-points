@@ -8,7 +8,7 @@
   },
   "scripts": {
     "compile": "truffle compile",
-    "test": "truffle test"
+    "test": "eslint .; truffle test"
   },
   "repository": {
     "type": "git",
@@ -31,6 +31,9 @@
     "mocha": "6.0.2",
     "chai": "4.2.0",
     "blueimp-md5": "2.12.0",
-    "expect-to-be-a-promise": "1.0.2"
+    "expect-to-be-a-promise": "1.0.2",
+    "eslint": "6.8.0",
+    "eslint-config-airbnb-base": "14.0.0",
+    "eslint-plugin-import": "2.20.0"
   }
 }

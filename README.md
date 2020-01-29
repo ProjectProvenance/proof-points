@@ -11,7 +11,7 @@ This repo contains everything you need to work with [Provenance Proof Points](ht
 
 ## Quick Start
 
-All proof point functionality is accessed through an instance of the `Provenance` object. To construct a `Provenance` object you will need a `web3` instance and the address of a `ProofPointStorage1` contract. The production instance of the `ProofPointStorage1` contract is deployed on kovan and its address is published at https://open.provenance.org/public-addresses. If you want to `issue` a proof point you will also need a funded Ethereum account.
+All proof point functionality is accessed through an instance of the `Provenance` object. To construct a `Provenance` object you will need a `web3` instance and the address of a `ProofPointRegistryStorage1` contract. The production instance of the `ProofPointRegistryStorage1` contract is deployed on kovan and its address is published at https://open.provenance.org/public-addresses. If you want to `issue` a proof point you will also need a funded Ethereum account.
 
 ```
 // construct an instance of the Provenance object

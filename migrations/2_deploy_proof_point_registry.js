@@ -1,5 +1,5 @@
-const ProofPointRegistry = artifacts.require("ProofPointRegistry");
-const ProofPointRegistryStorage1 = artifacts.require("ProofPointRegistryStorage1");
+const ProofPointRegistry = artifacts.require('ProofPointRegistry');
+const ProofPointRegistryStorage1 = artifacts.require('ProofPointRegistryStorage1');
 
 module.exports = async function(deployer) {
   await deployer.deploy(ProofPointRegistryStorage1);

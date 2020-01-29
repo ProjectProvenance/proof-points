@@ -8,6 +8,8 @@
 
 > **TODO** find out how to encode a fully qualified Ethereum address as an IRI and specify that for all Ethereum addresses
 
+# Provenance Proof Points Version 1 Specification
+
 The Provenance Proof Point system is an implementation of the [W3C Verifiable Credentials](https://www.w3.org/TR/vc-data-model/) specification, with an extension to ensure there is a public, trustless append-only log of all Proof Points ever issued and to enable the authenticity and revocation status of a presented Proof Point to be checked using a smart contract on the Ethereum blockchain.
 
 In general the system supports the following functionality:
@@ -65,7 +67,7 @@ The JSON document part of the Proof Point is an implementation of the [W3C Verif
 | `type-specific-data` | Data fields specific to the `type` which serve to further specify the meaning of the claim |
 | `registry-root` | The Ethereum address of the `RegistryRoot` instance which indirectly specifies the `ProofPointRegistry` contract that should be used to `issue`, `commit`, `revoke` and `validate` this claim. See [Locating the Claims Registry](#locating-the-claims-registry). |
 
-> **Note** The `method` field of the `proof` is what makes this W3C Verifiable Credential a Proof Point. The identifier `http://provenance.org/ontology/ptf/v2#ProvenanceProofType1` specifies the proof method defined in this document.
+> **Note** The `method` field of the `proof` is what makes this W3C Verifiable Credential a Proof Point. The identifier `https://provenance.org/ontology/ptf/v2#ProvenanceProofType1` specifies the proof method defined in this document.
 
 An example claim document:
 

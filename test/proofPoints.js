@@ -1,13 +1,6 @@
-// const Web3 = require('web3');
 const { expect } = require('chai');
 const P = require('../src');
-
-// const NODE_URI = 'http://localhost:8545'
 const FakeStorageProvider = require('./fixtures/FakeStorageProvider')
-
-// const web3 = new Web3(web3)
-// global.web3 = web3;
-
 
 contract('ProofPoints', () => {
   var storageProvider;

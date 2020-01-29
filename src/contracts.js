@@ -1,5 +1,5 @@
 const ProofPointRegistry = require('../build/contracts/ProofPointRegistry.json');
-const ProofPointRegistryStorage1= require('../build/contracts/ProofPointRegistryStorage1.json');
+const ProofPointRegistryStorage1 = require('../build/contracts/ProofPointRegistryStorage1.json');
 
 class ContractsManager {
   constructor(web3, proofPointStorageAddress) {
@@ -16,7 +16,7 @@ class ContractsManager {
 
     contract.setProvider(this.web3.currentProvider);
 
-    contract.at = address => new this
+    contract.at = (address) => new this
       .web3
       .eth
       .Contract(
