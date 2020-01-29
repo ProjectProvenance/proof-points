@@ -37,7 +37,7 @@ jobs:
       - run: npm run compile
 
       # Start local Ethereum node for testing
-      - run: ./node_modules/.bin/ganache-cli &
+      - run: ./repo/node_modules/.bin/ganache-cli &
 
       # run tests!
       - run: npm test
