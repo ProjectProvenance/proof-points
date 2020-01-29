@@ -4,15 +4,9 @@
 #
 version: 2
 jobs:
-  test:
+  build:
     docker:
-      # specify the version you desire here
       - image: circleci/node:10.18
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/mongo:3.4.4
 
     working_directory: ~/repo
 
@@ -36,6 +30,19 @@ jobs:
       # compile solidity contracts
       - run: npm run compile
 
+      - persist_to_workspace:
+          root: ~/repo
+          paths: .
+  test:
+    docker:
+      - image: circleci/node:10.18
+
+    working_directory: ~/repo
+
+    steps:
+      - attach_workspace:
+          at: ~/repo
+
       # Install IPFS node
       - run: wget https://dist.ipfs.io/go-ipfs/v0.4.22/go-ipfs_v0.4.22_linux-amd64.tar.gz
       - run: tar xvfz go-ipfs_v0.4.22_linux-amd64.tar.gz 
@@ -52,10 +59,6 @@ jobs:
       - run:
           name: Run tests
           command: npm test
-
-      - persist_to_workspace:
-          root: ~/repo
-          paths: .
   publish:
     docker:
       - image: circleci/node:10.18
@@ -72,7 +75,13 @@ workflows:
   version: 2
   build:
     jobs:
+      - build:
+          filters:
+            tags:
+              only: /.*/      
       - test:
+          requires:
+            - build
           filters:
             tags:
               only: /.*/
