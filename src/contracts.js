@@ -7,39 +7,30 @@ class ContractsManager {
     this.proofPointStorageAddress = proofPointStorageAddress;
   }
 
+  initContract(definition) {
+    const contract = new this.web3.eth.Contract(
+      definition.abi,
+      null, // address
+      { data: definition.bytecode }
+    );
+
+    contract.setProvider(this.web3.currentProvider);
+
+    contract.at = address => new this
+      .web3
+      .eth
+      .Contract(
+        definition.abi,
+        address,
+        { data: definition.bytecode }
+      );
+
+    return contract;
+  }
+
   async init() {
-    this.ProofPointRegistry = new this.web3.eth.Contract(
-      ProofPointRegistry.abi,
-      null, // address
-      { data: ProofPointRegistry.bytecode }
-    );
-    this.ProofPointRegistryStorage1 = new this.web3.eth.Contract(
-      ProofPointRegistryStorage1.abi,
-      null, // address
-      { data: ProofPointRegistryStorage1.bytecode }
-    );
-
-
-    this.ProofPointRegistry.setProvider(this.web3.currentProvider);
-    this.ProofPointRegistryStorage1.setProvider(this.web3.currentProvider);
-
-    this.ProofPointRegistry.at = address => new this
-      .web3
-      .eth
-      .Contract(
-        ProofPointRegistry.abi,
-        address,
-        { data: ProofPointRegistry.bytecode }
-      );
-
-    this.ProofPointRegistryStorage1.at = address => new this
-      .web3
-      .eth
-      .Contract(
-        ProofPointRegistryStorage1.abi,
-        address,
-        { data: ProofPointRegistryStorage1.bytecode }
-      );
+    this.ProofPointRegistry = this.initContract(ProofPointRegistry);
+    this.ProofPointRegistryStorage1 = this.initContract(ProofPointRegistryStorage1);
 
     if (typeof this.proofPointStorageAddress !== 'undefined') {
       const eternalStorage = await this
