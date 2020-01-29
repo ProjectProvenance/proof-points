@@ -1,7 +1,7 @@
 {
   "name": "proof-points",
   "version": "1.0.0",
-  "description": "",
+  "description": "Library for working with Provenance Proof Points",
   "main": "src/index.js",
   "directories": {
     "test": "test"
@@ -14,7 +14,7 @@
     "type": "git",
     "url": "git+https://github.com/ProjectProvenance/ProofPoints.git"
   },
-  "author": "",
+  "author": "Provenance",
   "license": "MPL-2.0",
   "bugs": {
     "url": "https://github.com/ProjectProvenance/ProofPoints/issues"
