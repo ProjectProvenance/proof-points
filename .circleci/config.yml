@@ -36,16 +36,10 @@ jobs:
       # compile solidity contracts
       - run: npm run compile
 
-      # Install and run IPFS node
+      # Install IPFS node
       - run: wget https://dist.ipfs.io/go-ipfs/v0.4.22/go-ipfs_v0.4.22_linux-amd64.tar.gz
       - run: tar xvfz go-ipfs_v0.4.22_linux-amd64.tar.gz 
       - run: ./go-ipfs/ipfs init
-
-      # Run local Ethereum node for testing
-      - run:
-          name: Ganache
-          command: ./node_modules/.bin/ganache-cli
-          background: true
 
       # Run local IPFS node for testing
       - run:
@@ -53,7 +47,7 @@ jobs:
           command: ./go-ipfs/ipfs daemon
           background: true
 
-      # allow daemons time to start up
+      # allow daemon time to start up
       - run: sleep 5
 
       # run tests

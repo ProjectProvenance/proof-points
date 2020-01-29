@@ -11,7 +11,25 @@ This repo contains everything you need to work with [Provenance Proof Points](ht
 
 ## Quick Start
 
+This section covers how to use the NPM package to issue, revoke and validate proof points.
+
 All proof point functionality is accessed through an instance of the `Provenance` object. To construct a `Provenance` object you will need a `web3` instance and the address of a `ProofPointRegistryStorage1` contract. The production instance of the `ProofPointRegistryStorage1` contract is deployed on kovan and its address is published at https://open.provenance.org/public-addresses. If you want to `issue` a proof point you will also need a funded Ethereum account.
+
+> If you want to deploy your own instance of the Proof Point registry contracts you can use `truffle migrate`. For more information see the [Truffle documentation](https://www.trufflesuite.com/docs)
+
+Install the NPM package
+
+```
+$ npm i @provenance/proof-points
+```
+
+Import the package in your Javascript
+
+```
+const Provenance = require('@provenance/proof-points');
+```
+
+Construct a provenance object
 
 ```
 // construct an instance of the Provenance object
@@ -67,7 +85,9 @@ await provenance.proofPoint.revoke(proofPointObject);
 await provenance.proofPoint.revokeByHash(proofPointHash);
 ```
 
-## Development
+## Contribute
+
+This section covers how to set up so that you can build the smart contracts and Javascript library and run the unit tests. This is mainly of interest for developers who wish to contribute to the smart contracts of Javascript library.
 
 Clone the repo
 
@@ -100,22 +120,7 @@ Run unit tests
 npm test
 ```
 
-start a local Ethereum node in a separate shell, e.g.
-
-```
-npm i -g ganache-cli
-ganache-cli
-```
-
-Deploy the smart contracts to a local Ethereum node
-
-```
-truffle migrate
-```
-
-Note the contract address of the `ProofPointRegistryStorage1` contract. This will be needed when constructing your `Provenance` object. See [Quick Start](#quick-start) for more info.
-
-> For more advanced deployment scenarios look at `truffle-config.js` and read the Truffle documentation.
+> For more advanced deployment and testing scenarios see the [Truffle documentation](https://www.trufflesuite.com/docs)
 
 ### Publishing NPM Package
 
