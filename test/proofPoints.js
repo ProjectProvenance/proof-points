@@ -33,7 +33,7 @@ contract('ProofPoints', () => {
       .setOwner(p.contracts.ProofPointRegistryInstance.options.address)
       .send({ from: admin, gas: 1000000 });
 
-    type = 'http://provenance.org/ontology/ptf/v1/TestProofPoint';
+    type = 'http://open.provenance.org/ontology/ptf/v1/TestProofPoint';
     content = {
       id: 'https://provenance.org/subject1',
       some: ['pp', 'data'],

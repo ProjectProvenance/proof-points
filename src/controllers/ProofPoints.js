@@ -1,4 +1,4 @@
-const PROOF_TYPE = 'https://provenance.org/ontology/ptf/v2#ProvenanceProofType1';
+const PROOF_TYPE = 'https://open.provenance.org/ontology/ptf/v2/ProvenanceProofType1';
 
 const Web3 = require('web3');
 JSON.canonicalize = require('canonicalize');

@@ -2,7 +2,7 @@
 
 A generic proof point type that can be used to describe many types of claim, as specified by the `category` field. The proof point contains a human readable statement describing the nature of the claim, a list of human readable `initiatives` describing steps that were taken to reach eligibility for the claim, a reference to a `verifier` organization that was supposedly used to verify the claim and optionally a geographic `location` associated with the claim.
 
-`type`: `https://provenance.org/ontology/ptf/v2/CategoryClaim`
+`type`: `https://open.provenance.org/ontology/ptf/v2/CategoryClaim`
 
 `credentialSubject`:
 

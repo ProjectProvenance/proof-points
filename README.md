@@ -49,7 +49,7 @@ Each proof point has a type, an issuer and some data. The issuer should be a fun
 ```
 // issue a proof point
 const result = await provenance.proofPoint.issue(
-    'https://provenance.org/ontology/ptf/v2/...', // A type identifying URL, such as one from the Provenance ontology
+    'https://open.provenance.org/ontology/ptf/v2/...', // A type identifying URL, such as one from the Provenance ontology
     '0x...', // The issuer account, a funded account that you control
     { a: 'b' }, // The data payload of the proof point, should match the schema defined by the type
     '2020-10-10', // Optional valid from date,

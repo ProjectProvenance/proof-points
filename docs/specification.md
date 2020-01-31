@@ -35,7 +35,7 @@ The JSON document part of the Proof Point is an implementation of the [W3C Verif
 {
   "@context": [
     "https://www.w3.org/2018/credentials/v1",
-    "https://provenance.org/ontology/ptf/v2"
+    "https://open.provenance.org/ontology/ptf/v2"
   ],
   "type": ["VerifiableCredential", "<type>"],
   "issuer": "<issuer>",
@@ -67,7 +67,7 @@ The JSON document part of the Proof Point is an implementation of the [W3C Verif
 | `type-specific-data` | Data fields specific to the `type` which serve to further specify the meaning of the claim |
 | `registry-root` | The Ethereum address of the `RegistryRoot` instance which indirectly specifies the `ProofPointRegistry` contract that should be used to `issue`, `commit`, `revoke` and `validate` this claim. See [Locating the Claims Registry](#locating-the-claims-registry). |
 
-> **Note** The `method` field of the `proof` is what makes this W3C Verifiable Credential a Proof Point. The identifier `https://provenance.org/ontology/ptf/v2#ProvenanceProofType1` specifies the proof method defined in this document.
+> **Note** The `method` field of the `proof` is what makes this W3C Verifiable Credential a Proof Point. The identifier `https://open.provenance.org/ontology/ptf/v2#ProvenanceProofType1` specifies the proof method defined in this document.
 
 An example claim document:
 
@@ -75,7 +75,7 @@ An example claim document:
 {
   "@context": [
     "https://www.w3.org/2018/credentials/v1",
-    "https://provenance.org/ontology/ptf/v2"
+    "https://open.provenance.org/ontology/ptf/v2"
   ],
   "type": ["VerifiableCredential", "CertificationClaim"],
   "issuer": "0x8F36fd828D18a060CF4523DE69eE9Ddc3ec23135",
