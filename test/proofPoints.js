@@ -1,6 +1,29 @@
 const { expect } = require('chai');
-const P = require('../src');
-const FakeStorageProvider = require('./fixtures/FakeStorageProvider')
+const Provenance = require('../src');
+const FakeStorageProvider = require('./fixtures/FakeStorageProvider');
+
+async function deployProofPointRegistry(web3, storageProvider, admin) {
+  p = new Provenance({ web3: web3, storageProvider: storageProvider });
+  await p.init();
+  const eternalStorage = await p
+    .contracts
+    .ProofPointRegistryStorage1
+    .deploy()
+    .send({ from: admin, gas: 1000000 });
+
+  const proofPointRegistry = await p
+    .contracts
+    .ProofPointRegistry
+    .deploy({ arguments: [eternalStorage.options.address] })
+    .send({ from: admin, gas: 1000000 });
+
+  await eternalStorage
+    .methods
+    .setOwner(proofPointRegistry.options.address)
+    .send({ from: admin, gas: 1000000 });
+
+  return eternalStorage.options.address;
+}
 
 async function initializeProvenanceWithNewlyDeployedProofPointRegistry(web3, storageProvider, admin) {
   p = new P({ web3: web3, storageProvider: storageProvider });
@@ -35,10 +58,18 @@ contract('ProofPoints', () => {
 
   beforeEach(async() => {
     storageProvider = new FakeStorageProvider();
+
     const accounts = await web3.eth.getAccounts();
     [admin] = accounts;
 
-    p = await initializeProvenanceWithNewlyDeployedProofPointRegistry(web3, storageProvider, admin);
+    const proofPointStorageAddress = await deployProofPointRegistry(web3, storageProvider, admin);
+
+    p = new Provenance({
+      web3: web3,
+      storageProvider: storageProvider,
+      proofPointStorageAddress: proofPointStorageAddress
+    });
+    await p.init();
 
     type = 'http://open.provenance.org/ontology/ptf/v1/TestProofPoint';
     content = {
@@ -129,9 +160,15 @@ contract('ProofPoints', () => {
       content
     );
 
-    const pWithDifferentProofPointRegistry = await initializeProvenanceWithNewlyDeployedProofPointRegistry(web3, storageProvider, admin);
+    const proofPointStorageAddress2 = await deployProofPointRegistry(web3, storageProvider, admin);
+    const p2 = new Provenance({
+      web3: web3,
+      storageProvider: storageProvider,
+      proofPointStorageAddress: proofPointStorageAddress2
+    });
+    await p2.init();
 
-    const isValidProofPoint = await pWithDifferentProofPointRegistry.proofPoint.validate(results.proofPointObject);
+    const isValidProofPoint = await p2.proofPoint.validate(results.proofPointObject);
     expect(isValidProofPoint).to.be.false;
   });
 });
