@@ -203,7 +203,8 @@ class ProofPointsController {
   }
 
   isRegistryWhitelisted(proofPointObject) {
-    return proofPointObject.proof.registryRoot.toLowerCase() === this.contracts.proofPointStorageAddress.toLowerCase();
+    return proofPointObject.proof.registryRoot.toLowerCase()
+      === this.contracts.proofPointStorageAddress.toLowerCase();
   }
 }
 
