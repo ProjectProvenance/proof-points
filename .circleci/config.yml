@@ -32,12 +32,12 @@ jobs:
           key: v1-dependencies-{{ checksum "package.json" }}
 
       - run:
-          name: Run Javascript linter
-          command: npm run lint
-
-      - run:
           name: Compile solidity contracts
           command: npm run compile
+
+      - run:
+          name: Run Javascript linter
+          command: npm run lint
 
       - persist_to_workspace:
           root: ~/repo
