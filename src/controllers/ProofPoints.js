@@ -84,6 +84,10 @@ class ProofPointsController {
       }
     }
 
+    if (!this.isRegistryWhitelisted(proofPointObject)) {
+      return false;
+    }
+
     const proofPointRegistry = await this.getProofPointRegistry(proofPointObject);
     const proofPointHash = await this.storeObjectAndReturnKey(proofPointObject);
     const proofPointHashBytes = web3.utils.asciiToHex(proofPointHash);
@@ -158,12 +162,12 @@ class ProofPointsController {
   }
 
   async getProofPointRegistry(proofPointObject) {
-    const proofPointStorageAddress = await this
+    const proofPointStorage1 = await this
       .contracts
       .ProofPointRegistryStorage1
       .at(proofPointObject.proof.registryRoot);
 
-    const proofPointRegistryAddress = await proofPointStorageAddress
+    const proofPointRegistryAddress = await proofPointStorage1
       .methods
       .getOwner()
       .call();
@@ -196,6 +200,10 @@ class ProofPointsController {
     const dataStr = JSON.canonicalize(cleanedDataObject);
     const storageResult = await this.storage.add(dataStr);
     return storageResult.digest;
+  }
+
+  isRegistryWhitelisted(proofPointObject) {
+    return proofPointObject.proof.registryRoot.toLowerCase() === this.contracts.proofPointStorageAddress.toLowerCase();
   }
 }
 
