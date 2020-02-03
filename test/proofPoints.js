@@ -2,6 +2,30 @@ const { expect } = require('chai');
 const P = require('../src');
 const FakeStorageProvider = require('./fixtures/FakeStorageProvider')
 
+async function initializeProvenanceWithNewlyDeployedProofPointRegistry(web3, storageProvider, admin) {
+  p = new P({ web3: web3, storageProvider: storageProvider });
+  await p.init();
+  const eternalStorage = await p
+    .contracts
+    .ProofPointRegistryStorage1
+    .deploy()
+    .send({ from: admin, gas: 1000000 });
+  p.contracts.proofPointStorageAddress = eternalStorage.options.address;
+
+  p.contracts.ProofPointRegistryInstance = await p
+    .contracts
+    .ProofPointRegistry
+    .deploy({ arguments: [p.contracts.proofPointStorageAddress] })
+    .send({ from: admin, gas: 1000000 });
+
+  await eternalStorage
+    .methods
+    .setOwner(p.contracts.ProofPointRegistryInstance.options.address)
+    .send({ from: admin, gas: 1000000 });
+
+  return p;
+}
+
 contract('ProofPoints', () => {
   var storageProvider;
   var p;
@@ -11,27 +35,10 @@ contract('ProofPoints', () => {
 
   beforeEach(async() => {
     storageProvider = new FakeStorageProvider();
-    p = new P({ web3: web3, storageProvider: storageProvider });
-    await p.init();
     const accounts = await web3.eth.getAccounts();
     [admin] = accounts;
-    const eternalStorage = await p
-      .contracts
-      .ProofPointRegistryStorage1
-      .deploy()
-      .send({ from: admin, gas: 1000000 });
-    p.contracts.proofPointStorageAddress = eternalStorage.options.address;
 
-    p.contracts.ProofPointRegistryInstance = await p
-      .contracts
-      .ProofPointRegistry
-      .deploy({ arguments: [p.contracts.proofPointStorageAddress] })
-      .send({ from: admin, gas: 1000000 });
-
-    await eternalStorage
-      .methods
-      .setOwner(p.contracts.ProofPointRegistryInstance.options.address)
-      .send({ from: admin, gas: 1000000 });
+    p = await initializeProvenanceWithNewlyDeployedProofPointRegistry(web3, storageProvider, admin);
 
     type = 'http://open.provenance.org/ontology/ptf/v1/TestProofPoint';
     content = {
@@ -112,6 +119,19 @@ contract('ProofPoints', () => {
       Date.now() - 1000000
     );
     const isValidProofPoint = await p.proofPoint.validate(results.proofPointObject);
+    expect(isValidProofPoint).to.be.false;
+  });
+
+  it('pp should be invalid if issued to a different registry', async() => {
+    const results = await p.proofPoint.issue(
+      type,
+      admin,
+      content
+    );
+
+    const pWithDifferentProofPointRegistry = await initializeProvenanceWithNewlyDeployedProofPointRegistry(web3, storageProvider, admin);
+
+    const isValidProofPoint = await pWithDifferentProofPointRegistry.proofPoint.validate(results.proofPointObject);
     expect(isValidProofPoint).to.be.false;
   });
 });
