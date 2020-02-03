@@ -1,4 +1,5 @@
-# ProofPoints
+# Provenance Proof Points
+
 Documentation, Javascript package and smart contracts for working with Provenance Proof Points
 
 ## Introduction
@@ -13,7 +14,7 @@ This repo contains everything you need to work with [Provenance Proof Points](ht
 
 This section covers how to use the NPM package to issue, revoke and validate proof points.
 
-All proof point functionality is accessed through an instance of the `Provenance` object. To construct a `Provenance` object you will need a `web3` instance and the address of a `ProofPointRegistryStorage1` contract. The production instance of the `ProofPointRegistryStorage1` contract is deployed on kovan and its address is published at https://open.provenance.org/public-addresses. If you want to `issue` a proof point you will also need a funded Ethereum account.
+All proof point functionality is accessed through an instance of the `Provenance` object. To construct a `Provenance` object you will need a `web3` instance and the address of a `ProofPointRegistryStorage1` contract. The production instance of the `ProofPointRegistryStorage1` contract is deployed on kovan and its address is published at [Provenance Public Ethereum Addresses](https://open.provenance.org/developers#provenance-public-ethereum-addresses). If you want to `issue` a proof point you will also need a funded Ethereum account.
 
 > If you want to deploy your own instance of the Proof Point registry contracts you can use `truffle migrate`. For more information see the [Truffle documentation](https://www.trufflesuite.com/docs)
 
