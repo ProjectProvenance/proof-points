@@ -25,30 +25,6 @@ async function deployProofPointRegistry(web3, storageProvider, admin) {
   return eternalStorage.options.address;
 }
 
-async function initializeProvenanceWithNewlyDeployedProofPointRegistry(web3, storageProvider, admin) {
-  p = new P({ web3: web3, storageProvider: storageProvider });
-  await p.init();
-  const eternalStorage = await p
-    .contracts
-    .ProofPointRegistryStorage1
-    .deploy()
-    .send({ from: admin, gas: 1000000 });
-  p.contracts.proofPointStorageAddress = eternalStorage.options.address;
-
-  p.contracts.ProofPointRegistryInstance = await p
-    .contracts
-    .ProofPointRegistry
-    .deploy({ arguments: [p.contracts.proofPointStorageAddress] })
-    .send({ from: admin, gas: 1000000 });
-
-  await eternalStorage
-    .methods
-    .setOwner(p.contracts.ProofPointRegistryInstance.options.address)
-    .send({ from: admin, gas: 1000000 });
-
-  return p;
-}
-
 contract('ProofPoints', () => {
   var storageProvider;
   var p;

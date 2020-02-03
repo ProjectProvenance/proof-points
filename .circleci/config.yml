@@ -22,15 +22,22 @@ jobs:
             # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
 
-      - run: npm install
+      - run: 
+          name: Install javascript dependencies
+          command: npm install
 
       - save_cache:
           paths:
             - node_modules
           key: v1-dependencies-{{ checksum "package.json" }}
 
-      # compile solidity contracts
-      - run: npm run compile
+      - run:
+          name: Compile solidity contracts
+          command: npm run compile
+
+      - run:
+          name: Run Javascript linter
+          command: npm run lint
 
       - persist_to_workspace:
           root: ~/repo
@@ -41,18 +48,21 @@ jobs:
       - attach_workspace:
           at: ~/repo
 
-      # Install IPFS node
-      - run: wget https://dist.ipfs.io/go-ipfs/v0.4.22/go-ipfs_v0.4.22_linux-amd64.tar.gz
-      - run: tar xvfz go-ipfs_v0.4.22_linux-amd64.tar.gz 
-      - run: ./go-ipfs/ipfs init
+      - run:
+          name: Install IPFS node
+          command: |
+            wget https://dist.ipfs.io/go-ipfs/v0.4.22/go-ipfs_v0.4.22_linux-amd64.tar.gz
+            tar xvfz go-ipfs_v0.4.22_linux-amd64.tar.gz 
+            ./go-ipfs/ipfs init
 
       - run:
-          name: Start IPFS Daemon
+          name: Start IPFS node
           command: ./go-ipfs/ipfs daemon
           background: true
 
-      # allow daemon time to start up
-      - run: sleep 5
+      - run: 
+          name: Wait for IPFS daemon to start
+          command: sleep 5
 
       - run:
           name: Run tests
@@ -63,10 +73,10 @@ jobs:
       - attach_workspace:
           at: ~/repo
       - run:
-          name: Authenticate with registry
+          name: Authenticate with Javascript package registry
           command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
       - run:
-          name: Publish package
+          name: Publish Javascript package
           command: npm publish
 workflows:
   version: 2
