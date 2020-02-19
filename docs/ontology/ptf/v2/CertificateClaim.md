@@ -1,6 +1,6 @@
 ## CertificateClaim
 
-Asserts that the subject is the holder or subject of the specified certification
+Asserts that the subject holds an instance of the specified certificate type
 
 `type`: `https://open.provenance.org/ontology/ptf/v2/CertificateClaim`
 
@@ -8,6 +8,6 @@ Asserts that the subject is the holder or subject of the specified certification
 ```
 {
     id: "https://provenance.org/users/example",
-    certification-id: "https://example.com/example-certification"
+    certificate-type: "https://example.com/example-certification"
 }
 ```
