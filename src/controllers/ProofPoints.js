@@ -3,23 +3,29 @@ const PROOF_TYPE = 'https://open.provenance.org/ontology/ptf/v2/ProvenanceProofT
 const Web3 = require('web3');
 JSON.canonicalize = require('canonicalize');
 const { localISOdt } = require('local-iso-dt');
-
-const web3 = new Web3();
+const didJWT = require('did-jwt');
+const { HTTP } = require('http-call');
+const Resolver = require('./VerySimpleEthrDidResolver');
 
 class ProofPointsController {
   constructor(contracts, storage) {
-    this.contracts = contracts
-    this.storage = storage
-    this.gasLimit = 200000
+    this.contracts = contracts;
+    this.storage = storage;
+    this.gasLimit = 200000;
+    this.web3 = new Web3();
+    this.fetchWellKnownDidResource = async function(domain) {
+      const response = await HTTP.get(`https://${domain}/.well-known/did-configuration.json`);
+      return JSON.parse(response.body);
+    }
   }
 
   async issue(type,
-    issuerAddress,
+    issuer,
     content,
     validFromDate = null,
     validUntilDate = null) {
     return this._issue(type,
-      issuerAddress,
+      issuer,
       content,
       this.contracts.ProofPointRegistryInstance.methods.issue,
       validFromDate,
@@ -27,12 +33,12 @@ class ProofPointsController {
   }
 
   async commit(type,
-    issuerAddress,
+    issuer,
     content,
     validFromDate = null,
     validUntilDate = null) {
     return this._issue(type,
-      issuerAddress,
+      issuer,
       content,
       this.contracts.ProofPointRegistryInstance.methods.commit,
       validFromDate,
@@ -52,7 +58,7 @@ class ProofPointsController {
 
     const proofPointRegistry = await this.getProofPointRegistry(proofPointObject);
     const proofPointHash = await this.storeObjectAndReturnKey(proofPointObject);
-    const proofPointHashBytes = web3.utils.asciiToHex(proofPointHash);
+    const proofPointHashBytes = this.web3.utils.asciiToHex(proofPointHash);
     await proofPointRegistry
       .methods
       .revoke(proofPointHashBytes)
@@ -90,30 +96,40 @@ class ProofPointsController {
 
     const proofPointRegistry = await this.getProofPointRegistry(proofPointObject);
     const proofPointHash = await this.storeObjectAndReturnKey(proofPointObject);
-    const proofPointHashBytes = web3.utils.asciiToHex(proofPointHash);
+    const proofPointHashBytes = this.web3.utils.asciiToHex(proofPointHash);
+
+    const issuerAddress = await this.issuerToEthereumAddress(proofPointObject.issuer);
+    if (!issuerAddress) {
+      return false;
+    }
 
     return proofPointRegistry
       .methods
-      .validate(proofPointObject.issuer, proofPointHashBytes)
+      .validate(issuerAddress, proofPointHashBytes)
       .call();
   }
 
   async _issue(type,
-    issuerAddress,
+    issuerDomain,
     content,
     issueFunction,
     validFromDate = null,
     validUntilDate = null) {
     const proofPointObject = this.buildJson(
       type,
-      issuerAddress,
+      issuerDomain,
       content,
       validFromDate,
       validUntilDate
     );
 
     const proofPointHash = await this.storeObjectAndReturnKey(proofPointObject);
-    const proofPointHashBytes = web3.utils.asciiToHex(proofPointHash);
+    const proofPointHashBytes = this.web3.utils.asciiToHex(proofPointHash);
+
+    const issuerAddress = await this.issuerToEthereumAddress(issuerDomain);
+    if (!issuerAddress) {
+      throw new Error('Unable to resolve issuer domain to ethereum address');
+    }
 
     const transactionReceipt = await issueFunction(proofPointHashBytes)
       .send({ from: issuerAddress, gas: this.gasLimit });
@@ -127,26 +143,24 @@ class ProofPointsController {
 
   buildJson(
     type,
-    issuerAddress,
+    issuer,
     content,
     validFromDate = null,
     validUntilDate = null
   ) {
-    const issuerAddressChecksum = web3.utils.toChecksumAddress(issuerAddress);
-
     const proofPoint = {
       '@context': [
         'https://www.w3.org/2018/credentials/v1',
         'https://provenance.org/ontology/ptf/v2'
       ],
       type: ['VerifiableCredential', type],
-      issuer: issuerAddressChecksum,
+      issuer: issuer,
       credentialSubject: content,
       proof: {
         type: PROOF_TYPE,
         registryRoot: this.contracts.proofPointStorageAddress,
         proofPurpose: 'assertionMethod',
-        verificationMethod: issuerAddressChecksum
+        verificationMethod: issuer
       }
     };
 
@@ -205,6 +219,29 @@ class ProofPointsController {
   isRegistryWhitelisted(proofPointObject) {
     return proofPointObject.proof.registryRoot.toLowerCase()
       === this.contracts.proofPointStorageAddress.toLowerCase();
+  }
+
+  async issuerToEthereumAddress(issuer) {
+    try {
+      if (/^0x[a-fA-F0-9]{40}$/.test(issuer)) {
+        return this.web3.utils.toChecksumAddress(issuer);
+      }
+
+      const didConfiguration = await this.fetchWellKnownDidResource(issuer);
+      const jwt = didConfiguration.entries[0];
+      const resolver = new Resolver();
+      const verified = await didJWT.verifyJWT(jwt, {
+        resolver: resolver
+      });
+      const verifiedDomain = verified.payload.vc.credentialSubject.domain;
+      if (verifiedDomain !== issuer) {
+        throw new Error(`Token is valid but links a different domain: ${verifiedDomain}, ${issuer}`);
+      }
+      const address = verified.signer.ethereumAddress;
+      return this.web3.utils.toChecksumAddress(address);
+    } catch (e) {
+      return undefined
+    }
   }
 }
 
