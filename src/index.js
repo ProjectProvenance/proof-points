@@ -34,7 +34,6 @@ class Provenance {
   }
 
   async init() {
-    [this.signingAccount] = (await this.web3.eth.getAccounts());
     await this.contracts.init();
   }
 }
