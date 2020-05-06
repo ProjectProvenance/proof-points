@@ -1,13 +1,24 @@
 const ProofPointRegistry = require('../build/contracts/ProofPointRegistry.json');
 const ProofPointRegistryStorage1 = require('../build/contracts/ProofPointRegistryStorage1.json');
 
+interface ContractDefinition {
+    abi: any;
+    bytecode: string;
+}
+
 class ContractsManager {
-  constructor(web3, proofPointStorageAddress) {
+  web3: any;
+  proofPointStorageAddress: string;
+  ProofPointRegistry: any;
+  ProofPointRegistryStorage1: any;
+  ProofPointRegistryInstance: any;
+
+  constructor(web3: any, proofPointStorageAddress: string) {
     this.web3 = web3;
     this.proofPointStorageAddress = proofPointStorageAddress;
   }
 
-  initContract(definition) {
+  initContract(definition: ContractDefinition) {
     const contract = new this.web3.eth.Contract(
       definition.abi,
       null, // address
@@ -16,7 +27,7 @@ class ContractsManager {
 
     contract.setProvider(this.web3.currentProvider);
 
-    contract.at = (address) => new this
+    contract.at = (address: string) => new this
       .web3
       .eth
       .Contract(
@@ -45,4 +56,4 @@ class ContractsManager {
   }
 }
 
-module.exports = ContractsManager;
+export default ContractsManager;

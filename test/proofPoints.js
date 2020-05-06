@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const Provenance = require('../src');
+const { Provenance } = require('../dist/index');
 const FakeStorageProvider = require('./fixtures/FakeStorageProvider');
 
 async function deployProofPointRegistry(web3, storageProvider, admin) {
@@ -26,11 +26,11 @@ async function deployProofPointRegistry(web3, storageProvider, admin) {
 }
 
 contract('ProofPoints', () => {
-  var storageProvider;
-  var p;
-  var type;
-  var content;
-  var admin;
+  let storageProvider;
+  let p;
+  let type;
+  let content;
+  let admin;
 
   beforeEach(async() => {
     storageProvider = new FakeStorageProvider();

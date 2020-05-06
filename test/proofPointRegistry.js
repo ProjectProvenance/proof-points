@@ -9,7 +9,7 @@ contract('ProofPointRegistry', (accounts) => {
   const user2 = accounts[2];
   const pp1 = Web3.utils.randomHex(32);
   const pp2 = Web3.utils.randomHex(32);
-  var subject;
+  let subject;
 
   beforeEach(async() => {
     const storage = await ppsRegistryEternalStorage1.new({ from: admin });

@@ -8,7 +8,7 @@ contract('ProofPointRegistryStorage1', (accounts) => {
   const nonOwner = accounts[2];
   const pp1 = Web3.utils.randomHex(32);
   const pp2 = Web3.utils.randomHex(32);
-  var subject;
+  let subject;
 
   beforeEach(async() => {
     subject = await ProofPointRegistryStorage1.new({ from: admin });

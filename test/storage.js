@@ -1,25 +1,23 @@
 const chai = require('chai');
 const expectToBeAPromise = require('expect-to-be-a-promise');
-const P = require('../.');
+const { IpfsStorageProvider } = require('../dist/storage');
 
 const { expect } = chai;
 
 chai.use(expectToBeAPromise);
 
-// define IPFS options
 const IPFS_OPTIONS = {
   host: 'localhost',
   port: '5001',
 };
 
-// define dummy values
 const digest = 'QmemSCLVMGoqsC21mgJJh2FJAzvv5aRTeVnBXXnnKmQuXd';
 const docInBytes = '{"quantity":42,"name":"British Gladioli","unit":""}';
 
 describe('IPFSProvider', () => {
   let storageProvider;
   beforeEach(() => {
-    storageProvider = new P.Storage.providers.IPFSProvider(IPFS_OPTIONS);
+    storageProvider = new IpfsStorageProvider(IPFS_OPTIONS);
   });
   it('should have get and add methods', () => {
     expect(typeof storageProvider.get).to.equal('function');

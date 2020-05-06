@@ -2,13 +2,14 @@
   "name": "@provenance/proof-points",
   "version": "1.2.0",
   "description": "Library for working with Provenance Proof Points",
-  "main": "src/index.js",
+  "main": "dist/index.js",
   "directories": {
     "test": "test"
   },
   "scripts": {
-    "compile": "truffle compile",
-    "lint": "eslint .",
+    "compile-typescript": "gulp",
+    "compile-solidity": "truffle compile",
+    "lint-typescript": "eslint .",
     "test": "truffle test"
   },
   "repository": {
@@ -22,19 +23,23 @@
   },
   "homepage": "https://github.com/ProjectProvenance/ProofPoints#readme",
   "dependencies": {
+    "bignumber.js": "^9.0.0",
     "canonicalize": "^1.0.1",
+    "ipfs-mini": "1.1.5",
     "local-iso-dt": "^1.2.2",
-    "web3": "^1.2.5",
-    "ipfs-mini": "1.1.5"
+    "web3": "^1.2.5"
   },
   "devDependencies": {
     "blueimp-md5": "2.12.0",
     "chai": "4.2.0",
     "eslint": "6.8.0",
-    "eslint-config-airbnb-base": "14.0.0",
-    "eslint-plugin-import": "2.20.0",
+    "@typescript-eslint/parser": "*",
+    "@typescript-eslint/eslint-plugin": "*",
     "expect-to-be-a-promise": "1.0.2",
+    "gulp": "^4.0.0",
+    "gulp-typescript": "^6.0.0-alpha.1",
     "mocha": "^7.1.1",
-    "truffle": "5.1.0"
+    "truffle": "5.1.0",
+    "typescript": "^3.8.3"
   }
 }
