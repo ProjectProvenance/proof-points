@@ -47,7 +47,7 @@ class Provenance {
     this.proofPoint = new ProofPointsRepo(this.contracts, this.storage);
   }
 
-  async init() {
+  async init(): Promise<void> {
     await this.contracts.init();
   }
 }
