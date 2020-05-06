@@ -53,8 +53,3 @@ class Provenance {
 }
 
 export { Provenance, Web3 };
-
-// Provenance.Storage = StorageProvider
-// Provenance.Web3 = Web3
-
-// module.exports = Provenance
