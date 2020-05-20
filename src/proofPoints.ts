@@ -44,26 +44,28 @@ class ProofPointsRepo {
         issuerAddress: string,
         content: string,
         validFromDate: Date = null,
-        validUntilDate: Date = null): Promise<ProofPointIssueResult> {
+        validUntilDate: Date = null
+    ): Promise<ProofPointIssueResult> {
         return this._issue(type,
-        issuerAddress,
-        content,
-        this.contracts.ProofPointRegistryInstance.methods.issue,
-        validFromDate,
-        validUntilDate);
+            issuerAddress,
+            content,
+            this.contracts.ProofPointRegistryInstance.methods.issue,
+            validFromDate,
+            validUntilDate);
     }
 
     async commit(type: string,
         issuerAddress: string,
         content: string,
         validFromDate: Date = null,
-        validUntilDate: Date = null): Promise<ProofPointIssueResult> {
+        validUntilDate: Date = null
+    ): Promise<ProofPointIssueResult> {
         return this._issue(type,
-        issuerAddress,
-        content,
-        this.contracts.ProofPointRegistryInstance.methods.commit,
-        validFromDate,
-        validUntilDate);
+            issuerAddress,
+            content,
+            this.contracts.ProofPointRegistryInstance.methods.commit,
+            validFromDate,
+            validUntilDate);
     }
 
     async revokeByHash(proofPointHash: string): Promise<void> {
@@ -74,16 +76,16 @@ class ProofPointsRepo {
 
     async revoke(proofPointObject: ProofPoint): Promise<void> {
         if (proofPointObject.proof.type !== PROOF_TYPE) {
-        throw new Error('Unsupported proof type');
+            throw new Error('Unsupported proof type');
         }
 
         const proofPointRegistry = await this.getProofPointRegistry(proofPointObject);
         const proofPointHash = await this.storeObjectAndReturnKey(proofPointObject);
         const proofPointHashBytes = web3.utils.asciiToHex(proofPointHash);
         await proofPointRegistry
-        .methods
-        .revoke(proofPointHashBytes)
-        .send({ from: proofPointObject.issuer, gas: this.gasLimit });
+            .methods
+            .revoke(proofPointHashBytes)
+            .send({ from: proofPointObject.issuer, gas: this.gasLimit });
     }
 
     async validateByHash(proofPointHash: string): Promise<boolean> {
@@ -98,14 +100,14 @@ class ProofPointsRepo {
         }
 
         if (typeof proofPointObject.validFrom !== 'undefined') {
-        const validFromDate = Date.parse(proofPointObject.validFrom);
+            const validFromDate = Date.parse(proofPointObject.validFrom);
             if (validFromDate > Date.now()) {
                 return false;
             }
         }
 
         if (typeof proofPointObject.validUntil !== 'undefined') {
-        const validUntilDate = Date.parse(proofPointObject.validUntil);
+            const validUntilDate = Date.parse(proofPointObject.validUntil);
             if (validUntilDate < Date.now()) {
                 return false;
             }
@@ -130,13 +132,14 @@ class ProofPointsRepo {
         content: string,
         issueFunction: any,
         validFromDate: Date = null,
-        validUntilDate: Date = null): Promise<ProofPointIssueResult> {
+        validUntilDate: Date = null
+    ): Promise<ProofPointIssueResult> {
         const proofPointObject = this.buildJson(
-        type,
-        issuerAddress,
-        content,
-        validFromDate,
-        validUntilDate
+            type,
+            issuerAddress,
+            content,
+            validFromDate,
+            validUntilDate
         );
 
         const proofPointHash = await this.storeObjectAndReturnKey(proofPointObject);
