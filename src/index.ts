@@ -4,13 +4,13 @@ import ContractsManager from './contracts';
 import { ProofPointsRepo } from './proofPoints';
 
 interface ProvenanceSettings {
-  web3: any;
+  web3: Web3;
   storageSettings: IpfsStorageProviderSettings;
   proofPointStorageAddress: string;
 }
 
 class Provenance {
-  web3: any;
+  web3: Web3;
   contracts: ContractsManager;
   storage: StorageProvider;
   proofPoint: ProofPointsRepo;

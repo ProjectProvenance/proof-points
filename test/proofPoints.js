@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const { Provenance } = require('../dist/index');
+const { Provenance } = require('../dist/src/index');
 const FakeStorageProvider = require('./fixtures/FakeStorageProvider');
 
 async function deployProofPointRegistry(web3, storageProvider, admin) {

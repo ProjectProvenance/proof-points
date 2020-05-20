@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const { Provenance } = require('../dist/index');
+const { Provenance } = require('../dist/src/index');
 
 contract('Index', () => {
   contract('Setup storage', () => {

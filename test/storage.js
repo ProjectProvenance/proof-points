@@ -1,6 +1,6 @@
 const chai = require('chai');
 const expectToBeAPromise = require('expect-to-be-a-promise');
-const { IpfsStorageProvider } = require('../dist/storage');
+const { IpfsStorageProvider } = require('../dist/src/storage');
 
 const { expect } = chai;
 

@@ -1,5 +1,7 @@
-const ProofPointRegistry = require('../build/contracts/ProofPointRegistry.json');
-const ProofPointRegistryStorage1 = require('../build/contracts/ProofPointRegistryStorage1.json');
+import ProofPointRegistry = require('../build/contracts/ProofPointRegistry.json');
+import ProofPointRegistryStorage1 = require('../build/contracts/ProofPointRegistryStorage1.json');
+import Web3 from 'Web3';
+import { Contract } from 'web3-eth-contract';
 
 interface ContractDefinition {
     abi: any;
@@ -7,51 +9,59 @@ interface ContractDefinition {
 }
 
 class ContractsManager {
-  web3: any;
+  web3: Web3;
   proofPointStorageAddress: string;
-  ProofPointRegistry: any;
-  ProofPointRegistryStorage1: any;
-  ProofPointRegistryInstance: any;
+  ProofPointRegistry: Contract;
+  ProofPointRegistryStorage1: Contract;
+  ProofPointRegistryInstance: Contract;
 
-  constructor(web3: any, proofPointStorageAddress: string) {
+  constructor(web3: Web3, proofPointStorageAddress: string) {
     this.web3 = web3;
     this.proofPointStorageAddress = proofPointStorageAddress;
   }
 
-  initContract(definition: ContractDefinition) {
+  async getProofPointRegistry(storageAddress: string): Promise<Contract> {
+    const proofPointStorage1 = await this
+      .initContract(ProofPointRegistryStorage1, storageAddress);
+
+    const proofPointRegistryAddress = await proofPointStorage1
+      .methods
+      .getOwner()
+      .call();
+
+    const proofPointRegistry = await this
+      .initContract(ProofPointRegistry, proofPointRegistryAddress);
+
+    return proofPointRegistry;
+  }
+
+  initContract(definition: ContractDefinition, address: string): Contract {
     const contract = new this.web3.eth.Contract(
       definition.abi,
-      null, // address
+      address,
       { data: definition.bytecode }
     );
 
-    contract.setProvider(this.web3.currentProvider);
+    // contract.setProvider(this.web3.currentProvider);
 
-    contract.at = (address: string) => new this
-      .web3
-      .eth
-      .Contract(
-        definition.abi,
-        address,
-        { data: definition.bytecode }
-      );
+    // contract['at'] = (address: string) => new this
+    //   .web3
+    //   .eth
+    //   .Contract(
+    //     definition.abi,
+    //     address,
+    //     { data: definition.bytecode }
+    //   );
 
     return contract;
   }
 
-  async init() {
-    this.ProofPointRegistry = this.initContract(ProofPointRegistry);
-    this.ProofPointRegistryStorage1 = this.initContract(ProofPointRegistryStorage1);
+  async init(): Promise<void> {
+    this.ProofPointRegistry = await this.initContract(ProofPointRegistry, undefined);
+    this.ProofPointRegistryStorage1 = await this.initContract(ProofPointRegistryStorage1, undefined);
 
     if (typeof this.proofPointStorageAddress !== 'undefined') {
-      const eternalStorage = await this
-        .ProofPointRegistryStorage1
-        .at(this.proofPointStorageAddress);
-      const proofPointRegistryAddress = await eternalStorage
-        .methods
-        .getOwner()
-        .call();
-      this.ProofPointRegistryInstance = await this.ProofPointRegistry.at(proofPointRegistryAddress);
+      this.ProofPointRegistryInstance = await this.getProofPointRegistry(this.proofPointStorageAddress);
     }
   }
 }

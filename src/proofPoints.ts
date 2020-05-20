@@ -1,38 +1,39 @@
 import ContractsManager from './contracts';
 import { StorageProvider } from './storage';
+import { Contract } from 'web3-eth-contract';
+import Web3 from 'web3';
+
+import canonicalizeJson = require('canonicalize');
+import localISOdt = require('local-iso-dt');
 
 interface ProofPoint {
-    '@context': Array<string>,
-    type: Array<string>,
-    issuer: string,
-    credentialSubject: any,
+    '@context': Array<string>;
+    type: Array<string>;
+    issuer: string;
+    credentialSubject: any;
     proof: {
-        type: string,
-        registryRoot: string,
-        proofPurpose: string,
-        verificationMethod: string
-    },
-    validFrom: string,
-    validUntil: string
+        type: string;
+        registryRoot: string;
+        proofPurpose: string;
+        verificationMethod: string;
+    };
+    validFrom: string;
+    validUntil: string;
 };
 
 interface ProofPointIssueResult {
-    proofPointHash: string,
-    transactionHash: string,
-    proofPointObject: ProofPoint
+    proofPointHash: string;
+    transactionHash: string;
+    proofPointObject: ProofPoint;
 };
 
 const PROOF_TYPE = 'https://open.provenance.org/ontology/ptf/v2/ProvenanceProofType1';
-
-const Web3 = require('web3');
-const canonicalizeJson = require('canonicalize');
-const { localISOdt } = require('local-iso-dt');
 const web3 = new Web3();
 
 class ProofPointsRepo {
     contracts: ContractsManager;
     storage: StorageProvider;
-    gasLimit: number = 200000;
+    gasLimit = 200000;
 
     constructor(contracts: ContractsManager, storage: StorageProvider) {
         this.contracts = contracts;
@@ -43,7 +44,7 @@ class ProofPointsRepo {
         issuerAddress: string,
         content: string,
         validFromDate: Date = null,
-        validUntilDate: Date = null) : Promise<ProofPointIssueResult> {
+        validUntilDate: Date = null): Promise<ProofPointIssueResult> {
         return this._issue(type,
         issuerAddress,
         content,
@@ -56,7 +57,7 @@ class ProofPointsRepo {
         issuerAddress: string,
         content: string,
         validFromDate: Date = null,
-        validUntilDate: Date = null) : Promise<ProofPointIssueResult> {
+        validUntilDate: Date = null): Promise<ProofPointIssueResult> {
         return this._issue(type,
         issuerAddress,
         content,
@@ -65,13 +66,13 @@ class ProofPointsRepo {
         validUntilDate);
     }
 
-    async revokeByHash(proofPointHash: string) {
+    async revokeByHash(proofPointHash: string): Promise<void> {
         const storedData = await this.storage.get(proofPointHash);
         const proofPointObject = JSON.parse(storedData.data);
         this.revoke(proofPointObject);
     }
 
-    async revoke(proofPointObject: any) {
+    async revoke(proofPointObject: ProofPoint): Promise<void> {
         if (proofPointObject.proof.type !== PROOF_TYPE) {
         throw new Error('Unsupported proof type');
         }
@@ -85,33 +86,33 @@ class ProofPointsRepo {
         .send({ from: proofPointObject.issuer, gas: this.gasLimit });
     }
 
-    async validateByHash(proofPointHash: string) : Promise<boolean> {
+    async validateByHash(proofPointHash: string): Promise<boolean> {
         const storedData = await this.storage.get(proofPointHash);
         const proofPointObject = JSON.parse(storedData.data);
         return this.validate(proofPointObject);
     }
 
-    async validate(proofPointObject: any) : Promise<boolean> {
+    async validate(proofPointObject: ProofPoint): Promise<boolean> {
         if (proofPointObject.proof.type !== PROOF_TYPE) {
-        throw new Error('Unsupported proof type');
+            throw new Error('Unsupported proof type');
         }
 
         if (typeof proofPointObject.validFrom !== 'undefined') {
         const validFromDate = Date.parse(proofPointObject.validFrom);
-        if (validFromDate > Date.now()) {
-            return false;
-        }
+            if (validFromDate > Date.now()) {
+                return false;
+            }
         }
 
         if (typeof proofPointObject.validUntil !== 'undefined') {
         const validUntilDate = Date.parse(proofPointObject.validUntil);
-        if (validUntilDate < Date.now()) {
-            return false;
-        }
+            if (validUntilDate < Date.now()) {
+                return false;
+            }
         }
 
         if (!this.isRegistryWhitelisted(proofPointObject)) {
-        return false;
+            return false;
         }
 
         const proofPointRegistry = await this.getProofPointRegistry(proofPointObject);
@@ -119,9 +120,9 @@ class ProofPointsRepo {
         const proofPointHashBytes = web3.utils.asciiToHex(proofPointHash);
 
         return proofPointRegistry
-        .methods
-        .validate(proofPointObject.issuer, proofPointHashBytes)
-        .call();
+            .methods
+            .validate(proofPointObject.issuer, proofPointHashBytes)
+            .call();
     }
 
     async _issue(type: string,
@@ -129,7 +130,7 @@ class ProofPointsRepo {
         content: string,
         issueFunction: any,
         validFromDate: Date = null,
-        validUntilDate: Date = null) : Promise<ProofPointIssueResult> {
+        validUntilDate: Date = null): Promise<ProofPointIssueResult> {
         const proofPointObject = this.buildJson(
         type,
         issuerAddress,
@@ -142,12 +143,12 @@ class ProofPointsRepo {
         const proofPointHashBytes = web3.utils.asciiToHex(proofPointHash);
 
         const transactionReceipt = await issueFunction(proofPointHashBytes)
-        .send({ from: issuerAddress, gas: this.gasLimit });
+            .send({ from: issuerAddress, gas: this.gasLimit });
 
         return {
-        proofPointHash: proofPointHash,
-        transactionHash: transactionReceipt.transactionHash,
-        proofPointObject: proofPointObject
+            proofPointHash: proofPointHash,
+            transactionHash: transactionReceipt.transactionHash,
+            proofPointObject: proofPointObject
         };
     }
 
@@ -157,7 +158,7 @@ class ProofPointsRepo {
         content: any,
         validFromDate: Date = null,
         validUntilDate: Date = null
-    ) : ProofPoint {
+    ): ProofPoint {
         const issuerAddressChecksum = web3.utils.toChecksumAddress(issuerAddress);
 
         const proofPoint: ProofPoint = {
@@ -179,36 +180,21 @@ class ProofPointsRepo {
         };
 
         if (validFromDate !== null) {
-            proofPoint.validFrom = localISOdt(validFromDate)
+            proofPoint.validFrom = localISOdt.localISOdt(validFromDate)
         }
 
         if (validUntilDate !== null) {
-            proofPoint.validUntil = localISOdt(validUntilDate);
+            proofPoint.validUntil = localISOdt.localISOdt(validUntilDate);
         }
 
         return proofPoint;
     }
 
-  async getProofPointRegistry(proofPoint: ProofPoint) {
-    const proofPointStorage1 = await this
-      .contracts
-      .ProofPointRegistryStorage1
-      .at(proofPoint.proof.registryRoot);
-
-    const proofPointRegistryAddress = await proofPointStorage1
-      .methods
-      .getOwner()
-      .call();
-
-    const proofPointRegistry = await this
-      .contracts
-      .ProofPointRegistry
-      .at(proofPointRegistryAddress);
-
-    return proofPointRegistry;
+  async getProofPointRegistry(proofPoint: ProofPoint): Promise<Contract> {
+      return this.contracts.getProofPointRegistry(proofPoint.proof.registryRoot);
   }
 
-  static removeEmptyFields(obj: any) {
+  static removeEmptyFields(obj: any): any {
     Object.keys(obj).forEach((key) => {
       if (obj[key] && typeof obj[key] === 'object') ProofPointsRepo.removeEmptyFields(obj[key]);
       // eslint-disable-next-line no-param-reassign
@@ -217,7 +203,7 @@ class ProofPointsRepo {
     return obj;
   }
 
-  async storeObjectAndReturnKey(dataObject: any) {
+  async storeObjectAndReturnKey(dataObject: any): Promise<string> {
     // TODO enforce SHA-256 hash alg
     // TODO add method to compute hash without storing
 
@@ -230,7 +216,7 @@ class ProofPointsRepo {
     return storageResult.digest;
   }
 
-  isRegistryWhitelisted(proofPointObject: ProofPoint) {
+  isRegistryWhitelisted(proofPointObject: ProofPoint): boolean {
     return proofPointObject.proof.registryRoot.toLowerCase()
       === this.contracts.proofPointStorageAddress.toLowerCase();
   }

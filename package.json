@@ -8,7 +8,7 @@
     "test": "test"
   },
   "scripts": {
-    "compile-typescript": "tsc",
+    "compile-typescript": "tsc --resolveJsonModule",
     "compile-solidity": "truffle compile",
     "lint-typescript": "eslint .",
     "test": "truffle test"
@@ -39,7 +39,7 @@
     "@typescript-eslint/eslint-plugin": "latest",
     "expect-to-be-a-promise": "1.0.2",
     "mocha": "^7.1.1",
-    "truffle": "5.1.0",
+    "truffle": "5.1.26",
     "typescript": "^3.8.3"
   }
 }
