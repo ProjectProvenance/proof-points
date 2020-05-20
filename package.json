@@ -13,7 +13,7 @@
     "lint-typescript": "eslint .",
     "test": "truffle test"
   },
-  "prePublish": "tsc",
+  "prePublish": "tsc --resolveJsonModule",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ProjectProvenance/ProofPoints.git"

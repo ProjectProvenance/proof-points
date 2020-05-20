@@ -32,16 +32,16 @@ jobs:
           key: v1-dependencies-{{ checksum "package.json" }}
 
       - run:
+          name: Compile Solidity
+          command: npm run compile-solidity
+
+      - run:
           name: Run TypeScript linter
           command: npm run lint-typescript
 
       - run:
           name: Compile TypeScript
           command: npm run compile-typescript
-
-      - run:
-          name: Compile Solidity
-          command: npm run compile-solidity
 
       - persist_to_workspace:
           root: ~/repo
