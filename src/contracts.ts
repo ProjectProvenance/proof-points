@@ -42,17 +42,6 @@ class ContractsManager {
       { data: definition.bytecode }
     );
 
-    // contract.setProvider(this.web3.currentProvider);
-
-    // contract['at'] = (address: string) => new this
-    //   .web3
-    //   .eth
-    //   .Contract(
-    //     definition.abi,
-    //     address,
-    //     { data: definition.bytecode }
-    //   );
-
     return contract;
   }
 
