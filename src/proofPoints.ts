@@ -43,8 +43,8 @@ class ProofPointsRepo {
     async issue(type: string,
         issuerAddress: string,
         content: string,
-        validFromDate: Date = null,
-        validUntilDate: Date = null
+        validFromDate: Date | null = null,
+        validUntilDate: Date | null = null
     ): Promise<ProofPointIssueResult> {
         return this._issue(type,
             issuerAddress,
@@ -57,8 +57,8 @@ class ProofPointsRepo {
     async commit(type: string,
         issuerAddress: string,
         content: string,
-        validFromDate: Date = null,
-        validUntilDate: Date = null
+        validFromDate: Date | null = null,
+        validUntilDate: Date | null = null
     ): Promise<ProofPointIssueResult> {
         return this._issue(type,
             issuerAddress,
@@ -131,8 +131,8 @@ class ProofPointsRepo {
         issuerAddress: string,
         content: string,
         issueFunction: any,
-        validFromDate: Date = null,
-        validUntilDate: Date = null
+        validFromDate: Date | null = null,
+        validUntilDate: Date | null = null
     ): Promise<ProofPointIssueResult> {
         const proofPointObject = this.buildJson(
             type,
@@ -159,8 +159,8 @@ class ProofPointsRepo {
         type: string,
         issuerAddress: string,
         content: any,
-        validFromDate: Date = null,
-        validUntilDate: Date = null
+        validFromDate: Date | null = null,
+        validUntilDate: Date | null = null
     ): ProofPoint {
         const issuerAddressChecksum = web3.utils.toChecksumAddress(issuerAddress);
 
