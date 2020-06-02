@@ -32,16 +32,20 @@ jobs:
           key: v1-dependencies-{{ checksum "package.json" }}
 
       - run:
-          name: Compile solidity contracts
-          command: npm run compile
+          name: Compile Solidity
+          command: npm run compile-solidity
 
       - run:
-          name: Run Javascript linter
-          command: npm run lint
+          name: Run TypeScript linter
+          command: npm run lint-typescript
+
+      - run:
+          name: Compile TypeScript
+          command: npm run compile-typescript
 
       - persist_to_workspace:
           root: ~/repo
-          paths: .
+          paths: [ "." ]
   test:
     <<: *defaults
     steps:

@@ -4,15 +4,14 @@ class FakeBrokenStorageProvider {
     this.name = 'FakeBrokenStorageProvider';
   }
 
-  add(msg) {
+  add() {
     return Promise.reject(new Error('storage is down'));
   }
 
-  get(digest) {
+  get() {
     return Promise.reject(new Error('storage is down'));
   }
 }
 
 module.exports = FakeBrokenStorageProvider;
-
 /* eslint-enable */

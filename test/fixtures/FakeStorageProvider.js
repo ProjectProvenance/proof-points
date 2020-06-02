@@ -1,4 +1,3 @@
-/* eslint-disable class-methods-use-this  */
 const md5 = require('blueimp-md5')
 
 class FakeStorageProvider {
@@ -19,4 +18,3 @@ class FakeStorageProvider {
 }
 
 module.exports = FakeStorageProvider;
-/* eslint-enable */
