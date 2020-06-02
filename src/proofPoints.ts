@@ -62,20 +62,20 @@ class ProofPointsRepo {
     /**
      * Issue a new proof point
      * @param type A URI string identifying the type of proof point to issue. This may be one of the values defined in the Provenance ontology.
-     * @param issuerAddress The Ethereum address from which to issue the proof point. This must be an account that you control and must be sufficiently funded to pay for the issuance transaction.
+     * @param issuer The Ethereum address from which to issue the proof point or a did:web identifier that resolves to that Ethereum address. This must be an account that you control and must be sufficiently funded to pay for the issuance transaction.
      * @param content A javascript object representing the type specific content of the payload. The shape of the data should conform to the specification of the @param type parameter
      * @param [validFromDate] Optional date from which the issued proof point will be valid. If null then there is no earliest date at which the proof point is valid.
      * @param [validUntilDate] Optional date until which the issued proof point will be valid. If null then there is no latest date at which the proof point is valid.
      * @returns A ProofPointIssueResult describing the result of the action.
      */
     async issue(type: string,
-        issuerAddress: string,
+        issuer: string,
         content: unknown,
         validFromDate: Date | null = null,
         validUntilDate: Date | null = null
     ): Promise<ProofPointIssueResult> {
         return this._issue(type,
-            issuerAddress,
+            issuer,
             content,
             this._contracts.ProofPointRegistryInstance.methods.issue,
             validFromDate,
@@ -86,20 +86,20 @@ class ProofPointsRepo {
     /**
      * Commit a new proof point
      * @param type A URI string identifying the type of proof point to issue. This may be one of the values defined in the Provenance ontology.
-     * @param issuerAddress The Ethereum address from which to issue the proof point. This must be an account that you control and must be sufficiently funded to pay for the issuance transaction.
+     * @param issuer The Ethereum address from which to issue the proof point or a did:web identifier that resolves to that Ethereum address. This must be an account that you control and must be sufficiently funded to pay for the issuance transaction.
      * @param content A javascript object representing the type specific content of the payload. The shape of the data should conform to the specification of the @param type parameter
      * @param [validFromDate] Optional date from which the issued proof point will be valid. If null then there is no earliest date at which the proof point is valid.
      * @param [validUntilDate] Optional date until which the issued proof point will be valid. If null then there is no latest date at which the proof point is valid.
      * @returns A ProofPointIssueResult describing the result of the action.
      */
     async commit(type: string,
-        issuerAddress: string,
+        issuer: string,
         content: string,
         validFromDate: Date | null = null,
         validUntilDate: Date | null = null
     ): Promise<ProofPointIssueResult> {
         return this._issue(type,
-            issuerAddress,
+            issuer,
             content,
             this._contracts.ProofPointRegistryInstance.methods.commit,
             validFromDate,

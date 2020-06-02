@@ -186,10 +186,16 @@ contract('ProofPoints', () => {
 
   it('should handle did:web issuer on issue', async() => {
     const result = await p.proofPoint.issue(type, 'did:web:example.com', content);
-    const isValidProofPoint = await p.proofPoint.validate(result.proofPointObject);
     expect(result.proofPointObject.issuer).to.eq('did:web:example.com');
+    const isValidProofPoint = await p.proofPoint.validate(result.proofPointObject);
     expect(isValidProofPoint).to.be.true;
-    
+  });
+
+  it('should handle did:web issuer on revoke', async() => {
+    const result = await p.proofPoint.issue(type, 'did:web:example.com', content);
+    await p.proofPoint.revokeByHash(result.proofPointHash);
+    const isValidProofPoint = await p.proofPoint.validate(result.proofPointObject);
+    expect(isValidProofPoint).to.be.false;
   });
 
   it('should handle did:web issuer on validate', async() => {
