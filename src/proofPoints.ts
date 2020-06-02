@@ -60,7 +60,8 @@ class ProofPointsRepo {
             content,
             this._contracts.ProofPointRegistryInstance.methods.issue,
             validFromDate,
-            validUntilDate);
+            validUntilDate
+        );
     }
 
     /**
@@ -83,7 +84,8 @@ class ProofPointsRepo {
             content,
             this._contracts.ProofPointRegistryInstance.methods.commit,
             validFromDate,
-            validUntilDate);
+            validUntilDate
+        );
     }
 
     /**

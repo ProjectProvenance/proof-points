@@ -10,14 +10,13 @@ interface ProvenanceSettings {
 }
 
 class Provenance {
-  private _web3: Web3;
   private _storage: StorageProvider;
   contracts: ContractsManager;
   proofPoint: ProofPointsRepo;
 
   constructor(settings: ProvenanceSettings) {
     if (typeof settings.web3 === 'undefined') {
-      throw new Error('web3 must be defined');
+      throw new TypeError('web3 must be defined');
     }
 
     if (settings.storageProvider === null || typeof settings.storageProvider === 'undefined') {
@@ -29,7 +28,6 @@ class Provenance {
       });
     }
 
-    this._web3 = settings.web3;
     this.contracts = new ContractsManager(
       settings.web3,
       settings.proofPointStorageAddress
