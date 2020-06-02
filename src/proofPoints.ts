@@ -10,7 +10,7 @@ interface ProofPoint {
     '@context': Array<string>;
     type: Array<string>;
     issuer: string;
-    credentialSubject: any;
+    credentialSubject: unknown;
     proof: {
         type: string;
         registryRoot: string;
@@ -31,29 +31,47 @@ const PROOF_TYPE = 'https://open.provenance.org/ontology/ptf/v2/ProvenanceProofT
 const web3 = new Web3();
 
 class ProofPointsRepo {
-    contracts: ContractsManager;
-    storage: StorageProvider;
-    gasLimit = 200000;
+    private _contracts: ContractsManager;
+    private _storage: StorageProvider;
+    private _gasLimit = 200000;
 
     constructor(contracts: ContractsManager, storage: StorageProvider) {
-        this.contracts = contracts;
-        this.storage = storage;
+        this._contracts = contracts;
+        this._storage = storage;
     }
 
+    /**
+     * Issue a new proof point
+     * @param type A URI string identifying the type of proof point to issue. This may be one of the values defined in the Provenance ontology.
+     * @param issuerAddress The Ethereum address from which to issue the proof point. This must be an account that you control and must be sufficiently funded to pay for the issuance transaction.
+     * @param content A javascript object representing the type specific content of the payload. The shape of the data should conform to the specification of the @param type parameter
+     * @param [validFromDate] Optional date from which the issued proof point will be valid. If null then there is no earliest date at which the proof point is valid.
+     * @param [validUntilDate] Optional date until which the issued proof point will be valid. If null then there is no latest date at which the proof point is valid.
+     * @returns A ProofPointIssueResult describing the result of the action.
+     */
     async issue(type: string,
         issuerAddress: string,
-        content: string,
+        content: unknown,
         validFromDate: Date | null = null,
         validUntilDate: Date | null = null
     ): Promise<ProofPointIssueResult> {
         return this._issue(type,
             issuerAddress,
             content,
-            this.contracts.ProofPointRegistryInstance.methods.issue,
+            this._contracts.ProofPointRegistryInstance.methods.issue,
             validFromDate,
             validUntilDate);
     }
 
+    /**
+     * Commit a new proof point
+     * @param type A URI string identifying the type of proof point to issue. This may be one of the values defined in the Provenance ontology.
+     * @param issuerAddress The Ethereum address from which to issue the proof point. This must be an account that you control and must be sufficiently funded to pay for the issuance transaction.
+     * @param content A javascript object representing the type specific content of the payload. The shape of the data should conform to the specification of the @param type parameter
+     * @param [validFromDate] Optional date from which the issued proof point will be valid. If null then there is no earliest date at which the proof point is valid.
+     * @param [validUntilDate] Optional date until which the issued proof point will be valid. If null then there is no latest date at which the proof point is valid.
+     * @returns A ProofPointIssueResult describing the result of the action.
+     */
     async commit(type: string,
         issuerAddress: string,
         content: string,
@@ -63,17 +81,25 @@ class ProofPointsRepo {
         return this._issue(type,
             issuerAddress,
             content,
-            this.contracts.ProofPointRegistryInstance.methods.commit,
+            this._contracts.ProofPointRegistryInstance.methods.commit,
             validFromDate,
             validUntilDate);
     }
 
+    /**
+     * Revoke a proof point identified by its hash ID. You must control the account that originally issued the proof point. The account must be sufficiently funded to execute the revoke transaction.
+     * @param proofPointHash The hash identifier of the proof point to revoke. This is the value returned in the @param proofPointHash field of the @type ProofPointIssueResult when the proof point was issued.
+     */
     async revokeByHash(proofPointHash: string): Promise<void> {
-        const storedData = await this.storage.get(proofPointHash);
+        const storedData = await this._storage.get(proofPointHash);
         const proofPointObject = JSON.parse(storedData.data);
-        this.revoke(proofPointObject);
+        await this.revoke(proofPointObject);
     }
 
+    /**
+     * Revoke a proof point identified by its full data. You must control the account that originally issued the proof point. The account must be sufficiently funded to execute the revoke transaction.
+     * @param proofPointObject The full proof point data as returned in the @param proofPointObject parameter of the @type ProofPointIssueResult when the proof point was issued.
+     */
     async revoke(proofPointObject: ProofPoint): Promise<void> {
         if (proofPointObject.proof.type !== PROOF_TYPE) {
             throw new Error('Unsupported proof type');
@@ -85,16 +111,27 @@ class ProofPointsRepo {
         await proofPointRegistry
             .methods
             .revoke(proofPointHashBytes)
-            .send({ from: proofPointObject.issuer, gas: this.gasLimit });
+            .send({ from: proofPointObject.issuer, gas: this._gasLimit });
     }
 
+    /**
+     * Validate a proof point identified by its hash ID. This does not involve a blockchain transaction.
+     * @param proofPointHash The hash identifier of the proof point to revoke. This is the value returned in the @param proofPointHash field of the @type ProofPointIssueResult when the proof point was issued.
+     * @returns true if the proof point passes all validation checks, otherwise false.
+     */
     async validateByHash(proofPointHash: string): Promise<boolean> {
-        const storedData = await this.storage.get(proofPointHash);
+        const storedData = await this._storage.get(proofPointHash);
         const proofPointObject = JSON.parse(storedData.data);
         return this.validate(proofPointObject);
     }
 
+    /**
+     * Validate a proof point identified by its full data. This does not involve a blockchain transaction.
+     * @param proofPointObject The full proof point data as returned in the @param proofPointObject parameter of the @type ProofPointIssueResult when the proof point was issued.
+     * @returns true if the proof point passes all validation checks, otherwise false.
+     */
     async validate(proofPointObject: ProofPoint): Promise<boolean> {
+
         if (proofPointObject.proof.type !== PROOF_TYPE) {
             throw new Error('Unsupported proof type');
         }
@@ -127,9 +164,9 @@ class ProofPointsRepo {
             .call();
     }
 
-    async _issue(type: string,
+    private async _issue(type: string,
         issuerAddress: string,
-        content: string,
+        content: unknown,
         issueFunction: any,
         validFromDate: Date | null = null,
         validUntilDate: Date | null = null
@@ -146,7 +183,7 @@ class ProofPointsRepo {
         const proofPointHashBytes = web3.utils.asciiToHex(proofPointHash);
 
         const transactionReceipt = await issueFunction(proofPointHashBytes)
-            .send({ from: issuerAddress, gas: this.gasLimit });
+            .send({ from: issuerAddress, gas: this._gasLimit });
 
         return {
             proofPointHash: proofPointHash,
@@ -155,10 +192,10 @@ class ProofPointsRepo {
         };
     }
 
-    buildJson(
+    private buildJson(
         type: string,
         issuerAddress: string,
-        content: any,
+        content: unknown,
         validFromDate: Date | null = null,
         validUntilDate: Date | null = null
     ): ProofPoint {
@@ -174,7 +211,7 @@ class ProofPointsRepo {
             credentialSubject: content,
             proof: {
                 type: PROOF_TYPE,
-                registryRoot: this.contracts.proofPointStorageAddress,
+                registryRoot: this._contracts.proofPointStorageAddress,
                 proofPurpose: 'assertionMethod',
                 verificationMethod: issuerAddressChecksum
             },
@@ -193,11 +230,11 @@ class ProofPointsRepo {
         return proofPoint;
     }
 
-  async getProofPointRegistry(proofPoint: ProofPoint): Promise<Contract> {
-      return this.contracts.getProofPointRegistry(proofPoint.proof.registryRoot);
+  private async getProofPointRegistry(proofPoint: ProofPoint): Promise<Contract> {
+      return this._contracts.getProofPointRegistry(proofPoint.proof.registryRoot);
   }
 
-  static removeEmptyFields(obj: any): any {
+  private static removeEmptyFields(obj: any): any {
     Object.keys(obj).forEach((key) => {
       if (obj[key] && typeof obj[key] === 'object') ProofPointsRepo.removeEmptyFields(obj[key]);
       // eslint-disable-next-line no-param-reassign
@@ -206,7 +243,7 @@ class ProofPointsRepo {
     return obj;
   }
 
-  async storeObjectAndReturnKey(dataObject: any): Promise<string> {
+  private async storeObjectAndReturnKey(dataObject: any): Promise<string> {
     // TODO enforce SHA-256 hash alg
     // TODO add method to compute hash without storing
 
@@ -215,13 +252,13 @@ class ProofPointsRepo {
     const cleanedDataObject = ProofPointsRepo.removeEmptyFields(dataObject);
 
     const dataStr = canonicalizeJson(cleanedDataObject);
-    const storageResult = await this.storage.add(dataStr);
+    const storageResult = await this._storage.add(dataStr);
     return storageResult.digest;
   }
 
   isRegistryWhitelisted(proofPointObject: ProofPoint): boolean {
     return proofPointObject.proof.registryRoot.toLowerCase()
-      === this.contracts.proofPointStorageAddress.toLowerCase();
+      === this._contracts.proofPointStorageAddress.toLowerCase();
   }
 }
 

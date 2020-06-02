@@ -1,50 +1,41 @@
 import Web3 from 'web3';
-import { StorageProvider, IpfsStorageProvider, IpfsStorageProviderSettings } from './storage';
+import { StorageProvider, IpfsStorageProvider } from './storage';
 import ContractsManager from './contracts';
 import { ProofPointsRepo } from './proofPoints';
 
 interface ProvenanceSettings {
   web3: Web3;
-  storageSettings: IpfsStorageProviderSettings;
+  storageProvider: StorageProvider | null;
   proofPointStorageAddress: string;
 }
 
 class Provenance {
-  web3: Web3;
+  private _web3: Web3;
+  private _storage: StorageProvider;
   contracts: ContractsManager;
-  storage: StorageProvider;
   proofPoint: ProofPointsRepo;
 
   constructor(settings: ProvenanceSettings) {
-    if (typeof settings === 'undefined') {
-      // eslint-disable-next-line no-param-reassign
-      settings = {
-        web3: undefined,
-        storageSettings: undefined,
-        proofPointStorageAddress: undefined
-      }
-    }
-
     if (typeof settings.web3 === 'undefined') {
       throw new Error('web3 must be defined');
     }
 
-    if (typeof settings.storageSettings === 'undefined') {
+    if (settings.storageProvider === null || typeof settings.storageProvider === 'undefined') {
       // eslint-disable-next-line no-param-reassign
-      settings.storageSettings = {
+      settings.storageProvider = new IpfsStorageProvider({
         host: 'ipfs-cluster.provenance.org',
         port: 443,
         protocol: 'https'
-      };
+      });
     }
 
-    this.web3 = settings.web3;
+    this._web3 = settings.web3;
     this.contracts = new ContractsManager(
       settings.web3,
       settings.proofPointStorageAddress
     );
-    this.storage = new IpfsStorageProvider(settings.storageSettings);
-    this.proofPoint = new ProofPointsRepo(this.contracts, this.storage);
+    this._storage = settings.storageProvider;
+    this.proofPoint = new ProofPointsRepo(this.contracts, this._storage);
   }
 
   async init(): Promise<void> {
@@ -52,4 +43,4 @@ class Provenance {
   }
 }
 
-export { Provenance, Web3 };
+export { Provenance, Web3, IpfsStorageProvider, StorageProvider };

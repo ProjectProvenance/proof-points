@@ -55,6 +55,24 @@ contract('ProofPoints', () => {
     };
   })
 
+  // it('should use provenance IPFS for storage if not specified', async() => {
+
+  //   const accounts = await web3.eth.getAccounts();
+  //   [admin] = accounts;
+
+  //   const proofPointStorageAddress = await deployProofPointRegistry(web3, storageProvider, admin);
+
+  //   p = new Provenance({
+  //     web3: web3,
+  //     // no storage provider specified
+  //     proofPointStorageAddress: proofPointStorageAddress
+  //   });
+  //   await p.init();
+
+  //   const results = await p.proofPoint.issue(type, admin, content);
+  //   expect(results.proofPointHash).to.eq('QmZmQKduqFm5JvPp8wvQGDQXJBCm8YfpUqKyGVFaenJ7cR');
+  // });
+
   it('should issue a valid pp', async() => {
     const results = await p.proofPoint.issue(type, admin, content);
     const isValidProofPoint = await p.proofPoint.validate(results.proofPointObject);
