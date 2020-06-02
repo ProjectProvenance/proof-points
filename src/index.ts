@@ -1,12 +1,13 @@
 import Web3 from 'web3';
 import { StorageProvider, IpfsStorageProvider } from './storage';
 import ContractsManager from './contracts';
-import { ProofPointsRepo } from './proofPoints';
+import { ProofPointsRepo, HttpClient } from './proofPoints';
 
 interface ProvenanceSettings {
   web3: Web3;
   storageProvider: StorageProvider | null;
   proofPointStorageAddress: string;
+  httpClient: HttpClient | null;
 }
 
 class Provenance {
@@ -33,7 +34,7 @@ class Provenance {
       settings.proofPointStorageAddress
     );
     this._storage = settings.storageProvider;
-    this.proofPoint = new ProofPointsRepo(this.contracts, this._storage);
+    this.proofPoint = new ProofPointsRepo(this.contracts, this._storage, settings.httpClient);
   }
 
   async init(): Promise<void> {

@@ -1,6 +1,7 @@
 const { expect } = require('chai');
 const { Provenance } = require('../dist/src/index');
 const FakeStorageProvider = require('./fixtures/FakeStorageProvider');
+const FakeHttpClient = require('./fixtures/FakeHttpClient');
 
 async function deployProofPointRegistry(web3, storageProvider, admin) {
   p = new Provenance({ web3: web3, storageProvider: storageProvider });
@@ -31,6 +32,7 @@ contract('ProofPoints', () => {
   let type;
   let content;
   let admin;
+  let httpClient;
 
   beforeEach(async() => {
     storageProvider = new FakeStorageProvider();
@@ -40,10 +42,26 @@ contract('ProofPoints', () => {
 
     const proofPointStorageAddress = await deployProofPointRegistry(web3, storageProvider, admin);
 
+    httpClient = new FakeHttpClient('https://example.com/.well-known/did.json', `{
+      "@context": "https://w3id.org/did/v1",
+      "id": "did:web:example.com",
+      "publicKey": [{
+           "id": "did:web:example.com#owner",
+           "type": "Secp256k1VerificationKey2018",
+           "owner": "did:web:example.com",
+           "ethereumAddress": "${admin}"
+      }],
+      "authentication": [{
+           "type": "Secp256k1SignatureAuthentication2018",
+           "publicKey": "did:web:example.com#owner"
+      }]
+    }`);
+
     p = new Provenance({
       web3: web3,
       storageProvider: storageProvider,
-      proofPointStorageAddress: proofPointStorageAddress
+      proofPointStorageAddress: proofPointStorageAddress,
+      httpClient: httpClient
     });
     await p.init();
 
@@ -163,6 +181,44 @@ contract('ProofPoints', () => {
     await p2.init();
 
     const isValidProofPoint = await p2.proofPoint.validate(results.proofPointObject);
+    expect(isValidProofPoint).to.be.false;
+  });
+
+  it('should handle did:web issuer on issue', async() => {
+    const result = await p.proofPoint.issue(type, 'did:web:example.com', content);
+    const isValidProofPoint = await p.proofPoint.validate(result.proofPointObject);
+    expect(result.proofPointObject.issuer).to.eq('did:web:example.com');
+    expect(isValidProofPoint).to.be.true;
+    
+  });
+
+  it('should handle did:web issuer on validate', async() => {
+
+    // issue a proof point from a web domain which maps to an ethereum address
+    const { proofPointHash } = await p.proofPoint.issue(type, 'did:web:example.com', content);
+
+    // it should be valid
+    let isValidProofPoint = await p.proofPoint.validateByHash(proofPointHash);
+    expect(isValidProofPoint).to.be.true;
+
+    // remap the web domain to a different ethereum address
+    httpClient._body = `{
+      "@context": "https://w3id.org/did/v1",
+      "id": "did:web:example.com",
+      "publicKey": [{
+           "id": "did:web:example.com#owner",
+           "type": "Secp256k1VerificationKey2018",
+           "owner": "did:web:example.com",
+           "ethereumAddress": "0x0000000000000000000000000000000000000000"
+      }],
+      "authentication": [{
+           "type": "Secp256k1SignatureAuthentication2018",
+           "publicKey": "did:web:example.com#owner"
+      }]
+    }`;
+
+    // now the proof point should be invalid
+    isValidProofPoint = await p.proofPoint.validateByHash(proofPointHash);
     expect(isValidProofPoint).to.be.false;
   });
 });

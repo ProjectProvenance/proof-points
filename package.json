@@ -29,7 +29,8 @@
     "canonicalize": "^1.0.1",
     "ipfs-mini": "1.1.5",
     "local-iso-dt": "^1.2.2",
-    "web3": "^1.2.5"
+    "web3": "^1.2.5",
+    "http-call": "^5.3.0"
   },
   "devDependencies": {
     "blueimp-md5": "2.12.0",

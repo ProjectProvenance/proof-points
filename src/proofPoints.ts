@@ -2,9 +2,11 @@ import ContractsManager from './contracts';
 import { StorageProvider } from './storage';
 import { Contract } from 'web3-eth-contract';
 import Web3 from 'web3';
+import { HTTP } from 'http-call';
 
 import canonicalizeJson = require('canonicalize');
 import localISOdt = require('local-iso-dt');
+
 
 interface ProofPoint {
     '@context': Array<string>;
@@ -30,14 +32,31 @@ interface ProofPointIssueResult {
 const PROOF_TYPE = 'https://open.provenance.org/ontology/ptf/v2/ProvenanceProofType1';
 const web3 = new Web3();
 
+interface HttpClient {
+    fetch(url: string): Promise<string>;
+}
+
+class RealHttpClient {
+    async fetch(url: string): Promise<string> {
+        const { body } = await HTTP.get(url);
+        return String(body);
+    }
+}
+
 class ProofPointsRepo {
     private _contracts: ContractsManager;
     private _storage: StorageProvider;
     private _gasLimit = 200000;
+    private _httpClient: HttpClient;
 
-    constructor(contracts: ContractsManager, storage: StorageProvider) {
+    constructor(contracts: ContractsManager, storage: StorageProvider, httpClient: HttpClient = null) {
         this._contracts = contracts;
         this._storage = storage;
+        if (httpClient === null ){
+            this._httpClient = new RealHttpClient();
+        } else {
+            this._httpClient = httpClient;
+        }
     }
 
     /**
@@ -110,10 +129,11 @@ class ProofPointsRepo {
         const proofPointRegistry = await this.getProofPointRegistry(proofPointObject);
         const proofPointHash = await this.storeObjectAndReturnKey(proofPointObject);
         const proofPointHashBytes = web3.utils.asciiToHex(proofPointHash);
+        const issuerEthereumAddress = await this.resolveIssuerToEthereumAddress(proofPointObject.issuer);
         await proofPointRegistry
             .methods
             .revoke(proofPointHashBytes)
-            .send({ from: proofPointObject.issuer, gas: this._gasLimit });
+            .send({ from: issuerEthereumAddress, gas: this._gasLimit });
     }
 
     /**
@@ -159,15 +179,16 @@ class ProofPointsRepo {
         const proofPointRegistry = await this.getProofPointRegistry(proofPointObject);
         const proofPointHash = await this.storeObjectAndReturnKey(proofPointObject);
         const proofPointHashBytes = web3.utils.asciiToHex(proofPointHash);
+        const issuerEthereumAddress = await this.resolveIssuerToEthereumAddress(proofPointObject.issuer);
 
         return proofPointRegistry
             .methods
-            .validate(proofPointObject.issuer, proofPointHashBytes)
+            .validate(issuerEthereumAddress, proofPointHashBytes)
             .call();
     }
 
     private async _issue(type: string,
-        issuerAddress: string,
+        issuer: string,
         content: unknown,
         issueFunction: any,
         validFromDate: Date | null = null,
@@ -175,7 +196,7 @@ class ProofPointsRepo {
     ): Promise<ProofPointIssueResult> {
         const proofPointObject = this.buildJson(
             type,
-            issuerAddress,
+            issuer,
             content,
             validFromDate,
             validUntilDate
@@ -183,6 +204,7 @@ class ProofPointsRepo {
 
         const proofPointHash = await this.storeObjectAndReturnKey(proofPointObject);
         const proofPointHashBytes = web3.utils.asciiToHex(proofPointHash);
+        const issuerAddress = await this.resolveIssuerToEthereumAddress(issuer);
 
         const transactionReceipt = await issueFunction(proofPointHashBytes)
             .send({ from: issuerAddress, gas: this._gasLimit });
@@ -196,26 +218,24 @@ class ProofPointsRepo {
 
     private buildJson(
         type: string,
-        issuerAddress: string,
+        issuer: string,
         content: unknown,
         validFromDate: Date | null = null,
         validUntilDate: Date | null = null
     ): ProofPoint {
-        const issuerAddressChecksum = web3.utils.toChecksumAddress(issuerAddress);
-
         const proofPoint: ProofPoint = {
             '@context': [
                 'https://www.w3.org/2018/credentials/v1',
                 'https://provenance.org/ontology/ptf/v2'
             ],
             type: ['VerifiableCredential', type],
-            issuer: issuerAddressChecksum,
+            issuer: issuer,
             credentialSubject: content,
             proof: {
                 type: PROOF_TYPE,
                 registryRoot: this._contracts.proofPointStorageAddress,
                 proofPurpose: 'assertionMethod',
-                verificationMethod: issuerAddressChecksum
+                verificationMethod: issuer
             },
             validFrom: undefined,
             validUntil: undefined
@@ -234,6 +254,31 @@ class ProofPointsRepo {
 
   private async getProofPointRegistry(proofPoint: ProofPoint): Promise<Contract> {
       return this._contracts.getProofPointRegistry(proofPoint.proof.registryRoot);
+  }
+
+  private async resolveIssuerToEthereumAddress(issuer: string): Promise<string> {
+    if (/^0x[a-fA-F0-9]{40}$/.test(issuer)) {
+        return web3.utils.toChecksumAddress(issuer);
+    }
+
+    if(/^did\:web\:.+$/.test(issuer)) {
+        const didDocumentUri = `https://${issuer.substr(8)}/.well-known/did.json`;
+        const body = await this._httpClient.fetch(didDocumentUri);
+        const didDocument = JSON.parse(body);
+
+        if (didDocument.id !== issuer
+            || typeof didDocument.publicKey === 'undefined'
+            || didDocument.publicKey[0].type !== 'Secp256k1VerificationKey2018'
+            || didDocument.publicKey[0].owner !== issuer
+            || !/^0x[a-fA-F0-9]{40}$/.test(didDocument.publicKey[0].ethereumAddress)
+        ) {
+            throw new Error(`Failed to resolve issuer to Ethereum address: ${issuer}`);
+        }
+
+        return web3.utils.toChecksumAddress(didDocument.publicKey[0].ethereumAddress);
+    }
+
+    throw new Error(`Unsupported issuer: ${issuer}`);
   }
 
   private static removeEmptyFields(obj: any): any {
@@ -264,4 +309,4 @@ class ProofPointsRepo {
   }
 }
 
-export { ProofPoint, ProofPointIssueResult, ProofPointsRepo };
+export { ProofPoint, ProofPointIssueResult, ProofPointsRepo, HttpClient };
