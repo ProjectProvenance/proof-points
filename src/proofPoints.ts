@@ -263,19 +263,26 @@ class ProofPointsRepo {
 
     if(/^did\:web\:.+$/.test(issuer)) {
         const didDocumentUri = `https://${issuer.substr(8)}/.well-known/did.json`;
-        const body = await this._httpClient.fetch(didDocumentUri);
-        const didDocument = JSON.parse(body);
 
-        if (didDocument.id !== issuer
-            || typeof didDocument.publicKey === 'undefined'
-            || didDocument.publicKey[0].type !== 'Secp256k1VerificationKey2018'
-            || didDocument.publicKey[0].owner !== issuer
-            || !/^0x[a-fA-F0-9]{40}$/.test(didDocument.publicKey[0].ethereumAddress)
-        ) {
-            throw new Error(`Failed to resolve issuer to Ethereum address: ${issuer}`);
+        try {
+
+            const body = await this._httpClient.fetch(didDocumentUri);
+            const didDocument = JSON.parse(body);
+
+            if (didDocument['@context'] !== 'https://w3id.org/did/v1'
+                || didDocument.id !== issuer
+                || typeof didDocument.publicKey === 'undefined'
+                || didDocument.publicKey[0].type !== 'Secp256k1VerificationKey2018'
+                || didDocument.publicKey[0].owner !== issuer
+                || !/^0x[a-fA-F0-9]{40}$/.test(didDocument.publicKey[0].ethereumAddress)
+            ) {
+                throw new Error('DID document is invalid or unsupported');
+            }
+
+            return web3.utils.toChecksumAddress(didDocument.publicKey[0].ethereumAddress);
+        } catch(e) {
+            throw new Error(`Failed to resolve issuer to Ethereum address: ${issuer}, ${e.message}`);
         }
-
-        return web3.utils.toChecksumAddress(didDocument.publicKey[0].ethereumAddress);
     }
 
     throw new Error(`Unsupported issuer: ${issuer}`);

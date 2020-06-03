@@ -184,11 +184,136 @@ contract('ProofPoints', () => {
     expect(isValidProofPoint).to.be.false;
   });
 
-  it('should handle did:web issuer on issue', async() => {
+  it('did:web issuer happy path', async() => {
     const result = await p.proofPoint.issue(type, 'did:web:example.com', content);
     expect(result.proofPointObject.issuer).to.eq('did:web:example.com');
     const isValidProofPoint = await p.proofPoint.validate(result.proofPointObject);
     expect(isValidProofPoint).to.be.true;
+  });
+
+  it('did:web issuer wrong context', async() => {
+    httpClient._body = `{
+      "@context": "wrongContext",
+      "id": "did:web:example.com",
+      "publicKey": [{
+           "id": "did:web:example.com#owner",
+           "type": "Secp256k1VerificationKey2018",
+           "owner": "did:web:example.com",
+           "ethereumAddress": "${admin}"
+      }],
+      "authentication": [{
+           "type": "Secp256k1SignatureAuthentication2018",
+           "publicKey": "did:web:example.com#owner"
+      }]
+    }`;
+
+    try{
+      await p.proofPoint.issue(type, 'did:web:example.com', content);
+    } catch(_){
+      return;
+    }
+
+    expect(false);
+  });
+
+  it('did:web issuer wrong id', async() => {
+    httpClient._body = `{
+      "@context": "https://w3id.org/did/v1",
+      "id": "wrongId",
+      "publicKey": [{
+           "id": "did:web:example.com#owner",
+           "type": "Secp256k1VerificationKey2018",
+           "owner": "did:web:example.com",
+           "ethereumAddress": "${admin}"
+      }],
+      "authentication": [{
+           "type": "Secp256k1SignatureAuthentication2018",
+           "publicKey": "did:web:example.com#owner"
+      }]
+    }`;
+
+    try{
+      await p.proofPoint.issue(type, 'did:web:example.com', content);
+    } catch(_){
+      return;
+    }
+
+    expect(false);
+  });
+
+  it('did:web issuer wrong publicKey type', async() => {
+    httpClient._body = `{
+      "@context": "https://w3id.org/did/v1",
+      "id": "did:web:example.com",
+      "publicKey": [{
+           "id": "did:web:example.com#owner",
+           "type": "wrongType",
+           "owner": "did:web:example.com",
+           "ethereumAddress": "${admin}"
+      }],
+      "authentication": [{
+           "type": "Secp256k1SignatureAuthentication2018",
+           "publicKey": "did:web:example.com#owner"
+      }]
+    }`;
+
+    try{
+      await p.proofPoint.issue(type, 'did:web:example.com', content);
+    } catch(_){
+      return;
+    }
+
+    expect(false);
+  });
+
+  it('did:web issuer wrong publicKey owner', async() => {
+    httpClient._body = `{
+      "@context": "https://w3id.org/did/v1",
+      "id": "did:web:example.com",
+      "publicKey": [{
+           "id": "did:web:example.com#owner",
+           "type": "Secp256k1VerificationKey2018",
+           "owner": "wrongOwner",
+           "ethereumAddress": "${admin}"
+      }],
+      "authentication": [{
+           "type": "Secp256k1SignatureAuthentication2018",
+           "publicKey": "did:web:example.com#owner"
+      }]
+    }`;
+
+    try{
+      await p.proofPoint.issue(type, 'did:web:example.com', content);
+    } catch(_){
+      return;
+    }
+
+    expect(false);
+  });
+
+  it('did:web issuer wrong publicKey ethereumAddress', async() => {
+    httpClient._body = `{
+      "@context": "https://w3id.org/did/v1",
+      "id": "did:web:example.com",
+      "publicKey": [{
+           "id": "did:web:example.com#owner",
+           "type": "Secp256k1VerificationKey2018",
+           "owner": "did:web:example.com",
+           "ethereumAddress": "invalidAddress"
+      }],
+      "authentication": [{
+           "type": "Secp256k1SignatureAuthentication2018",
+           "publicKey": "did:web:example.com#owner"
+      }]
+    }`;
+
+    try{
+      await p.proofPoint.issue(type, 'did:web:example.com', content);
+    } catch(_){
+      return;
+    }
+
+    expect(false);
   });
 
   it('should handle did:web issuer on revoke', async() => {
