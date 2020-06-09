@@ -2,7 +2,7 @@
 
 ## New Features
 
-- Improved proof proof point validation API
+- Improved proof point validation API
 
 ## Bug Fixes
 
