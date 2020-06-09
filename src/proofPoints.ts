@@ -27,30 +27,30 @@ interface ProofPointIssueResult {
     proofPointObject: ProofPoint;
 };
 
-enum ProofPointValidity {
+enum ProofPointStatus {
     /**
      * The proof point object is badly formed. The proof point is invalid.
      */
-    InvalidBadlyFormed,
+    BadlyFormed,
     /**
      * The validFrom date is in the future. The proof point is invalid.
      */
-    InvalidPending,
+    Pending,
     /**
      * The validUntil date is in the past. The proof point is invalid.
      */
-    InvalidExpired,
+    Expired,
     /**
      * The proof.registryRoot field references a smart contract that is not a whitelisted proof point registry, 
      * the validation provided is not trusted so the proof point is considered invalid.
      */
-    InvalidNonTrustedRegistry,
+    NonTrustedRegistry,
     /**
      * The proof point registry smart contract does not contain this proof point issued by this issuer. Either
      * the issuer never issued the proof point or it was issued and later revoked by the issuer. The proof 
      * point is invalid.
      */
-    InvalidRevokedOrNeverIssued,
+    NotFound,
     /**
      * The proof point has passed all of the validation checks. If you trust the issuer you can trust the meaning
      * of the proof point.
@@ -59,8 +59,9 @@ enum ProofPointValidity {
 }
 
 interface ProofPointValidateResult {
-    validity: ProofPointValidity;
-    message: string | null;
+    isValid: boolean;
+    statusCode: ProofPointStatus;
+    statusMessage: string | null;
 }
 
 const PROOF_TYPE = 'https://open.provenance.org/ontology/ptf/v2/ProvenanceProofType1';
@@ -172,8 +173,9 @@ class ProofPointsRepo {
 
         if (proofPointObject.proof.type !== PROOF_TYPE) {
             return {
-                validity: ProofPointValidity.InvalidBadlyFormed,
-                message: "The proof point uses an unsupported proof type."
+                isValid: false,
+                statusCode: ProofPointStatus.BadlyFormed,
+                statusMessage: "The proof point uses an unsupported proof type."
             };
         }
 
@@ -181,8 +183,9 @@ class ProofPointsRepo {
             const validFromDate = Date.parse(proofPointObject.validFrom);
             if (validFromDate > Date.now()) {
                 return {
-                    validity: ProofPointValidity.InvalidPending,
-                    message: "The proof point will become valid at a later date."
+                    isValid: false,
+                    statusCode: ProofPointStatus.Pending,
+                    statusMessage: "The proof point will become valid at a later date."
                 };
             }
         }
@@ -191,16 +194,18 @@ class ProofPointsRepo {
             const validUntilDate = Date.parse(proofPointObject.validUntil);
             if (validUntilDate < Date.now()) {
                 return {
-                    validity: ProofPointValidity.InvalidExpired,
-                    message: "The valid-until date of the proof point has passed."
+                    isValid: false,
+                    statusCode: ProofPointStatus.Expired,
+                    statusMessage: "The valid-until date of the proof point has passed."
                 };
             }
         }
 
         if (!this.isRegistryWhitelisted(proofPointObject)) {
             return {
-                validity: ProofPointValidity.InvalidNonTrustedRegistry,
-                message: "The proof point is issued using a registry that is not trusted in this context."
+                isValid: false,
+                statusCode: ProofPointStatus.NonTrustedRegistry,
+                statusMessage: "The proof point is issued using a registry that is not trusted in this context."
             };
         }
 
@@ -215,13 +220,15 @@ class ProofPointsRepo {
 
         if (isValid) {
             return {
-                validity: ProofPointValidity.Valid,
-                message: null
+                isValid: true,
+                statusCode: ProofPointStatus.Valid,
+                statusMessage: null
             };
         } else {
             return {
-                validity: ProofPointValidity.InvalidRevokedOrNeverIssued,
-                message: "The proof point has been revoked by the issuer or was never issued."
+                isValid: false,
+                statusCode: ProofPointStatus.NotFound,
+                statusMessage: "The proof point has been revoked or was never issued."
             };
         }
     }
@@ -324,4 +331,4 @@ class ProofPointsRepo {
   }
 }
 
-export { ProofPoint, ProofPointIssueResult, ProofPointsRepo, ProofPointValidateResult, ProofPointValidity };
+export { ProofPoint, ProofPointIssueResult, ProofPointsRepo, ProofPointValidateResult, ProofPointStatus };

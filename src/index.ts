@@ -1,7 +1,7 @@
 import Web3 from 'web3';
 import { StorageProvider, IpfsStorageProvider } from './storage';
 import ContractsManager from './contracts';
-import { ProofPointsRepo, ProofPointIssueResult, ProofPointValidateResult, ProofPointValidity } from './proofPoints';
+import { ProofPointsRepo, ProofPointIssueResult, ProofPointValidateResult, ProofPointStatus } from './proofPoints';
 
 interface ProvenanceSettings {
   web3: Web3;
@@ -48,5 +48,5 @@ export {
   StorageProvider, 
   ProofPointIssueResult, 
   ProofPointValidateResult, 
-  ProofPointValidity 
+  ProofPointStatus
 };

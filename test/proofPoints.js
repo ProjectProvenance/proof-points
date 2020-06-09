@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const { Provenance, ProofPointValidity } = require('../dist/src/index');
+const { Provenance, ProofPointStatus } = require('../dist/src/index');
 const FakeStorageProvider = require('./fixtures/FakeStorageProvider');
 
 async function deployProofPointRegistry(web3, storageProvider, admin) {
@@ -76,13 +76,15 @@ contract('ProofPoints', () => {
   it('should issue a valid pp', async() => {
     const results = await p.proofPoint.issue(type, admin, content);
     const validity = await p.proofPoint.validate(results.proofPointObject);
-    expect(validity.validity).to.eq(ProofPointValidity.Valid);
+    expect(validity.isValid).to.be.true;
+    expect(validity.statusCode).to.eq(ProofPointStatus.Valid);
   });
 
   it('should commit a valid pp', async() => {
     const results = await p.proofPoint.commit(type, admin, content);
     const validity = await p.proofPoint.validate(results.proofPointObject);
-    expect(validity.validity).to.eq(ProofPointValidity.Valid);
+    expect(validity.isValid).to.be.true;
+    expect(validity.statusCode).to.eq(ProofPointStatus.Valid);
   });
 
   it('should return tx hash and pp hash and a pp object', async() => {
@@ -96,20 +98,23 @@ contract('ProofPoints', () => {
     const result = await p.proofPoint.issue(type, admin, content);
     await p.proofPoint.revoke(result.proofPointObject);
     const validity = await p.proofPoint.validate(result.proofPointObject);
-    expect(validity.validity).to.eq(ProofPointValidity.InvalidRevokedOrNeverIssued);
+    expect(validity.isValid).to.be.false;
+    expect(validity.statusCode).to.eq(ProofPointStatus.NotFound);
   });
 
   it('should validate a valid pp by hash', async() => {
     const results = await p.proofPoint.issue(type, admin, content);
     const validity = await p.proofPoint.validateByHash(results.proofPointHash);
-    expect(validity.validity).to.eq(ProofPointValidity.Valid);
+    expect(validity.isValid).to.be.true;
+    expect(validity.statusCode).to.eq(ProofPointStatus.Valid);
   });
 
   it('should revoke a valid pp by hash', async() => {
     const results = await p.proofPoint.issue(type, admin, content);
     await p.proofPoint.revokeByHash(results.proofPointHash);
     const validity = await p.proofPoint.validateByHash(results.proofPointHash);
-    expect(validity.validity).to.eq(ProofPointValidity.InvalidRevokedOrNeverIssued);
+    expect(validity.isValid).to.be.false;
+    expect(validity.statusCode).to.eq(ProofPointStatus.NotFound);
   });
 
   it('should treat pp data canonically', async() => {
@@ -121,7 +126,8 @@ contract('ProofPoints', () => {
       some: ['pp', 'data']
     }
     const validity = await p.proofPoint.validate(equivalentProofPointObject);
-    expect(validity.validity).to.eq(ProofPointValidity.Valid);
+    expect(validity.isValid).to.be.true;
+    expect(validity.statusCode).to.eq(ProofPointStatus.Valid);
   });
 
   it('pp should be invalid before issuanceDate', async() => {
@@ -132,7 +138,8 @@ contract('ProofPoints', () => {
       Date.now() + 1000000
     );
     const validity = await p.proofPoint.validate(results.proofPointObject);
-    expect(validity.validity).to.eq(ProofPointValidity.InvalidPending);
+    expect(validity.isValid).to.be.false;
+    expect(validity.statusCode).to.eq(ProofPointStatus.Pending);
   });
 
   it('pp should be invalid after expirationDate', async() => {
@@ -144,7 +151,8 @@ contract('ProofPoints', () => {
       Date.now() - 1000000
     );
     const validity = await p.proofPoint.validate(results.proofPointObject);
-    expect(validity.validity).to.eq(ProofPointValidity.InvalidExpired);
+    expect(validity.isValid).to.be.false;
+    expect(validity.statusCode).to.eq(ProofPointStatus.Expired);
   });
 
   it('pp should be invalid if issued to a different registry', async() => {
@@ -163,6 +171,7 @@ contract('ProofPoints', () => {
     await p2.init();
 
     const validity = await p2.proofPoint.validate(results.proofPointObject);
-    expect(validity.validity).to.eq(ProofPointValidity.InvalidNonTrustedRegistry);
+    expect(validity.isValid).to.be.false;
+    expect(validity.statusCode).to.eq(ProofPointStatus.NonTrustedRegistry);
   });
 });
