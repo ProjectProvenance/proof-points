@@ -27,6 +27,43 @@ interface ProofPointIssueResult {
     proofPointObject: ProofPoint;
 };
 
+enum ProofPointStatus {
+    /**
+     * The proof point object is badly formed. The proof point is invalid.
+     */
+    BadlyFormed,
+    /**
+     * The validFrom date is in the future. The proof point is invalid.
+     */
+    Pending,
+    /**
+     * The validUntil date is in the past. The proof point is invalid.
+     */
+    Expired,
+    /**
+     * The proof.registryRoot field references a smart contract that is not a whitelisted proof point registry, 
+     * the validation provided is not trusted so the proof point is considered invalid.
+     */
+    NonTrustedRegistry,
+    /**
+     * The proof point registry smart contract does not contain this proof point issued by this issuer. Either
+     * the issuer never issued the proof point or it was issued and later revoked by the issuer. The proof 
+     * point is invalid.
+     */
+    NotFound,
+    /**
+     * The proof point has passed all of the validation checks. If you trust the issuer you can trust the meaning
+     * of the proof point.
+     */
+    Valid
+}
+
+interface ProofPointValidateResult {
+    isValid: boolean;
+    statusCode: ProofPointStatus;
+    statusMessage: string | null;
+}
+
 const PROOF_TYPE = 'https://open.provenance.org/ontology/ptf/v2/ProvenanceProofType1';
 const web3 = new Web3();
 
@@ -121,7 +158,7 @@ class ProofPointsRepo {
      * @param proofPointHash The hash identifier of the proof point to revoke. This is the value returned in the @param proofPointHash field of the @type ProofPointIssueResult when the proof point was issued.
      * @returns true if the proof point passes all validation checks, otherwise false.
      */
-    async validateByHash(proofPointHash: string): Promise<boolean> {
+    async validateByHash(proofPointHash: string): Promise<ProofPointValidateResult> {
         const storedData = await this._storage.get(proofPointHash);
         const proofPointObject = JSON.parse(storedData.data);
         return this.validate(proofPointObject);
@@ -130,40 +167,70 @@ class ProofPointsRepo {
     /**
      * Validate a proof point identified by its full data. This does not involve a blockchain transaction.
      * @param proofPointObject The full proof point data as returned in the @param proofPointObject parameter of the @type ProofPointIssueResult when the proof point was issued.
-     * @returns true if the proof point passes all validation checks, otherwise false.
+     * @returns a @type ProofPointValidateResult representing the validity of the proof point.
      */
-    async validate(proofPointObject: ProofPoint): Promise<boolean> {
+    async validate(proofPointObject: ProofPoint): Promise<ProofPointValidateResult> {
 
         if (proofPointObject.proof.type !== PROOF_TYPE) {
-            throw new Error('Unsupported proof type');
+            return {
+                isValid: false,
+                statusCode: ProofPointStatus.BadlyFormed,
+                statusMessage: "The proof point uses an unsupported proof type."
+            };
         }
 
         if (typeof proofPointObject.validFrom !== 'undefined') {
             const validFromDate = Date.parse(proofPointObject.validFrom);
             if (validFromDate > Date.now()) {
-                return false;
+                return {
+                    isValid: false,
+                    statusCode: ProofPointStatus.Pending,
+                    statusMessage: "The proof point will become valid at a later date."
+                };
             }
         }
 
         if (typeof proofPointObject.validUntil !== 'undefined') {
             const validUntilDate = Date.parse(proofPointObject.validUntil);
             if (validUntilDate < Date.now()) {
-                return false;
+                return {
+                    isValid: false,
+                    statusCode: ProofPointStatus.Expired,
+                    statusMessage: "The valid-until date of the proof point has passed."
+                };
             }
         }
 
         if (!this.isRegistryWhitelisted(proofPointObject)) {
-            return false;
+            return {
+                isValid: false,
+                statusCode: ProofPointStatus.NonTrustedRegistry,
+                statusMessage: "The proof point is issued using a registry that is not trusted in this context."
+            };
         }
 
         const proofPointRegistry = await this.getProofPointRegistry(proofPointObject);
         const proofPointHash = await this.storeObjectAndReturnKey(proofPointObject);
         const proofPointHashBytes = web3.utils.asciiToHex(proofPointHash);
 
-        return proofPointRegistry
+        const isValid = await proofPointRegistry
             .methods
             .validate(proofPointObject.issuer, proofPointHashBytes)
             .call();
+
+        if (isValid) {
+            return {
+                isValid: true,
+                statusCode: ProofPointStatus.Valid,
+                statusMessage: null
+            };
+        } else {
+            return {
+                isValid: false,
+                statusCode: ProofPointStatus.NotFound,
+                statusMessage: "The proof point has been revoked or was never issued."
+            };
+        }
     }
 
     private async _issue(type: string,
@@ -264,4 +331,4 @@ class ProofPointsRepo {
   }
 }
 
-export { ProofPoint, ProofPointIssueResult, ProofPointsRepo };
+export { ProofPoint, ProofPointIssueResult, ProofPointsRepo, ProofPointValidateResult, ProofPointStatus };
