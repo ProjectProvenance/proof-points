@@ -1,4 +1,4 @@
-# NEXT
+# 2.2.0
 
 ## New Features
 
