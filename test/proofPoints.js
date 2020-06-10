@@ -174,4 +174,16 @@ contract('ProofPoints', () => {
     expect(validity.isValid).to.be.false;
     expect(validity.statusCode).to.eq(ProofPointStatus.NonTrustedRegistry);
   });
+
+  it('should return the correct proof point document when getByHash is called', async() => {
+    const results = await p.proofPoint.issue(
+      type,
+      admin,
+      content
+    );
+
+    const fetched = await p.proofPoint.getByHash(results.proofPointHash);
+
+    expect(JSON.stringify(fetched)).to.eq(JSON.stringify(results.proofPointObject));
+  });
 });

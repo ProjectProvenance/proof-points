@@ -145,8 +145,8 @@ class ProofPointsRepo {
         }
 
         const proofPointRegistry = await this.getProofPointRegistry(proofPointObject);
-        const proofPointHash = await this.storeObjectAndReturnKey(proofPointObject);
-        const proofPointHashBytes = web3.utils.asciiToHex(proofPointHash);
+        const { hash } = await this.canonicalizeAndStoreObject(proofPointObject);
+        const proofPointHashBytes = web3.utils.asciiToHex(hash);
         await proofPointRegistry
             .methods
             .revoke(proofPointHashBytes)
@@ -210,8 +210,8 @@ class ProofPointsRepo {
         }
 
         const proofPointRegistry = await this.getProofPointRegistry(proofPointObject);
-        const proofPointHash = await this.storeObjectAndReturnKey(proofPointObject);
-        const proofPointHashBytes = web3.utils.asciiToHex(proofPointHash);
+        const { hash } = await this.canonicalizeAndStoreObject(proofPointObject);
+        const proofPointHashBytes = web3.utils.asciiToHex(hash);
 
         const isValid = await proofPointRegistry
             .methods
@@ -233,6 +233,16 @@ class ProofPointsRepo {
         }
     }
 
+    /**
+     * Fetch the proof point document identified by its hash ID.
+     * @param proofPointHash The hash identifier of the proof point document to fetch.
+     */
+    async getByHash(proofPointHash: string): Promise<ProofPoint> {
+        const storedData = await this._storage.get(proofPointHash);
+        const proofPointObject = JSON.parse(storedData.data);
+        return proofPointObject;
+    }
+
     private async _issue(type: string,
         issuerAddress: string,
         content: unknown,
@@ -248,16 +258,16 @@ class ProofPointsRepo {
             validUntilDate
         );
 
-        const proofPointHash = await this.storeObjectAndReturnKey(proofPointObject);
-        const proofPointHashBytes = web3.utils.asciiToHex(proofPointHash);
+        const { hash, canonicalisedObject } = await this.canonicalizeAndStoreObject(proofPointObject);
+        const proofPointHashBytes = web3.utils.asciiToHex(hash);
 
         const transactionReceipt = await issueFunction(proofPointHashBytes)
             .send({ from: issuerAddress, gas: this._gasLimit });
 
         return {
-            proofPointHash: proofPointHash,
+            proofPointHash: hash,
             transactionHash: transactionReceipt.transactionHash,
-            proofPointObject: proofPointObject
+            proofPointObject: canonicalisedObject
         };
     }
 
@@ -312,7 +322,7 @@ class ProofPointsRepo {
     return obj;
   }
 
-  private async storeObjectAndReturnKey(dataObject: any): Promise<string> {
+  private async canonicalizeAndStoreObject(dataObject: any): Promise<{hash: string; canonicalisedObject: any}> {
     // TODO enforce SHA-256 hash alg
     // TODO add method to compute hash without storing
 
@@ -322,7 +332,11 @@ class ProofPointsRepo {
 
     const dataStr = canonicalizeJson(cleanedDataObject);
     const storageResult = await this._storage.add(dataStr);
-    return storageResult.digest;
+
+    return {
+        hash: storageResult.digest,
+        canonicalisedObject: JSON.parse(dataStr)
+    }
   }
 
   isRegistryWhitelisted(proofPointObject: ProofPoint): boolean {

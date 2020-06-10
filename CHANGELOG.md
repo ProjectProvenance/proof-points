@@ -1,3 +1,17 @@
+# NEXT
+
+## New Features
+
+- new API `proofPoints.getByHash(hash)` fetches a proof point document given its hash
+
+## Bug Fixes
+
+None
+
+## Breaking Changes
+
+None
+
 # 2.1.0
 
 ## New Features
