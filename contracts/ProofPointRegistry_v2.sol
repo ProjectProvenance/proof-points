@@ -3,13 +3,13 @@ pragma solidity 0.5.16;
 import "./ProofPointRegistryStorage1.sol";
 
 
-contract ProofPointRegistry {
+contract ProofPointRegistry_v2 {
 
 
     ProofPointRegistryStorage1 eternalStorage1;
 
-    event Issued(address indexed _issuer, bytes indexed _claim);
-    event Committed(address indexed _issuer, bytes indexed _claim);
+    event Issued(address indexed _issuer, bytes indexed _claim, bytes _claimFull);
+    event Committed(address indexed _issuer, bytes indexed _claim, bytes _claimFull);
     event Revoked(address indexed _issuer, bytes indexed _claim);
 
     constructor(address _eternalStorage1) public {
@@ -21,7 +21,7 @@ contract ProofPointRegistry {
         bytes32 claimKey = keccak256(_claim);
         eternalStorage1.set(msg.sender, claimKey, true);
 
-        emit Issued(msg.sender, _claim);
+        emit Issued(msg.sender, _claim, _claim);
     }
 
     function commit(bytes memory _claim) public {
@@ -29,7 +29,7 @@ contract ProofPointRegistry {
         bytes32 claimKey = keccak256(_claim);
         eternalStorage1.commit(msg.sender, claimKey);
 
-        emit Committed(msg.sender, _claim);
+        emit Committed(msg.sender, _claim, _claim);
     }
 
     function revoke(bytes memory _claim) public {
