@@ -65,7 +65,16 @@ jobs:
           background: true
 
       - run: 
-          name: Wait for IPFS daemon to start
+          name: Install Ethereum node
+          command: |
+            npm i -g ganache-cli@latest
+
+      - run:
+          name: Start Ethereum node
+          command: nohup bash -c "ganache-cli 2>&1 &"
+
+      - run: 
+          name: Wait for services to start
           command: sleep 5
 
       - run:
