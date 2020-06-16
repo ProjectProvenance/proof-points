@@ -1,4 +1,4 @@
-import ProofPointRegistry = require('../build/contracts/ProofPointRegistry.json');
+import ProofPointRegistry = require('../build/contracts/ProofPointRegistry_v2.json');
 import ProofPointRegistryStorage1 = require('../build/contracts/ProofPointRegistryStorage1.json');
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
