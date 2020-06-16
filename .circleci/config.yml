@@ -67,12 +67,11 @@ jobs:
       - run: 
           name: Install Ethereum node
           command: |
-            export PATH="$PATH:$(yarn global bin)"
-            yarn global add ganache-cli@latest
+            npm install ganache-cli@latest
 
       - run:
           name: Start Ethereum node
-          command: nohup bash -c "ganache-cli 2>&1 &"
+          command: nohup bash -c "./node_modules/.bin/ganache-cli 2>&1 &"
 
       - run: 
           name: Wait for services to start
