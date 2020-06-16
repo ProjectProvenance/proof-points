@@ -1,3 +1,18 @@
+# 2.4.0
+
+## New Features
+
+None
+
+## Bug Fixes
+
+- Fixed types file location in `package.json`
+- Use `ProofPointRegistry_v2` ABI for interacting with the contract
+
+## Breaking Changes
+
+None
+
 # 2.3.0
 
 ## New Features
