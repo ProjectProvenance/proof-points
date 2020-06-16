@@ -3,7 +3,7 @@
   "version": "2.3.0",
   "description": "Library for working with Provenance Proof Points",
   "main": "dist/src/index.js",
-  "types": "dist/index.d.ts",
+  "types": "dist/src/index.d.ts",
   "directories": {
     "test": "test"
   },
