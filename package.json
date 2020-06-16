@@ -1,6 +1,6 @@
 {
   "name": "@provenance/proof-points",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "Library for working with Provenance Proof Points",
   "main": "dist/src/index.js",
   "types": "dist/index.d.ts",
