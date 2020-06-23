@@ -1,33 +1,12 @@
 const { expect } = require('chai');
-const { Provenance, ProofPointStatus, ProofPointEventType } = require('../dist/src/index');
+const { ProofPointRegistry, ProofPointStatus, ProofPointEventType } = require('../dist/src/index');
 const FakeStorageProvider = require('./fixtures/FakeStorageProvider');
-
-async function deployProofPointRegistry(web3, storageProvider, admin) {
-  p = new Provenance({ web3: web3, storageProvider: storageProvider });
-  await p.init();
-  const eternalStorage = await p
-    .contracts
-    .ProofPointRegistryStorage1
-    .deploy()
-    .send({ from: admin, gas: 1000000 });
-
-  const proofPointRegistry = await p
-    .contracts
-    .ProofPointRegistry
-    .deploy({ arguments: [eternalStorage.options.address] })
-    .send({ from: admin, gas: 1000000 });
-
-  await eternalStorage
-    .methods
-    .setOwner(proofPointRegistry.options.address)
-    .send({ from: admin, gas: 1000000 });
-
-  return eternalStorage.options.address;
-}
+const ProofPointRegistryV1Abi = require('../build/contracts/ProofPointRegistry.json');
+const ProofPointRegistryStorage1Abi = require('../build/contracts/ProofPointRegistryStorage1.json');
 
 contract('ProofPoints', () => {
   let storageProvider;
-  let p;
+  let subject;
   let type;
   let content;
   let admin;
@@ -38,14 +17,7 @@ contract('ProofPoints', () => {
     const accounts = await web3.eth.getAccounts();
     [admin] = accounts;
 
-    const proofPointStorageAddress = await deployProofPointRegistry(web3, storageProvider, admin);
-
-    p = new Provenance({
-      web3: web3,
-      storageProvider: storageProvider,
-      proofPointStorageAddress: proofPointStorageAddress
-    });
-    await p.init();
+    subject = await ProofPointRegistry.deploy(storageProvider, web3, admin);
 
     type = 'http://open.provenance.org/ontology/ptf/v1/TestProofPoint';
     content = {
@@ -56,126 +28,107 @@ contract('ProofPoints', () => {
   })
 
   it('should use provenance IPFS for storage if not specified', async() => {
-
     const accounts = await web3.eth.getAccounts();
     [admin] = accounts;
-
-    const proofPointStorageAddress = await deployProofPointRegistry(web3, storageProvider, admin);
-
-    p = new Provenance({
-      web3: web3,
-      // no storage provider specified
-      proofPointStorageAddress: proofPointStorageAddress
-    });
-    await p.init();
-
-    await p.proofPoint.issue(type, admin, content);
+    await subject.issue(type, admin, content);
     // no exception
   });
 
   it('should issue a valid pp', async() => {
-    const results = await p.proofPoint.issue(type, admin, content);
-    const validity = await p.proofPoint.validate(results.proofPointObject);
+    const results = await subject.issue(type, admin, content);
+    const validity = await subject.validate(results.proofPointObject);
     expect(validity.isValid).to.be.true;
     expect(validity.statusCode).to.eq(ProofPointStatus.Valid);
   });
 
   it('should commit a valid pp', async() => {
-    const results = await p.proofPoint.commit(type, admin, content);
-    const validity = await p.proofPoint.validate(results.proofPointObject);
+    const results = await subject.commit(type, admin, content);
+    const validity = await subject.validate(results.proofPointObject);
     expect(validity.isValid).to.be.true;
     expect(validity.statusCode).to.eq(ProofPointStatus.Valid);
   });
 
   it('should return tx hash and pp hash and a pp object', async() => {
-    const results = await p.proofPoint.issue(type, admin, content);
+    const results = await subject.issue(type, admin, content);
     expect(results.proofPointHash).to.exist;
     expect(results.transactionHash).to.exist;
     expect(results.proofPointObject).to.exist;
   });
 
   it('should revoke a pp', async() => {
-    const result = await p.proofPoint.issue(type, admin, content);
-    await p.proofPoint.revoke(result.proofPointObject);
-    const validity = await p.proofPoint.validate(result.proofPointObject);
+    const result = await subject.issue(type, admin, content);
+    await subject.revoke(result.proofPointObject);
+    const validity = await subject.validate(result.proofPointObject);
     expect(validity.isValid).to.be.false;
     expect(validity.statusCode).to.eq(ProofPointStatus.NotFound);
   });
 
   it('should validate a valid pp by hash', async() => {
-    const results = await p.proofPoint.issue(type, admin, content);
-    const validity = await p.proofPoint.validateByHash(results.proofPointHash);
+    const results = await subject.issue(type, admin, content);
+    const validity = await subject.validateByHash(results.proofPointHash);
     expect(validity.isValid).to.be.true;
     expect(validity.statusCode).to.eq(ProofPointStatus.Valid);
   });
 
   it('should revoke a valid pp by hash', async() => {
-    const results = await p.proofPoint.issue(type, admin, content);
-    await p.proofPoint.revokeByHash(results.proofPointHash);
-    const validity = await p.proofPoint.validateByHash(results.proofPointHash);
+    const results = await subject.issue(type, admin, content);
+    await subject.revokeByHash(results.proofPointHash);
+    const validity = await subject.validateByHash(results.proofPointHash);
     expect(validity.isValid).to.be.false;
     expect(validity.statusCode).to.eq(ProofPointStatus.NotFound);
   });
 
   it('should treat pp data canonically', async() => {
-    const results = await p.proofPoint.issue(type, admin, content);
+    const results = await subject.issue(type, admin, content);
     const equivalentProofPointObject = results.proofPointObject;
     equivalentProofPointObject.credentialSubject = {
       id: 'https://provenance.org/subject1',
       more: ['pp', 'data'],
       some: ['pp', 'data']
     }
-    const validity = await p.proofPoint.validate(equivalentProofPointObject);
+    const validity = await subject.validate(equivalentProofPointObject);
     expect(validity.isValid).to.be.true;
     expect(validity.statusCode).to.eq(ProofPointStatus.Valid);
   });
 
   it('pp should be invalid before issuanceDate', async() => {
-    const results = await p.proofPoint.issue(
+    const results = await subject.issue(
       type,
       admin,
       content,
       Date.now() + 1000000
     );
-    const validity = await p.proofPoint.validate(results.proofPointObject);
+    const validity = await subject.validate(results.proofPointObject);
     expect(validity.isValid).to.be.false;
     expect(validity.statusCode).to.eq(ProofPointStatus.Pending);
   });
 
   it('pp should be invalid after expirationDate', async() => {
-    const results = await p.proofPoint.issue(
+    const results = await subject.issue(
       type,
       admin,
       content,
       null,
       Date.now() - 1000000
     );
-    const validity = await p.proofPoint.validate(results.proofPointObject);
+    const validity = await subject.validate(results.proofPointObject);
     expect(validity.isValid).to.be.false;
     expect(validity.statusCode).to.eq(ProofPointStatus.Expired);
   });
 
   it('pp should be invalid if issued to a different registry', async() => {
     // issue a pp
-    const results = await p.proofPoint.issue(
+    const results = await subject.issue(
       type,
       admin,
       content
     );
 
-    // deploy a second registry
-    const proofPointStorageAddress2 = await deployProofPointRegistry(web3, storageProvider, admin);
-
-    // set up an Provenance API that trusts only the second registry
-    const p2 = new Provenance({
-      web3: web3,
-      storageProvider: storageProvider,
-      proofPointStorageAddress: proofPointStorageAddress2
-    });
-    await p2.init();
+    // deploy a second registry and use an API that trusts only the new registry
+    const altRegistry = await ProofPointRegistry.deploy(storageProvider, web3, admin);
 
     // use that API to validate the pp
-    const validity = await p2.proofPoint.validate(results.proofPointObject);
+    const validity = await altRegistry.validate(results.proofPointObject);
 
     // should be invalid, since it specifies a non trusted registry
     expect(validity.isValid).to.be.false;
@@ -183,27 +136,27 @@ contract('ProofPoints', () => {
   });
 
   it('should return the correct proof point document when getByHash is called', async() => {
-    const results = await p.proofPoint.issue(
+    const results = await subject.issue(
       type,
       admin,
       content
     );
 
-    const fetched = await p.proofPoint.getByHash(results.proofPointHash);
+    const fetched = await subject.getByHash(results.proofPointHash);
 
     expect(JSON.stringify(fetched)).to.eq(JSON.stringify(results.proofPointObject));
   });
 
   it('should return a list of all issued and committed proof points when getAll is called', async() => {
     // issue a pp
-    const result1 = await p.proofPoint.issue("type1", admin, content );
+    const result1 = await subject.issue("type1", admin, content );
     // revoke it
-    await p.proofPoint.revoke(result1.proofPointObject);
+    await subject.revoke(result1.proofPointObject);
     // commit another pp
-    const result2 = await p.proofPoint.commit("type2", admin, content );
+    const result2 = await subject.commit("type2", admin, content );
 
     // get all pps ever published
-    const list = await p.proofPoint.getAll();
+    const list = await subject.getAll();
 
     // should include the issued and revoked one and the committed one
     expect(list.length).to.eq(2);
@@ -213,16 +166,16 @@ contract('ProofPoints', () => {
 
   it('should return a list of all related events when getHistoryByHash is called', async() => {
     // issue a pp
-    const result = await p.proofPoint.issue(type, admin, content );
+    const result = await subject.issue(type, admin, content );
     // issue another one
-    await p.proofPoint.issue("type2", admin, content );
+    await subject.issue("type2", admin, content );
     // revoke the first one
-    await p.proofPoint.revoke(result.proofPointObject);
+    await subject.revoke(result.proofPointObject);
     // commit the first one
-    await p.proofPoint.commit(type, admin, content );
+    await subject.commit(type, admin, content );
 
     // get history of first one
-    const history = await p.proofPoint.getHistoryByHash(result.proofPointHash);
+    const history = await subject.getHistoryByHash(result.proofPointHash);
 
     // should be Issue, Revoke, Commit and not include the other pp
     expect(history.length).to.eq(3);
@@ -232,5 +185,49 @@ contract('ProofPoints', () => {
     expect(history[1].issuer).to.eq(admin);
     expect(history[2].type).to.eq(ProofPointEventType.Committed);
     expect(history[2].issuer).to.eq(admin);
+  });
+
+  it('should not upgrade a latest version repo', async() => {
+    const canUpgrade = await subject.canUpgrade();
+    expect(canUpgrade).to.be.false;
+    try{
+      await subject.upgrade()
+    } catch(e){
+      expect(e.message).to.eq("Cannot upgrade proof point registry: Already at or above current version.");
+    }
+  });
+
+  it('upgrade happy path', async() => {
+    // deploy v1 registry
+
+    // deploy eternal storage contract
+    const eternalStorageContract = new web3.eth.Contract(ProofPointRegistryStorage1Abi.abi);
+    const eternalStorage = await eternalStorageContract
+        .deploy({ data: ProofPointRegistryStorage1Abi.bytecode })
+        .send({from: admin, gas: 1000000});
+
+    // deploy logic contract pointing to eternal storage
+    const logicContract = new web3.eth.Contract(ProofPointRegistryV1Abi.abi);
+    const logic = await logicContract
+        .deploy({ data: ProofPointRegistryV1Abi.bytecode, arguments: [eternalStorage.options.address] })
+        .send({from: admin, gas: 1000000});
+
+    // set logic contract as owner of eternal storage
+    await eternalStorage
+        .methods
+        .setOwner(logic.options.address)
+        .send({from: admin, gas: 1000000});
+
+    // construct and return a ProofPointRegistry object for the newly deployed setup
+    subject = new ProofPointRegistry(eternalStorage.options.address, storageProvider, web3);
+    await subject.init();
+
+    let canUpgrade = await subject.canUpgrade();
+    expect(canUpgrade).to.be.true;
+
+    await subject.upgrade();
+
+    canUpgrade = await subject.canUpgrade();
+    expect(canUpgrade).to.be.false;
   });
 });

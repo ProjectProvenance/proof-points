@@ -1,10 +1,15 @@
-import ContractsManager from './contracts';
+import ProofPointRegistryAbi from '../build/contracts/ProofPointRegistry_v2.json';
+import ProofPointRegistryStorage1Abi from '../build/contracts/ProofPointRegistryStorage1.json';
+
+// import ContractsManager from './contracts';
 import { StorageProvider } from './storage';
 import { Contract } from 'web3-eth-contract';
 import Web3 from 'web3';
 
 import canonicalizeJson = require('canonicalize');
 import localISOdt = require('local-iso-dt');
+
+const PROOF_POINT_REGISTRY_VERSION = 2;
 
 interface ProofPoint {
     '@context': Array<string>;
@@ -98,14 +103,104 @@ interface ProofPointEvent {
 const PROOF_TYPE = 'https://open.provenance.org/ontology/ptf/v2/ProvenanceProofType1';
 const web3 = new Web3();
 
-class ProofPointsRepo {
-    private _contracts: ContractsManager;
+class ProofPointRegistry {
+    // private _contracts: ContractsManager;
+    private _web3: Web3;
+    private _address: string;
+    private _registry: Contract;
     private _storage: StorageProvider;
     private _gasLimit = 200000;
 
-    constructor(contracts: ContractsManager, storage: StorageProvider) {
-        this._contracts = contracts;
+    constructor(address: string, storage: StorageProvider, web3: Web3) {
+        this._address = address;
         this._storage = storage;
+        this._web3 = web3;
+    }
+
+    static async deploy(
+        storage: StorageProvider, 
+        web3: Web3, 
+        fromAddress: string
+    ): Promise<ProofPointRegistry>{
+        // deploy eternal storage contract
+        const eternalStorageContract = new web3.eth.Contract(ProofPointRegistryStorage1Abi.abi as any);
+        const eternalStorage = await eternalStorageContract
+            .deploy({ data: ProofPointRegistryStorage1Abi.bytecode })
+            .send({from: fromAddress, gas: 1000000});
+
+        // deploy logic contract pointing to eternal storage
+        const logicContract = new web3.eth.Contract(ProofPointRegistryAbi.abi as any);
+        const logic = await logicContract
+            .deploy({ data: ProofPointRegistryAbi.bytecode, arguments: [eternalStorage.options.address] })
+            .send({from: fromAddress, gas: 1000000});
+
+        // set logic contract as owner of eternal storage
+        await eternalStorage
+            .methods
+            .setOwner(logic.options.address)
+            .send({from: fromAddress, gas: 1000000});
+
+        // construct and return a ProofPointRegistry object for the newly deployed setup
+        const registry = new ProofPointRegistry(eternalStorage.options.address, storage, web3);
+        await registry.init();
+
+        return registry;
+    }
+
+    async canUpgrade(): Promise<boolean> {
+        try {
+            const version = await this._registry.methods.getVersion().call();
+            return version < PROOF_POINT_REGISTRY_VERSION;
+        } catch(e) {
+            // version 1 does not have the getVersion method.
+            return true;
+        }
+    }
+
+    async upgrade(): Promise<void> {
+        if (!(await this.canUpgrade())) {
+            throw new Error("Cannot upgrade proof point registry: Already at or above current version.");
+        }
+
+        // get the admin account from which to perform the upgrade
+        const eternalStorage = new web3.eth.Contract(
+            ProofPointRegistryStorage1Abi.abi as any,
+            this._address,
+            { data: ProofPointRegistryStorage1Abi.bytecode }
+        );
+        const admin = await eternalStorage.methods.getAdmin().call();
+
+        // deploy logic contract pointing to eternal storage
+        const logicContract = new web3.eth.Contract(ProofPointRegistryAbi.abi as any);
+        const logic = await logicContract
+            .deploy({ data: ProofPointRegistryAbi.bytecode, arguments: [this._address] })
+            .send({from: admin, gas: 1000000});
+
+        // set logic contract as owner of eternal storage
+        eternalStorage
+            .methods
+            .setOwner(logic.options.address)
+            .send({from: admin, gas: 1000000});
+
+        this._registry = logic;
+    }
+
+    async init(): Promise<void> {
+        // Use the storage contract to locate the logic contract
+        const eternalStorage = new this._web3.eth.Contract(
+            ProofPointRegistryStorage1Abi.abi as any,
+            this._address,
+            { data: ProofPointRegistryStorage1Abi.bytecode }
+        );
+        const logicAddress = await eternalStorage.methods.getOwner().call();
+
+        // Prepare and store proxy object for the logic contract
+        const registry = new this._web3.eth.Contract(
+            ProofPointRegistryAbi.abi as any,
+            logicAddress,
+            { data: ProofPointRegistryAbi.bytecode }
+        );
+        this._registry = registry;
     }
 
     /**
@@ -126,7 +221,7 @@ class ProofPointsRepo {
         return this._issue(type,
             issuerAddress,
             content,
-            this._contracts.ProofPointRegistryInstance.methods.issue,
+            this._registry.methods.issue,
             validFromDate,
             validUntilDate
         );
@@ -150,7 +245,7 @@ class ProofPointsRepo {
         return this._issue(type,
             issuerAddress,
             content,
-            this._contracts.ProofPointRegistryInstance.methods.commit,
+            this._registry.methods.commit,
             validFromDate,
             validUntilDate
         );
@@ -175,10 +270,14 @@ class ProofPointsRepo {
             throw new Error('Unsupported proof type');
         }
 
-        const proofPointRegistry = await this.getProofPointRegistry(proofPointObject);
+        if (!this.isSameRegistry(proofPointObject)) {
+            throw new Error("Registry mismatch");
+        }
+
         const { hash } = await this.canonicalizeAndStoreObject(proofPointObject);
         const proofPointHashBytes = web3.utils.asciiToHex(hash);
-        await proofPointRegistry
+        await this
+            ._registry
             .methods
             .revoke(proofPointHashBytes)
             .send({ from: proofPointObject.issuer, gas: this._gasLimit });
@@ -232,7 +331,7 @@ class ProofPointsRepo {
             }
         }
 
-        if (!this.isRegistryWhitelisted(proofPointObject)) {
+        if (!this.isSameRegistry(proofPointObject)) {
             return {
                 isValid: false,
                 statusCode: ProofPointStatus.NonTrustedRegistry,
@@ -240,11 +339,12 @@ class ProofPointsRepo {
             };
         }
 
-        const proofPointRegistry = await this.getProofPointRegistry(proofPointObject);
+        // const proofPointRegistry = await this.getProofPointRegistry(proofPointObject);
         const { hash } = await this.canonicalizeAndStoreObject(proofPointObject);
         const proofPointHashBytes = web3.utils.asciiToHex(hash);
 
-        const isValid = await proofPointRegistry
+        const isValid = await this
+            ._registry
             .methods
             .validate(proofPointObject.issuer, proofPointHashBytes)
             .call();
@@ -280,8 +380,7 @@ class ProofPointsRepo {
      */
     async getAll(): Promise<Array<string>> {
         const publishEvents = await this
-            ._contracts
-            .ProofPointRegistryInstance
+            ._registry
             .getPastEvents(
                 "Published", 
                 { 
@@ -300,8 +399,7 @@ class ProofPointsRepo {
      */
     async getHistoryByHash(proofPointHash: string): Promise<Array<ProofPointEvent>> {
         const events = await this
-            ._contracts
-            .ProofPointRegistryInstance
+            ._registry
             .getPastEvents(
                 "allEvents", 
                 { 
@@ -380,7 +478,7 @@ class ProofPointsRepo {
             credentialSubject: content,
             proof: {
                 type: PROOF_TYPE,
-                registryRoot: this._contracts.proofPointStorageAddress,
+                registryRoot: this._address,
                 proofPurpose: 'assertionMethod',
                 verificationMethod: issuerAddressChecksum
             },
@@ -399,46 +497,46 @@ class ProofPointsRepo {
         return proofPoint;
     }
 
-  private async getProofPointRegistry(proofPoint: ProofPoint): Promise<Contract> {
-      return this._contracts.getProofPointRegistry(proofPoint.proof.registryRoot);
-  }
-
-  private static removeEmptyFields(obj: any): any {
-    Object.keys(obj).forEach((key) => {
-      if (obj[key] && typeof obj[key] === 'object') ProofPointsRepo.removeEmptyFields(obj[key]);
-      // eslint-disable-next-line no-param-reassign
-      else if (obj[key] === undefined) delete obj[key];
-    });
-    return obj;
-  }
-
-  private async canonicalizeAndStoreObject(dataObject: any): Promise<{hash: string; canonicalisedObject: any}> {
-    // TODO enforce SHA-256 hash alg
-    // TODO add method to compute hash without storing
-
-    // Necessary because JSON.canonicalize produces invalid JSON if there
-    // are fields with value undefined
-    const cleanedDataObject = ProofPointsRepo.removeEmptyFields(dataObject);
-
-    const dataStr = canonicalizeJson(cleanedDataObject);
-    const storageResult = await this._storage.add(dataStr);
-
-    return {
-        hash: storageResult.digest,
-        canonicalisedObject: JSON.parse(dataStr)
+    private isSameRegistry(proofPoint: ProofPoint): boolean {
+        return proofPoint.proof.registryRoot.toLowerCase() === this._address.toLowerCase();
     }
-  }
 
-  isRegistryWhitelisted(proofPointObject: ProofPoint): boolean {
-    return proofPointObject.proof.registryRoot.toLowerCase()
-      === this._contracts.proofPointStorageAddress.toLowerCase();
-  }
+    private static removeEmptyFields(obj: any): any {
+        Object.keys(obj).forEach((key) => {
+        if (obj[key] && typeof obj[key] === 'object') ProofPointRegistry.removeEmptyFields(obj[key]);
+        // eslint-disable-next-line no-param-reassign
+        else if (obj[key] === undefined) delete obj[key];
+        });
+        return obj;
+    }
+
+    private async canonicalizeAndStoreObject(dataObject: any): Promise<{hash: string; canonicalisedObject: any}> {
+        // TODO enforce SHA-256 hash alg
+        // TODO add method to compute hash without storing
+
+        // Necessary because JSON.canonicalize produces invalid JSON if there
+        // are fields with value undefined
+        const cleanedDataObject = ProofPointRegistry.removeEmptyFields(dataObject);
+
+        const dataStr = canonicalizeJson(cleanedDataObject);
+        const storageResult = await this._storage.add(dataStr);
+
+        return {
+            hash: storageResult.digest,
+            canonicalisedObject: JSON.parse(dataStr)
+        }
+    }
+
+//   isRegistryWhitelisted(proofPointObject: ProofPoint): boolean {
+//     return proofPointObject.proof.registryRoot.toLowerCase()
+//       === this._contracts.proofPointStorageAddress.toLowerCase();
+//   }
 }
 
 export { 
     ProofPoint, 
     ProofPointIssueResult, 
-    ProofPointsRepo, 
+    ProofPointRegistry, 
     ProofPointValidateResult, 
     ProofPointStatus,
     ProofPointEventType,
