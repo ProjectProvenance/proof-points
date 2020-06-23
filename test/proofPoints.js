@@ -1,5 +1,5 @@
 const { expect } = require('chai');
-const { Provenance, ProofPointStatus } = require('../dist/src/index');
+const { Provenance, ProofPointStatus, ProofPointEventType } = require('../dist/src/index');
 const FakeStorageProvider = require('./fixtures/FakeStorageProvider');
 
 async function deployProofPointRegistry(web3, storageProvider, admin) {
@@ -185,5 +185,34 @@ contract('ProofPoints', () => {
     const fetched = await p.proofPoint.getByHash(results.proofPointHash);
 
     expect(JSON.stringify(fetched)).to.eq(JSON.stringify(results.proofPointObject));
+  });
+
+  it('should return a list of all issued and committed proof points when getAll is called', async() => {
+    const result1 = await p.proofPoint.issue("type1", admin, content );
+    await p.proofPoint.revoke(result1.proofPointObject);
+    const result2 = await p.proofPoint.commit("type2", admin, content );
+
+    const list = await p.proofPoint.getAll();
+
+    expect(list.length).to.eq(2);
+    expect(list[0]).to.eq(result1.proofPointHash);
+    expect(list[1]).to.eq(result2.proofPointHash);
+  });
+
+  it('should return a list of all related events when getHistoryByHash is called', async() => {
+    const result = await p.proofPoint.issue(type, admin, content );
+    await p.proofPoint.issue("type2", admin, content );
+    await p.proofPoint.revoke(result.proofPointObject);
+    await p.proofPoint.commit(type, admin, content );
+
+    const history = await p.proofPoint.getHistoryByHash(result.proofPointHash);
+
+    expect(history.length).to.eq(3);
+    expect(history[0].type).to.eq(ProofPointEventType.Issued);
+    expect(history[0].issuer).to.eq(admin);
+    expect(history[1].type).to.eq(ProofPointEventType.Revoked);
+    expect(history[1].issuer).to.eq(admin);
+    expect(history[2].type).to.eq(ProofPointEventType.Committed);
+    expect(history[2].issuer).to.eq(admin);
   });
 });

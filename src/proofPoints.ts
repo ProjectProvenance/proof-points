@@ -64,6 +64,20 @@ interface ProofPointValidateResult {
     statusMessage: string | null;
 }
 
+enum ProofPointEventType {
+    Issued,
+    Committed,
+    Revoked,
+    Published
+}
+
+interface ProofPointEvent {
+    blockNumber: number;
+    type: ProofPointEventType;
+    issuer: string;
+    proofPointHash: string;
+}
+
 const PROOF_TYPE = 'https://open.provenance.org/ontology/ptf/v2/ProvenanceProofType1';
 const web3 = new Web3();
 
@@ -243,6 +257,57 @@ class ProofPointsRepo {
         return proofPointObject;
     }
 
+    async getAll(): Promise<Array<string>> {
+        const publishEvents = await this
+            ._contracts
+            .ProofPointRegistryInstance
+            .getPastEvents(
+                "Published", 
+                { 
+                    fromBlock: 0, 
+                    toBlock: "latest"
+                }
+            );
+
+        return publishEvents.map(ev => Web3.utils.hexToAscii(ev.returnValues._claim));
+    }
+
+    async getHistoryByHash(proofPointHash: string): Promise<Array<ProofPointEvent>> {
+        const events = await this
+            ._contracts
+            .ProofPointRegistryInstance
+            .getPastEvents(
+                "allEvents", 
+                { 
+                    // TODO filter doesn't work for some reason
+                    // filter: {_claim: Web3.utils.keccak256(proofPointHash) },
+                    fromBlock: 0, 
+                    toBlock: "latest"
+                }
+            );
+
+        return events
+            // TODO remove this client side filter once filter bug is fixed
+            .filter(ev => ev.returnValues._claim === Web3.utils.keccak256(proofPointHash))
+            .filter(ev => ev.event !== "Published")
+            .map(ev => {
+                return {
+                    blockNumber: ev.blockNumber,
+                    type: this._eventNameToEventType(ev.event),
+                    issuer: ev.returnValues._issuer, // TODO CHECK
+                    proofPointHash: proofPointHash
+                }
+            });
+    }
+
+    private _eventNameToEventType(eventName: string): ProofPointEventType {
+        if(eventName === "Issued") return ProofPointEventType.Issued;
+        if(eventName === "Committed") return ProofPointEventType.Committed;
+        if(eventName === "Revoked") return ProofPointEventType.Revoked;
+        if(eventName === "Published") return ProofPointEventType.Published;
+        throw new Error(`Invalid proof point event name: ${eventName}`);
+    }
+
     private async _issue(type: string,
         issuerAddress: string,
         content: unknown,
@@ -345,4 +410,12 @@ class ProofPointsRepo {
   }
 }
 
-export { ProofPoint, ProofPointIssueResult, ProofPointsRepo, ProofPointValidateResult, ProofPointStatus };
+export { 
+    ProofPoint, 
+    ProofPointIssueResult, 
+    ProofPointsRepo, 
+    ProofPointValidateResult, 
+    ProofPointStatus,
+    ProofPointEventType,
+    ProofPointEvent 
+};
