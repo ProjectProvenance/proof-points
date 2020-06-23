@@ -64,17 +64,34 @@ interface ProofPointValidateResult {
     statusMessage: string | null;
 }
 
+/**
+ * Proof point event type, the type of an {@link ProofPointEvent}
+ */
 enum ProofPointEventType {
     Issued,
     Committed,
-    Revoked,
-    Published
+    Revoked
 }
 
+/**
+ * Proof point event, describes a single event in the history of a proof point
+ */
 interface ProofPointEvent {
+    /** 
+     * The blockchain block number at which the event occurred 
+     * */
     blockNumber: number;
+    /**
+     * The type of event e.g. Issued, Revoked etc.
+     */
     type: ProofPointEventType;
+    /**
+     * The sender address that initiated the event
+     */
     issuer: string;
+    /**
+     * The identifying hash of the proof point
+     */
     proofPointHash: string;
 }
 
@@ -141,7 +158,7 @@ class ProofPointsRepo {
 
     /**
      * Revoke a proof point identified by its hash ID. You must control the account that originally issued the proof point. The account must be sufficiently funded to execute the revoke transaction.
-     * @param proofPointHash The hash identifier of the proof point to revoke. This is the value returned in the @param proofPointHash field of the @type ProofPointIssueResult when the proof point was issued.
+     * @param proofPointHash The hash identifier of the proof point to revoke. This is the value returned in the @param proofPointHash field of the {@link ProofPointIssueResult} when the proof point was issued.
      */
     async revokeByHash(proofPointHash: string): Promise<void> {
         const storedData = await this._storage.get(proofPointHash);
@@ -151,7 +168,7 @@ class ProofPointsRepo {
 
     /**
      * Revoke a proof point identified by its full data. You must control the account that originally issued the proof point. The account must be sufficiently funded to execute the revoke transaction.
-     * @param proofPointObject The full proof point data as returned in the @param proofPointObject parameter of the @type ProofPointIssueResult when the proof point was issued.
+     * @param proofPointObject The full proof point data as returned in the @param proofPointObject parameter of the {@link ProofPointIssueResult} when the proof point was issued.
      */
     async revoke(proofPointObject: ProofPoint): Promise<void> {
         if (proofPointObject.proof.type !== PROOF_TYPE) {
@@ -169,7 +186,7 @@ class ProofPointsRepo {
 
     /**
      * Validate a proof point identified by its hash ID. This does not involve a blockchain transaction.
-     * @param proofPointHash The hash identifier of the proof point to revoke. This is the value returned in the @param proofPointHash field of the @type ProofPointIssueResult when the proof point was issued.
+     * @param proofPointHash The hash identifier of the proof point to revoke. This is the value returned in the @param proofPointHash field of the {@link ProofPointIssueResult} when the proof point was issued.
      * @returns true if the proof point passes all validation checks, otherwise false.
      */
     async validateByHash(proofPointHash: string): Promise<ProofPointValidateResult> {
@@ -180,8 +197,8 @@ class ProofPointsRepo {
 
     /**
      * Validate a proof point identified by its full data. This does not involve a blockchain transaction.
-     * @param proofPointObject The full proof point data as returned in the @param proofPointObject parameter of the @type ProofPointIssueResult when the proof point was issued.
-     * @returns a @type ProofPointValidateResult representing the validity of the proof point.
+     * @param proofPointObject The full proof point data as returned in the @param proofPointObject parameter of the {@link ProofPointIssueResult} when the proof point was issued.
+     * @returns a {@link ProofPointValidateResult} representing the validity of the proof point.
      */
     async validate(proofPointObject: ProofPoint): Promise<ProofPointValidateResult> {
 
@@ -257,6 +274,10 @@ class ProofPointsRepo {
         return proofPointObject;
     }
 
+    /**
+     * Get a list of the hashes of all proof points ever issued or committed
+     * to this registry
+     */
     async getAll(): Promise<Array<string>> {
         const publishEvents = await this
             ._contracts
@@ -272,6 +293,11 @@ class ProofPointsRepo {
         return publishEvents.map(ev => Web3.utils.hexToAscii(ev.returnValues._claim));
     }
 
+    /**
+     * Gets a list of all events related to the given proof point, identified by its hash.
+     * @param proofPointHash the identifying hash of the proof point
+     * @returns a list of {@link ProofPointEvent} describing the history of the proof point
+     */
     async getHistoryByHash(proofPointHash: string): Promise<Array<ProofPointEvent>> {
         const events = await this
             ._contracts
@@ -304,7 +330,6 @@ class ProofPointsRepo {
         if(eventName === "Issued") return ProofPointEventType.Issued;
         if(eventName === "Committed") return ProofPointEventType.Committed;
         if(eventName === "Revoked") return ProofPointEventType.Revoked;
-        if(eventName === "Published") return ProofPointEventType.Published;
         throw new Error(`Invalid proof point event name: ${eventName}`);
     }
 
