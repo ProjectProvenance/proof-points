@@ -320,7 +320,7 @@ class ProofPointsRepo {
                 return {
                     blockNumber: ev.blockNumber,
                     type: this._eventNameToEventType(ev.event),
-                    issuer: ev.returnValues._issuer, // TODO CHECK
+                    issuer: ev.returnValues._issuer,
                     proofPointHash: proofPointHash
                 }
             });

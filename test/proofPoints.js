@@ -156,13 +156,17 @@ contract('ProofPoints', () => {
   });
 
   it('pp should be invalid if issued to a different registry', async() => {
+    // issue a pp
     const results = await p.proofPoint.issue(
       type,
       admin,
       content
     );
 
+    // deploy a second registry
     const proofPointStorageAddress2 = await deployProofPointRegistry(web3, storageProvider, admin);
+
+    // set up an Provenance API that trusts only the second registry
     const p2 = new Provenance({
       web3: web3,
       storageProvider: storageProvider,
@@ -170,7 +174,10 @@ contract('ProofPoints', () => {
     });
     await p2.init();
 
+    // use that API to validate the pp
     const validity = await p2.proofPoint.validate(results.proofPointObject);
+
+    // should be invalid, since it specifies a non trusted registry
     expect(validity.isValid).to.be.false;
     expect(validity.statusCode).to.eq(ProofPointStatus.NonTrustedRegistry);
   });
@@ -188,25 +195,36 @@ contract('ProofPoints', () => {
   });
 
   it('should return a list of all issued and committed proof points when getAll is called', async() => {
+    // issue a pp
     const result1 = await p.proofPoint.issue("type1", admin, content );
+    // revoke it
     await p.proofPoint.revoke(result1.proofPointObject);
+    // commit another pp
     const result2 = await p.proofPoint.commit("type2", admin, content );
 
+    // get all pps ever published
     const list = await p.proofPoint.getAll();
 
+    // should include the issued and revoked one and the committed one
     expect(list.length).to.eq(2);
     expect(list[0]).to.eq(result1.proofPointHash);
     expect(list[1]).to.eq(result2.proofPointHash);
   });
 
   it('should return a list of all related events when getHistoryByHash is called', async() => {
+    // issue a pp
     const result = await p.proofPoint.issue(type, admin, content );
+    // issue another one
     await p.proofPoint.issue("type2", admin, content );
+    // revoke the first one
     await p.proofPoint.revoke(result.proofPointObject);
+    // commit the first one
     await p.proofPoint.commit(type, admin, content );
 
+    // get history of first one
     const history = await p.proofPoint.getHistoryByHash(result.proofPointHash);
 
+    // should be Issue, Revoke, Commit and not include the other pp
     expect(history.length).to.eq(3);
     expect(history[0].type).to.eq(ProofPointEventType.Issued);
     expect(history[0].issuer).to.eq(admin);
