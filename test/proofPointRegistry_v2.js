@@ -81,18 +81,21 @@ contract('ProofPointRegistry_v2', (accounts) => {
   });
 
   it('v2 is backwards compatible with v1', async() => {
+    // deploy a v1 registry
     const ppsRegistry1 = artifacts.require('./ProofPointRegistry.sol');
     const storage = await ppsRegistryEternalStorage1.new({ from: admin });
     const v1 = await ppsRegistry1.new(storage.address, { from: admin });
     await storage.setOwner(v1.address, { from: admin });
 
+    // do some operations on the v1 registry
     await v1.issue(pp1, { from: user1 });
     await v1.revoke(pp1, { from: user1 });
     await v1.commit(pp1, { from: user1 });
 
+    // use the v2 ABI to interact with the deployed v1 contract
     const v2 = await ppsRegistry2.at(v1.address);
 
-    // past events
+    // It should be possible to recover data from past events
     const events = await v2.getPastEvents("AllEvents", {fromBlock: 0, toBlock: "latest"});
     const issueEvent = events[0];
     assert(issueEvent.event === "Issued");
@@ -107,11 +110,11 @@ contract('ProofPointRegistry_v2', (accounts) => {
     assert(commitEvent.returnValues._issuer === user1);
     assert(commitEvent.returnValues._claim === Web3.utils.keccak256(pp1));
 
-    // validate
+    // it should be possible to validate extant pps
     let isValid = await v2.validate(user1, pp1, { from: user1 });
     assert(isValid);
 
-    // issue
+    // it should be possible to issue new pps
     let results = await v2.issue(pp2, { from: user1 });
     assert(results.logs[0].event === "Issued");
     assert(results.logs[0].args._issuer === user1);
@@ -119,7 +122,7 @@ contract('ProofPointRegistry_v2', (accounts) => {
     isValid = await v2.validate(user1, pp2, { from: user1 });
     assert(isValid);
 
-    // commit
+    // it should be possible to commit new pps
     results = await v2.commit(pp3, { from: user1 });
     assert(results.logs[0].event === "Committed");
     assert(results.logs[0].args._issuer === user1);
@@ -127,7 +130,7 @@ contract('ProofPointRegistry_v2', (accounts) => {
     isValid = await v2.validate(user1, pp3, { from: user1 });
     assert(isValid);
 
-    // revoke
+    // it should be possible to revoke extant pps
     results = await v2.revoke(pp2, { from: user1 });
     assert(results.logs[0].event === "Revoked");
     assert(results.logs[0].args._issuer === user1);
@@ -137,19 +140,21 @@ contract('ProofPointRegistry_v2', (accounts) => {
   });
 
   it('v1 is forwards compatible with v2', async() => {
+    // deploy a v2 registry
     const storage = await ppsRegistryEternalStorage1.new({ from: admin });
     const v2 = await ppsRegistry2.new(storage.address, { from: admin });
     await storage.setOwner(v2.address, { from: admin });
 
+    // do some operations on the registry
     await v2.issue(pp1, { from: user1 });
     await v2.revoke(pp1, { from: user1 });
     await v2.commit(pp1, { from: user1 });
 
+    // use the v1 ABI to interact with the v2 registry
     const ppsRegistry1 = artifacts.require('./ProofPointRegistry.sol');
-
     const v1 = await ppsRegistry1.at(v2.address);
 
-    // past events
+    // It should be possible to recover data from past events
     const events = await v1.getPastEvents("AllEvents", {fromBlock: 0, toBlock: "latest"});
     const issueEvent = events[0];
     assert(issueEvent.event === "Issued");
@@ -164,11 +169,11 @@ contract('ProofPointRegistry_v2', (accounts) => {
     assert(commitEvent.returnValues._issuer === user1);
     assert(commitEvent.returnValues._claim === Web3.utils.keccak256(pp1));
 
-    // validate
+    // it should be possible to validate extant pps
     let isValid = await v1.validate(user1, pp1, { from: user1 });
     assert(isValid);
 
-    // issue
+    // it should be possible to issue new pps
     let results = await v1.issue(pp2, { from: user1 });
     assert(results.logs[0].event === "Issued");
     assert(results.logs[0].args._issuer === user1);
@@ -176,7 +181,7 @@ contract('ProofPointRegistry_v2', (accounts) => {
     isValid = await v1.validate(user1, pp2, { from: user1 });
     assert(isValid);
 
-    // commit
+    // it should be possible to commit new pps
     results = await v1.commit(pp3, { from: user1 });
     assert(results.logs[0].event === "Committed");
     assert(results.logs[0].args._issuer === user1);
@@ -184,7 +189,7 @@ contract('ProofPointRegistry_v2', (accounts) => {
     isValid = await v1.validate(user1, pp3, { from: user1 });
     assert(isValid);
 
-    // revoke
+    // it should be possible to revoke extant pps
     results = await v1.revoke(pp2, { from: user1 });
     assert(results.logs[0].event === "Revoked");
     assert(results.logs[0].args._issuer === user1);
@@ -194,14 +199,16 @@ contract('ProofPointRegistry_v2', (accounts) => {
   });
 
   it('upgrade from v1 works', async() => {
+    // deploy a v1 registry
     const ppsRegistry1 = artifacts.require('./ProofPointRegistry.sol');
     const storage = await ppsRegistryEternalStorage1.new({ from: admin });
     const v1 = await ppsRegistry1.new(storage.address, { from: admin });
     await storage.setOwner(v1.address, { from: admin });
 
+    // do an operation on the v1 registry
     await v1.issue(pp1, { from: user1 });
 
-    // upgrade
+    // upgrade the registry to v2
     const v2 = await ppsRegistry2.new(storage.address, { from: admin });
     await storage.setOwner(v2.address, { from: admin });
 
@@ -235,17 +242,21 @@ contract('ProofPointRegistry_v2', (accounts) => {
   });
 
   it('version', async() => {
+    // Deploy a v1 registry
     const ppsRegistry1 = artifacts.require('./ProofPointRegistry.sol');
     const storage = await ppsRegistryEternalStorage1.new({ from: admin });
     const v1 = await ppsRegistry1.new(storage.address, { from: admin });
     await storage.setOwner(v1.address, { from: admin });
 
+    // upgrade to v2 registry
     const v2 = await ppsRegistry2.new(storage.address, { from: admin });
     await storage.setOwner(v2.address, { from: admin });
 
+    // getVersion() should return 2
     const version = await v2.getVersion();
     assert(version.toNumber() === 2);
 
+    // getPrevious() should return address of v1 contract instance
     const previous = await v2.getPrevious();
     assert(previous === v1.address);
   });
