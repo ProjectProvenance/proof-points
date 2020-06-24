@@ -1,3 +1,22 @@
+# NEXT
+
+## New Features
+
+- Added API: `ProofPointRegistry.deploy(...)` to deploy an instance of the registry contracts
+- Added API: `ProofPointRegistry.canUpgrade()` to determine whether this library can upgrade the deployed logic contract
+- Added API: `ProofPointRegistry.upgrade()` to perform a logic contract upgrade
+- Added API: `ProofPointRegistry.getAll()` to get a list of the hashes of all proof points ever issued or committed.
+- Added API: `ProofPointRegistry.getHistory(...)` to fetch a list of blockchain events related to the given proof point.
+
+## Bug Fixes
+
+- Fixed ProofPointRegistry_v2 smart contract to be ABI backwards compatible with the previous version. This is done by reverting the `Issued` and `Committed` events to be identical to the version 1 contract and adding a new
+event `Published` which is used to record a list of all proof point hashes.
+
+## Breaking Changes
+
+- The way the API is initialized and used has changed. To construct an instance of the API for a pre-existing registry deployment use the constructor `const api = new ProofPointRegistry(...)`. You must then initialize the API: `await api.init()`. Interact with the proof point registry using methods directly on the API object e.g. `api.issue(...)`.
+
 # 2.4.0
 
 ## New Features

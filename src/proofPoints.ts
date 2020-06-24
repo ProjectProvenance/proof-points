@@ -1,8 +1,7 @@
 import ProofPointRegistryAbi from '../build/contracts/ProofPointRegistry_v2.json';
 import ProofPointRegistryStorage1Abi from '../build/contracts/ProofPointRegistryStorage1.json';
 
-// import ContractsManager from './contracts';
-import { StorageProvider } from './storage';
+import { StorageProvider, IpfsStorageProvider } from './storage';
 import { Contract } from 'web3-eth-contract';
 import Web3 from 'web3';
 
@@ -10,6 +9,7 @@ import canonicalizeJson = require('canonicalize');
 import localISOdt = require('local-iso-dt');
 
 const PROOF_POINT_REGISTRY_VERSION = 2;
+const GAS_LIMIT = 1000000;
 
 interface ProofPoint {
     '@context': Array<string>;
@@ -104,49 +104,84 @@ const PROOF_TYPE = 'https://open.provenance.org/ontology/ptf/v2/ProvenanceProofT
 const web3 = new Web3();
 
 class ProofPointRegistry {
-    // private _contracts: ContractsManager;
     private _web3: Web3;
     private _address: string;
     private _registry: Contract;
     private _storage: StorageProvider;
-    private _gasLimit = 200000;
 
-    constructor(address: string, storage: StorageProvider, web3: Web3) {
+    /**
+     * Creates an instance of proof point registry for interacting with a pre-existing deployment of the registry contracts.
+     * @param address the Ethereum address of the deployed eternal storage contract
+     * @param web3 a web instance to use for interacting with the Ethereum blockchain
+     * @param storage a {@link StorageProvider} to use for storing/retrieving off-chain data or null to use the default implementation.
+     */
+    constructor(address: string, web3: Web3, storage: StorageProvider | null) {
         this._address = address;
-        this._storage = storage;
         this._web3 = web3;
+        this._storage = storage;
+
+        if (storage === null || typeof storage === 'undefined') {
+            // eslint-disable-next-line no-param-reassign
+            this._storage = new IpfsStorageProvider({
+                host: 'ipfs-cluster.provenance.org',
+                port: 443,
+                protocol: 'https'
+            });
+        }
     }
 
+    /**
+     * Deploys an instance of the proof point registry, including an eternal storage contract and a logic
+     * contract.
+     * @param fromAddress the Ethereum account to use for signing transactions. This will become the admin account that must be used for all future smart contract upgrades.
+     * @param web3 a web3 instance to use for interacting with the Ethereum blockchain.
+     * @param storage a {@link StorageProvider} to use for storing/retrieving off-chain data, or null to use the default provider.
+     * @returns a {@link ProofPointRegistry} for interacting with the newly deployed contracts. 
+     */
     static async deploy(
-        storage: StorageProvider, 
+        fromAddress: string,
         web3: Web3, 
-        fromAddress: string
+        storage: StorageProvider | null
     ): Promise<ProofPointRegistry>{
         // deploy eternal storage contract
         const eternalStorageContract = new web3.eth.Contract(ProofPointRegistryStorage1Abi.abi as any);
         const eternalStorage = await eternalStorageContract
             .deploy({ data: ProofPointRegistryStorage1Abi.bytecode })
-            .send({from: fromAddress, gas: 1000000});
+            .send({from: fromAddress, gas: GAS_LIMIT});
 
         // deploy logic contract pointing to eternal storage
         const logicContract = new web3.eth.Contract(ProofPointRegistryAbi.abi as any);
         const logic = await logicContract
             .deploy({ data: ProofPointRegistryAbi.bytecode, arguments: [eternalStorage.options.address] })
-            .send({from: fromAddress, gas: 1000000});
+            .send({from: fromAddress, gas: GAS_LIMIT});
 
         // set logic contract as owner of eternal storage
         await eternalStorage
             .methods
             .setOwner(logic.options.address)
-            .send({from: fromAddress, gas: 1000000});
+            .send({from: fromAddress, gas: GAS_LIMIT});
 
         // construct and return a ProofPointRegistry object for the newly deployed setup
-        const registry = new ProofPointRegistry(eternalStorage.options.address, storage, web3);
+        const registry = new ProofPointRegistry(eternalStorage.options.address, web3, storage);
         await registry.init();
 
         return registry;
     }
 
+    /**
+     * Gets the address of the registry root - which is the address of the eternal storage contract
+     * @returns address of registry root.
+     */
+    getAddress(): string {
+        return this._address;
+    }
+
+    /**
+     * Determines whether the deployed logic contract is the latest known version. If not then the 
+     * {@link upgrade} method can be called to deploy the latest logic contract and update the plumbing
+     * so that the latest version will be used for future interactions.
+     * @returns true if the {@link upgrade} method can be called to upgrade the logic contract. 
+     */
     async canUpgrade(): Promise<boolean> {
         try {
             const version = await this._registry.methods.getVersion().call();
@@ -157,6 +192,12 @@ class ProofPointRegistry {
         }
     }
 
+    /**
+     * Upgrades proof point registry. Performs the upgrade procedure to deploy an instance of the latest
+     * logic contract, then set that as the owner of the eternal storage contract. You must control the admin
+     * account to do this. Throws if already at latest version. Use {@link canUpgrade} to determine whether 
+     * this method can be called.
+     */
     async upgrade(): Promise<void> {
         if (!(await this.canUpgrade())) {
             throw new Error("Cannot upgrade proof point registry: Already at or above current version.");
@@ -174,17 +215,20 @@ class ProofPointRegistry {
         const logicContract = new this._web3.eth.Contract(ProofPointRegistryAbi.abi as any);
         const logic = await logicContract
             .deploy({ data: ProofPointRegistryAbi.bytecode, arguments: [this._address] })
-            .send({from: admin, gas: 1000000});
+            .send({from: admin, gas: GAS_LIMIT});
 
         // set logic contract as owner of eternal storage
         eternalStorage
             .methods
             .setOwner(logic.options.address)
-            .send({from: admin, gas: 1000000});
+            .send({from: admin, gas: GAS_LIMIT});
 
         this._registry = logic;
     }
 
+    /**
+     * Initialises the proof point registry. Must be completed before the {@link ProofPointRegistry} can be used.
+     */
     async init(): Promise<void> {
         // Use the storage contract to locate the logic contract
         const eternalStorage = new this._web3.eth.Contract(
@@ -280,7 +324,7 @@ class ProofPointRegistry {
             ._registry
             .methods
             .revoke(proofPointHashBytes)
-            .send({ from: proofPointObject.issuer, gas: this._gasLimit });
+            .send({ from: proofPointObject.issuer, gas: GAS_LIMIT });
     }
 
     /**
@@ -450,7 +494,7 @@ class ProofPointRegistry {
         const proofPointHashBytes = web3.utils.asciiToHex(hash);
 
         const transactionReceipt = await issueFunction(proofPointHashBytes)
-            .send({ from: issuerAddress, gas: this._gasLimit });
+            .send({ from: issuerAddress, gas: GAS_LIMIT });
 
         return {
             proofPointHash: hash,
@@ -526,11 +570,6 @@ class ProofPointRegistry {
             canonicalisedObject: JSON.parse(dataStr)
         }
     }
-
-//   isRegistryWhitelisted(proofPointObject: ProofPoint): boolean {
-//     return proofPointObject.proof.registryRoot.toLowerCase()
-//       === this._contracts.proofPointStorageAddress.toLowerCase();
-//   }
 }
 
 export { 

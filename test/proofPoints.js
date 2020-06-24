@@ -17,7 +17,7 @@ contract('ProofPoints', () => {
     const accounts = await web3.eth.getAccounts();
     [admin] = accounts;
 
-    subject = await ProofPointRegistry.deploy(storageProvider, web3, admin);
+    subject = await ProofPointRegistry.deploy(admin, web3, storageProvider);
 
     type = 'http://open.provenance.org/ontology/ptf/v1/TestProofPoint';
     content = {
@@ -30,6 +30,8 @@ contract('ProofPoints', () => {
   it('should use provenance IPFS for storage if not specified', async() => {
     const accounts = await web3.eth.getAccounts();
     [admin] = accounts;
+    subject = new ProofPointRegistry(subject.getAddress(), web3, null);
+    await subject.init();
     await subject.issue(type, admin, content);
     // no exception
   });
@@ -125,7 +127,7 @@ contract('ProofPoints', () => {
     );
 
     // deploy a second registry and use an API that trusts only the new registry
-    const altRegistry = await ProofPointRegistry.deploy(storageProvider, web3, admin);
+    const altRegistry = await ProofPointRegistry.deploy(admin, web3, storageProvider);
 
     // use that API to validate the pp
     const validity = await altRegistry.validate(results.proofPointObject);
@@ -219,7 +221,7 @@ contract('ProofPoints', () => {
         .send({from: admin, gas: 1000000});
 
     // construct and return a ProofPointRegistry object for the newly deployed setup
-    subject = new ProofPointRegistry(eternalStorage.options.address, storageProvider, web3);
+    subject = new ProofPointRegistry(eternalStorage.options.address, web3, storageProvider);
     await subject.init();
 
     let canUpgrade = await subject.canUpgrade();
