@@ -163,7 +163,7 @@ class ProofPointRegistry {
         }
 
         // get the admin account from which to perform the upgrade
-        const eternalStorage = new web3.eth.Contract(
+        const eternalStorage = new this._web3.eth.Contract(
             ProofPointRegistryStorage1Abi.abi as any,
             this._address,
             { data: ProofPointRegistryStorage1Abi.bytecode }
@@ -171,7 +171,7 @@ class ProofPointRegistry {
         const admin = await eternalStorage.methods.getAdmin().call();
 
         // deploy logic contract pointing to eternal storage
-        const logicContract = new web3.eth.Contract(ProofPointRegistryAbi.abi as any);
+        const logicContract = new this._web3.eth.Contract(ProofPointRegistryAbi.abi as any);
         const logic = await logicContract
             .deploy({ data: ProofPointRegistryAbi.bytecode, arguments: [this._address] })
             .send({from: admin, gas: 1000000});
