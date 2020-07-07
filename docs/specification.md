@@ -60,7 +60,7 @@ The JSON document part of the Proof Point is an implementation of the [W3C Verif
 | Token | Meaning |
 |-------|---------|
 | `type` | An IRI representing the type of claim being made. This defines the meaning of the claim as well as defining what fields should be expected in the `type-specific-data` |
-| `issuer` | The Ethereum address of the issuer of the claim. This is the account that must be used to `issue`, `commit` and `revoke` the claim. |
+| `issuer` | The Ethereum address of the issuer of the claim. This is the account that must be used to `issue`, `commit` and `revoke` the claim. The address may be represented either directly or using the did:web URI scheme. See (Proof Point Issuer)[#proof-point-issuer] |
 | `valid-from-date` | Optional, the date from which the claim is valid, in [RFC3339](https://tools.ietf.org/html/rfc3339) format. If present this will be checked as part of validation |
 | `valid-until-date` | Optional, the date until which the claim is valid, in [RFC3339](https://tools.ietf.org/html/rfc3339) format. If present this will be checked as part of validation |
 | `subject` | A URL identifying the subject of the claim. For business, product and ingredient claims it could be the address of the corresponding page within `provenance.org`. A claim with multiple subjects such as a connection claim should include one `credentialSubject` entry for each subject |
@@ -130,6 +130,12 @@ contract ProofPointRegistry {
     function validate(address _issuer, bytes memory _claim) view returns(bool);
 }
 ```
+
+## Proof Point Issuer
+
+Each Proof Point declares an `issuer` which is an Ethereum address represented either directly or using the did:web protocol. Where the `issuer` is represented using a did:web URI it will be neccesary to resolve this
+to an Ethereum address in order to either `issue`, `commit` or `validate` it. For more information on how to
+do this please see the [did:web Decentralized Identifier Method Specification](https://w3c-ccg.github.io/did-method-web/)
 
 ## Issue
 

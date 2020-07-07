@@ -139,6 +139,7 @@ class ProofPointRegistry {
    * @param address the Ethereum address of the deployed eternal storage contract.
    * @param web3 a web instance to use for interacting with the Ethereum blockchain.
    * @param storage a {@link StorageProvider} to use for storing/retrieving off-chain data or null to use the default implementation.
+   * @param httpClient a {@link HttpClient} to use for fetching DID documents in order to support did:web issuers or null to use the default implementation.
    */
   constructor(address: string, web3: Web3, storage: StorageProvider | null = null, httpClient: HttpClient | null = null) {
     this._address = address;
@@ -167,6 +168,7 @@ class ProofPointRegistry {
    * @param fromAddress the Ethereum account to use for signing transactions. This will become the admin account that must be used for all future smart contract upgrades.
    * @param web3 a web3 instance to use for interacting with the Ethereum blockchain.
    * @param storage a {@link StorageProvider} to use for storing/retrieving off-chain data, or null to use the default provider.
+   * @param httpClient a {@link HttpClient} to use for fetching DID documents in order to support did:web issuers or null to use the default implementation.
    * @returns a {@link ProofPointRegistry} for interacting with the newly deployed contracts. 
    */
   static async deploy(
@@ -277,7 +279,7 @@ class ProofPointRegistry {
   /**
    * Issue a new Proof Point
    * @param type A URI string identifying the type of Proof Point to issue. This may be one of the values defined in the Provenance ontology.
-   * @param issuerAddress The Ethereum address from which to issue the Proof Point. This must be an account that you control and must be sufficiently funded to pay for the issuance transaction.
+   * @param issuer A string identifying the Ethereum address from which to issue the Proof Point. This may be either an Ethereum address or a did:web URI. It must represent an account that you control and must be sufficiently funded to pay for the issuance transaction.
    * @param content A javascript object representing the type specific content of the payload. The shape of the data should conform to the specification of the @param type parameter.
    * @param [validFromDate] Optional date from which the issued Proof Point will be valid. If null then there is no earliest date at which the Proof Point is valid.
    * @param [validUntilDate] Optional date until which the issued Proof Point will be valid. If null then there is no latest date at which the Proof Point is valid.
@@ -301,7 +303,7 @@ class ProofPointRegistry {
   /**
    * Commit a new Proof Point
    * @param type A URI string identifying the type of Proof Point to issue. This may be one of the values defined in the Provenance ontology.
-   * @param issuerAddress The Ethereum address from which to issue the Proof Point. This must be an account that you control and must be sufficiently funded to pay for the issuance transaction.
+   * @param issuer A string identifying the Ethereum address from which to commit the Proof Point. This may be either an Ethereum address or a did:web URI. It must represent an account that you control and must be sufficiently funded to pay for the issuance transaction.
    * @param content A javascript object representing the type specific content of the payload. The shape of the data should conform to the specification of the @param type parameter.
    * @param [validFromDate] Optional date from which the issued Proof Point will be valid. If null then there is no earliest date at which the Proof Point is valid.
    * @param [validUntilDate] Optional date until which the issued Proof Point will be valid. If null then there is no latest date at which the Proof Point is valid.
