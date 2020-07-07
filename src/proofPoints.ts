@@ -383,7 +383,6 @@ class ProofPointRegistry {
             };
         }
 
-        // const proofPointRegistry = await this.getProofPointRegistry(proofPointObject);
         const { hash } = await this.canonicalizeAndStoreObject(proofPointObject);
         const proofPointHashBytes = web3.utils.asciiToHex(hash);
 
