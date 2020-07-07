@@ -164,8 +164,8 @@ To revoke a valid Proof Point the following process is used:
 
 1. Start with the JSON document that was issued
 2. [Compute the Proof Point ID](#generating-the-proof-point-identifier)
-4. [Locate the ProofPointRegistry](#locating-the-ProofPointRegistry)
-5. Using the `issuer` account, call the `revoke` method of the `ProofPointRegistry` contract with the ID computed in 2.
+3. [Locate the ProofPointRegistry](#locating-the-ProofPointRegistry)
+4. Using the `issuer` account, call the `revoke` method of the `ProofPointRegistry` contract with the ID computed in 2.
 
 The Proof Point is no longer valid in any form.
 
@@ -178,9 +178,9 @@ To check the validity of a given Proof Point the following process is used:
 1. Start with the JSON document that you want to validate. This may have been directly transmitted to you, or may be recovered from the ID using an IPFS lookup.
 2. If the `validFrom` field is present and is in the future then the claim is **invalid**
 3. If the `validUntil` field is present and is in the past then the claim is **invalid**
-5. [Compute the Proof Point ID](#generating-the-proof-point-identifier) if you don't already have it.
-6. [Locate the ProofPointRegistry](#locating-the-ProofPointRegistry)
-7. Call the `validate` method of the `ProofPointRegistry` contract with the `<issuer>` and the ID computed in 5. If the return value is `true` then the Proof Point is **valid**, otherwise it is **invalid**.
+4. [Compute the Proof Point ID](#generating-the-proof-point-identifier) if you don't already have it.
+5. [Locate the ProofPointRegistry](#locating-the-ProofPointRegistry)
+6. Call the `validate` method of the `ProofPointRegistry` contract with the `<issuer>` and the ID computed in 5. If the return value is `true` then the Proof Point is **valid**, otherwise it is **invalid**.
 
 ## Locating the ProofPointRegistry
 

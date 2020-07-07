@@ -1,4 +1,5 @@
 import { 
+  Web3,
   ProofPoint, 
   ProofPointIssueResult, 
   ProofPointRegistry, 
@@ -10,6 +11,7 @@ import {
 import { StorageProvider, IpfsStorageProvider, IpfsStorageProviderSettings } from './storage';
 
 export { 
+  Web3,
   ProofPointRegistry, 
   StorageProvider, 
   IpfsStorageProvider, 

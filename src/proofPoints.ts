@@ -1,4 +1,12 @@
-import ProofPointRegistryAbi from '../build/contracts/ProofPointRegistry_v2.json';
+import ProofPointRegistryAbiV1 from '../build/contracts/ProofPointRegistry_v2.json';
+import ProofPointRegistryAbiV2 from '../build/contracts/ProofPointRegistry_v2.json';
+
+const ProofPointRegistryAbi = [
+  undefined,
+  ProofPointRegistryAbiV1,
+  ProofPointRegistryAbiV2
+]
+
 import ProofPointRegistryStorage1Abi from '../build/contracts/ProofPointRegistryStorage1.json';
 
 import { StorageProvider, IpfsStorageProvider } from './storage';
@@ -150,9 +158,9 @@ class ProofPointRegistry {
       .send({from: fromAddress, gas: GAS_LIMIT});
 
     // deploy logic contract pointing to eternal storage
-    const logicContract = new web3.eth.Contract(ProofPointRegistryAbi.abi as any);
+    const logicContract = new web3.eth.Contract(ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].abi as any);
     const logic = await logicContract
-      .deploy({ data: ProofPointRegistryAbi.bytecode, arguments: [eternalStorage.options.address] })
+      .deploy({ data: ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].bytecode, arguments: [eternalStorage.options.address] })
       .send({from: fromAddress, gas: GAS_LIMIT});
 
     // set logic contract as owner of eternal storage
@@ -183,13 +191,8 @@ class ProofPointRegistry {
    * @returns true if the {@link upgrade} method can be called to upgrade the logic contract. 
    */
   async canUpgrade(): Promise<boolean> {
-    try {
-      const version = await this._registry.methods.getVersion().call();
-      return version < PROOF_POINT_REGISTRY_VERSION;
-    } catch(e) {
-      // version 1 does not have the getVersion method.
-      return true;
-    }
+    const version = await this._getVersion();
+    return version < PROOF_POINT_REGISTRY_VERSION;
   }
 
   /**
@@ -212,9 +215,9 @@ class ProofPointRegistry {
     const admin = await eternalStorage.methods.getAdmin().call();
 
     // deploy logic contract pointing to eternal storage
-    const logicContract = new this._web3.eth.Contract(ProofPointRegistryAbi.abi as any);
+    const logicContract = new this._web3.eth.Contract(ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].abi as any);
     const logic = await logicContract
-      .deploy({ data: ProofPointRegistryAbi.bytecode, arguments: [this._address] })
+      .deploy({ data: ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].bytecode, arguments: [this._address] })
       .send({from: admin, gas: GAS_LIMIT});
 
     // set logic contract as owner of eternal storage
@@ -240,9 +243,9 @@ class ProofPointRegistry {
 
     // Prepare and store proxy object for the logic contract
     const registry = new this._web3.eth.Contract(
-      ProofPointRegistryAbi.abi as any,
+      ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].abi as any,
       logicAddress,
-      { data: ProofPointRegistryAbi.bytecode }
+      { data: ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].bytecode }
     );
     this._registry = registry;
   }
@@ -441,30 +444,9 @@ class ProofPointRegistry {
    * @returns a list of {@link ProofPointEvent} describing the history of the Proof Point.
    */
   async getHistoryById(proofPointId: string): Promise<Array<ProofPointEvent>> {
-    const events = await this
-      ._registry
-      .getPastEvents(
-        "allEvents", 
-        { 
-          // TODO filter doesn't work for some reason
-          // filter: {_claim: Web3.utils.keccak256(proofPointId) },
-          fromBlock: 0, 
-          toBlock: "latest"
-        }
-      );
-
-    return events
-      // TODO remove this client side filter once filter bug is fixed
-      .filter(ev => ev.returnValues._claim === Web3.utils.keccak256(proofPointId))
-      .filter(ev => ev.event !== "Published")
-      .map(ev => {
-        return {
-          blockNumber: ev.blockNumber,
-          type: this._eventNameToEventType(ev.event),
-          issuer: ev.returnValues._issuer,
-          proofPointId: proofPointId
-        }
-      });
+    const version = await this._getVersion();
+    const history = await this._getHistory(version, this._registry.options.address, proofPointId);
+    return history.sort((a, b) => a.blockNumber - b.blockNumber);
   }
 
   private _eventNameToEventType(eventName: string): ProofPointEventType {
@@ -472,6 +454,61 @@ class ProofPointRegistry {
     if(eventName === "Committed") return ProofPointEventType.Committed;
     if(eventName === "Revoked") return ProofPointEventType.Revoked;
     throw new Error(`Invalid Proof Point event name: ${eventName}`);
+  }
+
+  private async _getVersion(): Promise<number> {
+    try {
+      const version = await this._registry.methods.getVersion().call();
+      return version;
+    } catch(e) {
+      // version 1 does not have the getVersion method.
+      return 1;
+    }
+  }
+
+  private async _getHistory(version: number, logicContractAddress: string, proofPointId: string): Promise<ProofPointEvent[]> {
+      // Prepare and store proxy object for the logic contract
+      const registry = new this._web3.eth.Contract(
+        ProofPointRegistryAbi[version].abi as any,
+        logicContractAddress,
+        { data: ProofPointRegistryAbi[version].bytecode }
+      );
+
+      const eventsRaw = await registry
+        .getPastEvents(
+          "allEvents", 
+          { 
+            // TODO filter doesn't work for some reason
+            // filter: {_claim: Web3.utils.keccak256(proofPointId) },
+            fromBlock: 0, 
+            toBlock: "latest"
+          }
+        );
+
+      const events = eventsRaw
+        // TODO remove this client side filter once filter bug is fixed
+        .filter(ev => ev.returnValues._claim === Web3.utils.keccak256(proofPointId))
+        .filter(ev => ev.event !== "Published")
+        .map(ev => {
+          return {
+            blockNumber: ev.blockNumber,
+            type: this._eventNameToEventType(ev.event),
+            issuer: ev.returnValues._issuer,
+            proofPointId: proofPointId
+          }
+        });
+
+      if(version === 1) {
+        return events;
+      }
+
+      const priorAddress = await registry.methods.getPrevious().call();
+
+      const priorEvents = await this._getHistory(version - 1, priorAddress, proofPointId);
+
+      events.push(...priorEvents);
+
+      return events;
   }
 
   private async _issue(type: string,
@@ -572,6 +609,7 @@ class ProofPointRegistry {
 }
 
 export { 
+  Web3,
   ProofPoint, 
   ProofPointIssueResult, 
   ProofPointRegistry, 

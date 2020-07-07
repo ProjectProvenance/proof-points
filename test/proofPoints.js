@@ -232,4 +232,43 @@ contract('ProofPoints', () => {
     canUpgrade = await subject.canUpgrade();
     expect(canUpgrade).to.be.false;
   });
+
+  it('history still available after upgrade', async() => {
+    // deploy v1 registry
+
+    // deploy eternal storage contract
+    const eternalStorageContract = new web3.eth.Contract(ProofPointRegistryStorage1Abi.abi);
+    const eternalStorage = await eternalStorageContract
+        .deploy({ data: ProofPointRegistryStorage1Abi.bytecode })
+        .send({from: admin, gas: 1000000});
+
+    // deploy logic contract pointing to eternal storage
+    const logicContract = new web3.eth.Contract(ProofPointRegistryV1Abi.abi);
+    const logic = await logicContract
+        .deploy({ data: ProofPointRegistryV1Abi.bytecode, arguments: [eternalStorage.options.address] })
+        .send({from: admin, gas: 1000000});
+
+    // set logic contract as owner of eternal storage
+    await eternalStorage
+        .methods
+        .setOwner(logic.options.address)
+        .send({from: admin, gas: 1000000});
+
+    // construct and return a ProofPointRegistry object for the newly deployed setup
+    subject = new ProofPointRegistry(eternalStorage.options.address, web3, storageProvider);
+    await subject.init();
+
+    // create some history activity
+    const { proofPointId } = await subject.issue(type, admin, content);
+    await subject.revokeById(proofPointId);
+
+    // upgrade the registry contract
+    await subject.upgrade();
+
+    // get the history of the pp issued before the upgrade
+    const history = await subject.getHistoryById(proofPointId);
+
+    // events from before the upgrade should be present
+    expect(history.length).to.eq(2);
+  });
 });

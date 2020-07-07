@@ -36,8 +36,8 @@ Construct a `ProofPointRegistry` object
 ```
 // construct an instance of the ProofPointRegistry object
 const api = new ProofPointRegistry(
-    proofPointStorageAddress, // The Ethereum address of the eternal storage contract. Public registry addresses are available at https://open.provenance.org/developers/
-    web3                      // A web3 instance  to use for interacting with the Ethereum network.
+    proofPointStorageAddress,
+    web3
   );
 
 // initialize the instance. The promise must resolve before the registry can be used.
@@ -116,7 +116,7 @@ Compile the typescript
 npm run compile-typescript
 ```
 
-[Install IPFS](https://docs.ipfs.io/guides/guides/install/) then in a separate shell start an IPFS daemon
+[Install IPFS](https://docs.ipfs.io/guides/guides/install/) then in a separate terminal start an IPFS daemon
 
 ```
 ipfs daemon
