@@ -25,9 +25,9 @@ In general the system supports the following functionality:
   4. `validate` by which anyone presented with a Proof Point may verify that it was `issue`d or `commit`ed by the `issuer` and has not subsequently been revoked. **Note** that a _valid_ Proof Point is not necessarily _true_ just as any signed statement is not necessarily true.
 - A Proof Point can be issued or validated by anyone with access to the Ethereum network, and may be revoked only by the issuer.
 - Proof Points are tamper proof in that modifying the content of a valid Proof Point invalidates it.
-- There is a public, trustless, append-only log of all Proof Points that have ever been `issue`d 
+- There is a public, trustless, append-only log of all Proof Points that have ever been `issue`d or `commit`ed
 
-## Proof Point Data Format
+## Proof Point Document Format
 
 The JSON document part of the Proof Point is an implementation of the [W3C Verifiable Credentials](https://www.w3.org/TR/vc-data-model/) with a special, Provenance specific `proof` type as defined here.
 
@@ -96,6 +96,20 @@ An example claim document:
 }
 ```
 
+## Proof Point Identifier
+
+Each Proof Point has a unique identifier (or ID), which is a fixed length string that can be generated from the Proof Point JSON document using the following method. The ID is used to represent the Proof Point when interacting with the Proof Point Registry Smart Contract and may also be a convenient way to represent the 
+Proof Point in other situations.
+
+The Proof Point ID is designed to be a valid [IPFS](https://ipfs.io/) digest. When an `issuer` `issue`s a Proof Point they have the option to store the Proof Point document on IPFS. In this case it is possible to recover the Proof Point document from the Proof Point ID using an IPFS lookup.
+
+### Generating the Proof Point Identifier
+
+The ID is generated from the Proof Point JSON document according to to the following method:
+
+1. Canonicalize the document according to the [draft-rundgren-json-canonicalization-scheme](https://tools.ietf.org/html/draft-rundgren-json-canonicalization-scheme-14). For example, by using [this NPM package](https://www.npmjs.com/package/canonicalize)
+2. Compute the base 58 encoding of the [multihash](https://github.com/multiformats/multihash) encoding of the 32 byte SHA-256 hash of the canonicalized document. Note that this the IPFS digest you will get if you add the file to IPFS and  specify the `sha2-256` hash method: `ipfs add --hash sha2-256 <file>`. The result is the Proof Point ID.
+
 ## The ProofPointRegistry Smart Contract
 
 The `ProofPointRegistry` smart contract is a singleton smart contract on the Ethereum blockchain that is used to support Proof Point functionality. The following is the API of the contract. We will see how it is used in later sections.
@@ -125,12 +139,12 @@ To issue a new valid Proof Point the following process is used:
 
 1. Determine the `<issuer>`, `<subject>`, `<type>`, `<type-specific-data>`, `<valid-from-date>` (optional), `<valid-until-date>` (optional) and `<registry-root>`. The `<issuer>` must be an Ethereum account that you control. The issued claim will only be valid between the `<valid-from-date>` and `<valid-until-date>` if present.
 2. Construct a JSON document according to the [Claim Data Format](#claim-data-format)
-3. Canonicalize the document according to the [draft-rundgren-json-canonicalization-scheme](https://tools.ietf.org/html/draft-rundgren-json-canonicalization-scheme-14). For example, by using [this NPM package](https://www.npmjs.com/package/canonicalize)
-4. Compute the base 58 encoding of the [multihash](https://github.com/multiformats/multihash) encoding of the 32 byte SHA-256 hash of the canonicalized document. Note that this the IPFS digest you will get if you add the file to IPFS and  specify the `sha2-256` hash method: `ipfs add --hash sha2-256 <file>`
-5. Locate the `ProofPointRegistry`. See [Locating the ProofPointRegistry](#locating-the-ProofPointRegistry)
-6. Using the `<issuer>` account, call the `issue` method of the `ProofPointRegistry` contract with the hash generated in 4.
+3. [Compute the Proof Point ID](#generating-the-proof-point-identifier)
+4. (Optional) Store the canonicalized Proof Point document on IPFS
+5. [Locate the ProofPointRegistry](#locating-the-ProofPointRegistry)
+6. Using the `<issuer>` account, call the `issue` method of the `ProofPointRegistry` contract with the ID generated in 3.
 
-The document (both canonical or pre-canonical form) is now a valid Proof Point and may be published or transmitted to a holder or validator.
+The document (both canonical, pre-canonical and ID form) is now a valid Proof Point and may be published or transmitted to a holder or validator.
 
 ## Commit
 
@@ -149,12 +163,11 @@ To revoke a valid Proof Point the following process is used:
 > **Note** Revoking a `commit`ed claim has no effect
 
 1. Start with the JSON document that was issued
-2. Canonicalize the document according to the [draft-rundgren-json-canonicalization-scheme](https://tools.ietf.org/html/draft-rundgren-json-canonicalization-scheme-14). For example, by using [this NPM package](https://www.npmjs.com/package/canonicalize)
-3. Compute the base 58 encoding of the [multihash](https://github.com/multiformats/multihash) encoding of the 32 byte SHA-256 hash of the canonicalized document. **Note** that this the IPFS digest you will get if you add the file to IPFS and  specify the `sha2-256` hash method. You can also specify the `--only-hash` flag to return the digest without storing the file: `ipfs add --only-hash --hash sha2-256 <file>`
-4. Locate the `ProofPointRegistry`. See [Locating the ProofPointRegistry](#locating-the-ProofPointRegistry)
-5. Using the `issuer` account, call the `revoke` method of the `ProofPointRegistry` contract with the hash computed in 3.
+2. [Compute the Proof Point ID](#generating-the-proof-point-identifier)
+3. [Locate the ProofPointRegistry](#locating-the-ProofPointRegistry)
+4. Using the `issuer` account, call the `revoke` method of the `ProofPointRegistry` contract with the ID computed in 2.
 
-The Proof Point is no longer valid 
+The Proof Point is no longer valid in any form.
 
 ## Validate
 
@@ -162,13 +175,12 @@ To check the validity of a given Proof Point the following process is used:
 
 > **Note** This process involves a blockchain read, but not a write, so no Ether funds are required to perform this process.
 
-1. Start with the JSON document that you want to validate
-2. Canonicalize the document according to the [draft-rundgren-json-canonicalization-scheme](https://tools.ietf.org/html/draft-rundgren-json-canonicalization-scheme-14). For example, by using [this NPM package](https://www.npmjs.com/package/canonicalize)
-3. If the `validFrom` field is present and is in the future then the claim is **invalid**
-4. If the `validUntil` field is present and is in the past then the claim is **invalid**
-5. Compute the base 58 encoding of the [multihash](https://github.com/multiformats/multihash) encoding of the 32 byte SHA-256 hash of the canonicalized document. **Note** that this the IPFS digest you will get if you add the file to IPFS and  specify the `sha2-256` hash method. You can also specify the `--only-hash` flag to return the digest without storing the file: `ipfs add --only-hash --hash sha2-256 <file>`
-6. Locate the `ProofPointRegistry`. See [Locating the ProofPointRegistry](#locating-the-ProofPointRegistry)
-7. Call the `validate` method of the `ProofPointRegistry` contract with the `<issuer>` and the hash computed in 5. If the return value is `true` then the Proof Point is **valid**, otherwise it is **invalid**.
+1. Start with the JSON document that you want to validate. This may have been directly transmitted to you, or may be recovered from the ID using an IPFS lookup.
+2. If the `validFrom` field is present and is in the future then the claim is **invalid**
+3. If the `validUntil` field is present and is in the past then the claim is **invalid**
+4. [Compute the Proof Point ID](#generating-the-proof-point-identifier) if you don't already have it.
+5. [Locate the ProofPointRegistry](#locating-the-ProofPointRegistry)
+6. Call the `validate` method of the `ProofPointRegistry` contract with the `<issuer>` and the ID computed in 5. If the return value is `true` then the Proof Point is **valid**, otherwise it is **invalid**.
 
 ## Locating the ProofPointRegistry
 

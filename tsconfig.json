@@ -3,7 +3,6 @@
         "src/index.ts",
         "src/storage.ts",
         "src/proofPoints.ts",
-        "src/contracts.ts",
         "src/canonicalize.d.ts",
         "src/local-iso-dt.d.ts",
         "src/ipfs-mini.d.ts"
