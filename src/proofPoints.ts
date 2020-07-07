@@ -70,7 +70,7 @@ interface ProofPointValidateResult {
 }
 
 /**
- * Proof Point event type, the type of an {@link ProofPointEvent}
+ * Proof Point event type, the type of an {@link ProofPointEvent}.
  */
 enum ProofPointEventType {
     Issued,
@@ -79,11 +79,11 @@ enum ProofPointEventType {
 }
 
 /**
- * Proof Point event, describes a single event in the history of a Proof Point
+ * Proof Point event, describes a single event in the history of a Proof Point.
  */
 interface ProofPointEvent {
     /** 
-     * The blockchain block number at which the event occurred 
+     * The blockchain block number at which the event occurred.
      * */
     blockNumber: number;
     /**
@@ -91,11 +91,11 @@ interface ProofPointEvent {
      */
     type: ProofPointEventType;
     /**
-     * The sender address that initiated the event
+     * The sender address that initiated the event.
      */
     issuer: string;
     /**
-     * The identifying hash of the Proof Point
+     * The identifying hash of the Proof Point.
      */
     proofPointHash: string;
 }
@@ -111,8 +111,8 @@ class ProofPointRegistry {
 
     /**
      * Creates an instance of Proof Point registry for interacting with a pre-existing deployment of the registry contracts.
-     * @param address the Ethereum address of the deployed eternal storage contract
-     * @param web3 a web instance to use for interacting with the Ethereum blockchain
+     * @param address the Ethereum address of the deployed eternal storage contract.
+     * @param web3 a web instance to use for interacting with the Ethereum blockchain.
      * @param storage a {@link StorageProvider} to use for storing/retrieving off-chain data or null to use the default implementation.
      */
     constructor(address: string, web3: Web3, storage: StorageProvider | null) {
@@ -251,7 +251,7 @@ class ProofPointRegistry {
      * Issue a new Proof Point
      * @param type A URI string identifying the type of Proof Point to issue. This may be one of the values defined in the Provenance ontology.
      * @param issuerAddress The Ethereum address from which to issue the Proof Point. This must be an account that you control and must be sufficiently funded to pay for the issuance transaction.
-     * @param content A javascript object representing the type specific content of the payload. The shape of the data should conform to the specification of the @param type parameter
+     * @param content A javascript object representing the type specific content of the payload. The shape of the data should conform to the specification of the @param type parameter.
      * @param [validFromDate] Optional date from which the issued Proof Point will be valid. If null then there is no earliest date at which the Proof Point is valid.
      * @param [validUntilDate] Optional date until which the issued Proof Point will be valid. If null then there is no latest date at which the Proof Point is valid.
      * @returns A ProofPointIssueResult describing the result of the action.
@@ -275,7 +275,7 @@ class ProofPointRegistry {
      * Commit a new Proof Point
      * @param type A URI string identifying the type of Proof Point to issue. This may be one of the values defined in the Provenance ontology.
      * @param issuerAddress The Ethereum address from which to issue the Proof Point. This must be an account that you control and must be sufficiently funded to pay for the issuance transaction.
-     * @param content A javascript object representing the type specific content of the payload. The shape of the data should conform to the specification of the @param type parameter
+     * @param content A javascript object representing the type specific content of the payload. The shape of the data should conform to the specification of the @param type parameter.
      * @param [validFromDate] Optional date from which the issued Proof Point will be valid. If null then there is no earliest date at which the Proof Point is valid.
      * @param [validUntilDate] Optional date until which the issued Proof Point will be valid. If null then there is no latest date at which the Proof Point is valid.
      * @returns A ProofPointIssueResult describing the result of the action.
@@ -419,7 +419,7 @@ class ProofPointRegistry {
 
     /**
      * Get a list of the hashes of all Proof Points ever issued or committed
-     * to this registry
+     * to this registry.
      */
     async getAll(): Promise<Array<string>> {
         const publishEvents = await this
@@ -437,8 +437,8 @@ class ProofPointRegistry {
 
     /**
      * Gets a list of all events related to the given Proof Point, identified by its hash.
-     * @param proofPointHash the identifying hash of the Proof Point
-     * @returns a list of {@link ProofPointEvent} describing the history of the Proof Point
+     * @param proofPointHash the identifying hash of the Proof Point.
+     * @returns a list of {@link ProofPointEvent} describing the history of the Proof Point.
      */
     async getHistoryByHash(proofPointHash: string): Promise<Array<ProofPointEvent>> {
         const events = await this
