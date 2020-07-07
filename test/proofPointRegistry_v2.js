@@ -68,13 +68,13 @@ contract('ProofPointRegistry_v2', (accounts) => {
     assert(await subject.validate(user1, pp1));
   });
 
-  it('publishes issued proof point', async() => {
+  it('publishes issued Proof Point', async() => {
     const results = await subject.issue(pp1, { from: user1 });
     assert(results.logs[1].event === "Published");
     assert(results.logs[1].args._claim === pp1);
   });
 
-  it('publishes committed proof point', async() => {
+  it('publishes committed Proof Point', async() => {
     const results = await subject.commit(pp1, { from: user1 });
     assert(results.logs[1].event === "Published");
     assert(results.logs[1].args._claim === pp1);

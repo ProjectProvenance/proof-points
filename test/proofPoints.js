@@ -137,7 +137,7 @@ contract('ProofPoints', () => {
     expect(validity.statusCode).to.eq(ProofPointStatus.NonTrustedRegistry);
   });
 
-  it('should return the correct proof point document when getByHash is called', async() => {
+  it('should return the correct Proof Point document when getByHash is called', async() => {
     const results = await subject.issue(
       type,
       admin,
@@ -149,7 +149,7 @@ contract('ProofPoints', () => {
     expect(JSON.stringify(fetched)).to.eq(JSON.stringify(results.proofPointObject));
   });
 
-  it('should return a list of all issued and committed proof points when getAll is called', async() => {
+  it('should return a list of all issued and committed Proof Points when getAll is called', async() => {
     // issue a pp
     const result1 = await subject.issue("type1", admin, content );
     // revoke it
@@ -195,7 +195,7 @@ contract('ProofPoints', () => {
     try{
       await subject.upgrade()
     } catch(e){
-      expect(e.message).to.eq("Cannot upgrade proof point registry: Already at or above current version.");
+      expect(e.message).to.eq("Cannot upgrade Proof Point registry: Already at or above current version.");
     }
   });
 

@@ -12,9 +12,9 @@ This repo contains everything you need to work with [Provenance Proof Points](ht
 
 ## Quick Start
 
-This section covers how to use the NPM package to issue, revoke and validate proof points.
+This section covers how to use the NPM package to issue, revoke and validate Proof Points.
 
-All proof point functionality is accessed through an instance of the `Provenance` object. To construct a `Provenance` object you will need a `web3` instance and the address of a `ProofPointRegistryStorage1` contract. The production instance of the `ProofPointRegistryStorage1` contract is deployed on kovan and its address is published at [Provenance Public Ethereum Addresses](https://open.provenance.org/developers#provenance-public-ethereum-addresses). If you want to `issue` a proof point you will also need a funded Ethereum account.
+All Proof Point functionality is accessed through an instance of the `Provenance` object. To construct a `Provenance` object you will need a `web3` instance and the address of a `ProofPointRegistryStorage1` contract. The production instance of the `ProofPointRegistryStorage1` contract is deployed on kovan and its address is published at [Provenance Public Ethereum Addresses](https://open.provenance.org/developers#provenance-public-ethereum-addresses). If you want to `issue` a Proof Point you will also need a funded Ethereum account.
 
 > If you want to deploy your own instance of the Proof Point registry contracts you can use `truffle migrate`. For more information see the [Truffle documentation](https://www.trufflesuite.com/docs)
 
@@ -45,14 +45,14 @@ await provenance.init();
 
 ### Issue a Proof Point
 
-Each proof point has a type, an issuer and some data. The issuer should be a funded Ethereum account that you control. The type should be a type identifying string, for example one of the types defined in the [Provenance ontology](https://open.provenance.org/ontology). The data can be any javascript object but when serialized to JSON should meet any specification for the type.
+Each Proof Point has a type, an issuer and some data. The issuer should be a funded Ethereum account that you control. The type should be a type identifying string, for example one of the types defined in the [Provenance ontology](https://open.provenance.org/ontology). The data can be any javascript object but when serialized to JSON should meet any specification for the type.
 
 ```
-// issue a proof point
+// issue a Proof Point
 const result = await provenance.proofPoint.issue(
     'https://open.provenance.org/ontology/ptf/v2/...', // A type identifying URL, such as one from the Provenance ontology
     '0x...', // The issuer account, a funded account that you control
-    { a: 'b' }, // The data payload of the proof point, should match the schema defined by the type
+    { a: 'b' }, // The data payload of the Proof Point, should match the schema defined by the type
     '2020-10-10', // Optional valid from date,
     '2030-10-10', // optional valid until date
 );
@@ -62,27 +62,27 @@ The returned `result` has three fields:
 
 | Field | Notes |
 |-------|-------|
-| `proofPointHash` | A unique identifier for the proof point that is also the IPFS address of the proof point object |
-| `proofPointObject` | A javascript object that can be serialized to JSON to form the self describing JSON representation of the proof point |
-| `transactionHash` | The Ethereum transaction hash of the transaction that issued the proof point |
+| `proofPointHash` | A unique identifier for the Proof Point that is also the IPFS address of the Proof Point object |
+| `proofPointObject` | A javascript object that can be serialized to JSON to form the self describing JSON representation of the Proof Point |
+| `transactionHash` | The Ethereum transaction hash of the transaction that issued the Proof Point |
 
 ### Validate a Proof Point
 
 ```
-// validate a proof point object
+// validate a Proof Point object
 const isValid = await provenance.proofPoint.validate(proofPointObject);
 
-// validate a proof point given its identifier
+// validate a Proof Point given its identifier
 const isValid = await provenance.proofPoint.validateByHash(proofPointHash);
 ```
 
 ### Revoke a Proof Point
 
 ```
-// revoke a proof point object
+// revoke a Proof Point object
 await provenance.proofPoint.revoke(proofPointObject);
 
-// revoke a proof point given its identifier
+// revoke a Proof Point given its identifier
 await provenance.proofPoint.revokeByHash(proofPointHash);
 ```
 

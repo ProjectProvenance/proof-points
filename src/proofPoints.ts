@@ -34,31 +34,31 @@ interface ProofPointIssueResult {
 
 enum ProofPointStatus {
     /**
-     * The proof point object is badly formed. The proof point is invalid.
+     * The Proof Point object is badly formed. The Proof Point is invalid.
      */
     BadlyFormed,
     /**
-     * The validFrom date is in the future. The proof point is invalid.
+     * The validFrom date is in the future. The Proof Point is invalid.
      */
     Pending,
     /**
-     * The validUntil date is in the past. The proof point is invalid.
+     * The validUntil date is in the past. The Proof Point is invalid.
      */
     Expired,
     /**
-     * The proof.registryRoot field references a smart contract that is not a whitelisted proof point registry, 
-     * the validation provided is not trusted so the proof point is considered invalid.
+     * The proof.registryRoot field references a smart contract that is not a whitelisted Proof Point registry, 
+     * the validation provided is not trusted so the Proof Point is considered invalid.
      */
     NonTrustedRegistry,
     /**
-     * The proof point registry smart contract does not contain this proof point issued by this issuer. Either
-     * the issuer never issued the proof point or it was issued and later revoked by the issuer. The proof 
+     * The Proof Point registry smart contract does not contain this Proof Point issued by this issuer. Either
+     * the issuer never issued the Proof Point or it was issued and later revoked by the issuer. The proof 
      * point is invalid.
      */
     NotFound,
     /**
-     * The proof point has passed all of the validation checks. If you trust the issuer you can trust the meaning
-     * of the proof point.
+     * The Proof Point has passed all of the validation checks. If you trust the issuer you can trust the meaning
+     * of the Proof Point.
      */
     Valid
 }
@@ -70,7 +70,7 @@ interface ProofPointValidateResult {
 }
 
 /**
- * Proof point event type, the type of an {@link ProofPointEvent}
+ * Proof Point event type, the type of an {@link ProofPointEvent}
  */
 enum ProofPointEventType {
     Issued,
@@ -79,7 +79,7 @@ enum ProofPointEventType {
 }
 
 /**
- * Proof point event, describes a single event in the history of a proof point
+ * Proof Point event, describes a single event in the history of a Proof Point
  */
 interface ProofPointEvent {
     /** 
@@ -95,7 +95,7 @@ interface ProofPointEvent {
      */
     issuer: string;
     /**
-     * The identifying hash of the proof point
+     * The identifying hash of the Proof Point
      */
     proofPointHash: string;
 }
@@ -110,7 +110,7 @@ class ProofPointRegistry {
     private _storage: StorageProvider;
 
     /**
-     * Creates an instance of proof point registry for interacting with a pre-existing deployment of the registry contracts.
+     * Creates an instance of Proof Point registry for interacting with a pre-existing deployment of the registry contracts.
      * @param address the Ethereum address of the deployed eternal storage contract
      * @param web3 a web instance to use for interacting with the Ethereum blockchain
      * @param storage a {@link StorageProvider} to use for storing/retrieving off-chain data or null to use the default implementation.
@@ -131,7 +131,7 @@ class ProofPointRegistry {
     }
 
     /**
-     * Deploys an instance of the proof point registry, including an eternal storage contract and a logic
+     * Deploys an instance of the Proof Point registry, including an eternal storage contract and a logic
      * contract.
      * @param fromAddress the Ethereum account to use for signing transactions. This will become the admin account that must be used for all future smart contract upgrades.
      * @param web3 a web3 instance to use for interacting with the Ethereum blockchain.
@@ -193,14 +193,14 @@ class ProofPointRegistry {
     }
 
     /**
-     * Upgrades proof point registry. Performs the upgrade procedure to deploy an instance of the latest
+     * Upgrades Proof Point registry. Performs the upgrade procedure to deploy an instance of the latest
      * logic contract, then set that as the owner of the eternal storage contract. You must control the admin
      * account to do this. Throws if already at latest version. Use {@link canUpgrade} to determine whether 
      * this method can be called.
      */
     async upgrade(): Promise<void> {
         if (!(await this.canUpgrade())) {
-            throw new Error("Cannot upgrade proof point registry: Already at or above current version.");
+            throw new Error("Cannot upgrade Proof Point registry: Already at or above current version.");
         }
 
         // get the admin account from which to perform the upgrade
@@ -227,7 +227,7 @@ class ProofPointRegistry {
     }
 
     /**
-     * Initialises the proof point registry. Must be completed before the {@link ProofPointRegistry} can be used.
+     * Initialises the Proof Point registry. Must be completed before the {@link ProofPointRegistry} can be used.
      */
     async init(): Promise<void> {
         // Use the storage contract to locate the logic contract
@@ -248,12 +248,12 @@ class ProofPointRegistry {
     }
 
     /**
-     * Issue a new proof point
-     * @param type A URI string identifying the type of proof point to issue. This may be one of the values defined in the Provenance ontology.
-     * @param issuerAddress The Ethereum address from which to issue the proof point. This must be an account that you control and must be sufficiently funded to pay for the issuance transaction.
+     * Issue a new Proof Point
+     * @param type A URI string identifying the type of Proof Point to issue. This may be one of the values defined in the Provenance ontology.
+     * @param issuerAddress The Ethereum address from which to issue the Proof Point. This must be an account that you control and must be sufficiently funded to pay for the issuance transaction.
      * @param content A javascript object representing the type specific content of the payload. The shape of the data should conform to the specification of the @param type parameter
-     * @param [validFromDate] Optional date from which the issued proof point will be valid. If null then there is no earliest date at which the proof point is valid.
-     * @param [validUntilDate] Optional date until which the issued proof point will be valid. If null then there is no latest date at which the proof point is valid.
+     * @param [validFromDate] Optional date from which the issued Proof Point will be valid. If null then there is no earliest date at which the Proof Point is valid.
+     * @param [validUntilDate] Optional date until which the issued Proof Point will be valid. If null then there is no latest date at which the Proof Point is valid.
      * @returns A ProofPointIssueResult describing the result of the action.
      */
     async issue(type: string,
@@ -272,12 +272,12 @@ class ProofPointRegistry {
     }
 
     /**
-     * Commit a new proof point
-     * @param type A URI string identifying the type of proof point to issue. This may be one of the values defined in the Provenance ontology.
-     * @param issuerAddress The Ethereum address from which to issue the proof point. This must be an account that you control and must be sufficiently funded to pay for the issuance transaction.
+     * Commit a new Proof Point
+     * @param type A URI string identifying the type of Proof Point to issue. This may be one of the values defined in the Provenance ontology.
+     * @param issuerAddress The Ethereum address from which to issue the Proof Point. This must be an account that you control and must be sufficiently funded to pay for the issuance transaction.
      * @param content A javascript object representing the type specific content of the payload. The shape of the data should conform to the specification of the @param type parameter
-     * @param [validFromDate] Optional date from which the issued proof point will be valid. If null then there is no earliest date at which the proof point is valid.
-     * @param [validUntilDate] Optional date until which the issued proof point will be valid. If null then there is no latest date at which the proof point is valid.
+     * @param [validFromDate] Optional date from which the issued Proof Point will be valid. If null then there is no earliest date at which the Proof Point is valid.
+     * @param [validUntilDate] Optional date until which the issued Proof Point will be valid. If null then there is no latest date at which the Proof Point is valid.
      * @returns A ProofPointIssueResult describing the result of the action.
      */
     async commit(type: string,
@@ -296,8 +296,8 @@ class ProofPointRegistry {
     }
 
     /**
-     * Revoke a proof point identified by its hash ID. You must control the account that originally issued the proof point. The account must be sufficiently funded to execute the revoke transaction.
-     * @param proofPointHash The hash identifier of the proof point to revoke. This is the value returned in the @param proofPointHash field of the {@link ProofPointIssueResult} when the proof point was issued.
+     * Revoke a Proof Point identified by its hash ID. You must control the account that originally issued the Proof Point. The account must be sufficiently funded to execute the revoke transaction.
+     * @param proofPointHash The hash identifier of the Proof Point to revoke. This is the value returned in the @param proofPointHash field of the {@link ProofPointIssueResult} when the Proof Point was issued.
      */
     async revokeByHash(proofPointHash: string): Promise<void> {
         const storedData = await this._storage.get(proofPointHash);
@@ -306,8 +306,8 @@ class ProofPointRegistry {
     }
 
     /**
-     * Revoke a proof point identified by its full data. You must control the account that originally issued the proof point. The account must be sufficiently funded to execute the revoke transaction.
-     * @param proofPointObject The full proof point data as returned in the @param proofPointObject parameter of the {@link ProofPointIssueResult} when the proof point was issued.
+     * Revoke a Proof Point identified by its full data. You must control the account that originally issued the Proof Point. The account must be sufficiently funded to execute the revoke transaction.
+     * @param proofPointObject The full Proof Point data as returned in the @param proofPointObject parameter of the {@link ProofPointIssueResult} when the Proof Point was issued.
      */
     async revoke(proofPointObject: ProofPoint): Promise<void> {
         if (proofPointObject.proof.type !== PROOF_TYPE) {
@@ -328,9 +328,9 @@ class ProofPointRegistry {
     }
 
     /**
-     * Validate a proof point identified by its hash ID. This does not involve a blockchain transaction.
-     * @param proofPointHash The hash identifier of the proof point to revoke. This is the value returned in the @param proofPointHash field of the {@link ProofPointIssueResult} when the proof point was issued.
-     * @returns true if the proof point passes all validation checks, otherwise false.
+     * Validate a Proof Point identified by its hash ID. This does not involve a blockchain transaction.
+     * @param proofPointHash The hash identifier of the Proof Point to revoke. This is the value returned in the @param proofPointHash field of the {@link ProofPointIssueResult} when the Proof Point was issued.
+     * @returns true if the Proof Point passes all validation checks, otherwise false.
      */
     async validateByHash(proofPointHash: string): Promise<ProofPointValidateResult> {
         const storedData = await this._storage.get(proofPointHash);
@@ -339,9 +339,9 @@ class ProofPointRegistry {
     }
 
     /**
-     * Validate a proof point identified by its full data. This does not involve a blockchain transaction.
-     * @param proofPointObject The full proof point data as returned in the @param proofPointObject parameter of the {@link ProofPointIssueResult} when the proof point was issued.
-     * @returns a {@link ProofPointValidateResult} representing the validity of the proof point.
+     * Validate a Proof Point identified by its full data. This does not involve a blockchain transaction.
+     * @param proofPointObject The full Proof Point data as returned in the @param proofPointObject parameter of the {@link ProofPointIssueResult} when the Proof Point was issued.
+     * @returns a {@link ProofPointValidateResult} representing the validity of the Proof Point.
      */
     async validate(proofPointObject: ProofPoint): Promise<ProofPointValidateResult> {
 
@@ -349,7 +349,7 @@ class ProofPointRegistry {
             return {
                 isValid: false,
                 statusCode: ProofPointStatus.BadlyFormed,
-                statusMessage: "The proof point uses an unsupported proof type."
+                statusMessage: "The Proof Point uses an unsupported proof type."
             };
         }
 
@@ -359,7 +359,7 @@ class ProofPointRegistry {
                 return {
                     isValid: false,
                     statusCode: ProofPointStatus.Pending,
-                    statusMessage: "The proof point will become valid at a later date."
+                    statusMessage: "The Proof Point will become valid at a later date."
                 };
             }
         }
@@ -370,7 +370,7 @@ class ProofPointRegistry {
                 return {
                     isValid: false,
                     statusCode: ProofPointStatus.Expired,
-                    statusMessage: "The valid-until date of the proof point has passed."
+                    statusMessage: "The valid-until date of the Proof Point has passed."
                 };
             }
         }
@@ -379,7 +379,7 @@ class ProofPointRegistry {
             return {
                 isValid: false,
                 statusCode: ProofPointStatus.NonTrustedRegistry,
-                statusMessage: "The proof point is issued using a registry that is not trusted in this context."
+                statusMessage: "The Proof Point is issued using a registry that is not trusted in this context."
             };
         }
 
@@ -403,14 +403,14 @@ class ProofPointRegistry {
             return {
                 isValid: false,
                 statusCode: ProofPointStatus.NotFound,
-                statusMessage: "The proof point has been revoked or was never issued."
+                statusMessage: "The Proof Point has been revoked or was never issued."
             };
         }
     }
 
     /**
-     * Fetch the proof point document identified by its hash ID.
-     * @param proofPointHash The hash identifier of the proof point document to fetch.
+     * Fetch the Proof Point document identified by its hash ID.
+     * @param proofPointHash The hash identifier of the Proof Point document to fetch.
      */
     async getByHash(proofPointHash: string): Promise<ProofPoint> {
         const storedData = await this._storage.get(proofPointHash);
@@ -419,7 +419,7 @@ class ProofPointRegistry {
     }
 
     /**
-     * Get a list of the hashes of all proof points ever issued or committed
+     * Get a list of the hashes of all Proof Points ever issued or committed
      * to this registry
      */
     async getAll(): Promise<Array<string>> {
@@ -437,9 +437,9 @@ class ProofPointRegistry {
     }
 
     /**
-     * Gets a list of all events related to the given proof point, identified by its hash.
-     * @param proofPointHash the identifying hash of the proof point
-     * @returns a list of {@link ProofPointEvent} describing the history of the proof point
+     * Gets a list of all events related to the given Proof Point, identified by its hash.
+     * @param proofPointHash the identifying hash of the Proof Point
+     * @returns a list of {@link ProofPointEvent} describing the history of the Proof Point
      */
     async getHistoryByHash(proofPointHash: string): Promise<Array<ProofPointEvent>> {
         const events = await this
@@ -472,7 +472,7 @@ class ProofPointRegistry {
         if(eventName === "Issued") return ProofPointEventType.Issued;
         if(eventName === "Committed") return ProofPointEventType.Committed;
         if(eventName === "Revoked") return ProofPointEventType.Revoked;
-        throw new Error(`Invalid proof point event name: ${eventName}`);
+        throw new Error(`Invalid Proof Point event name: ${eventName}`);
     }
 
     private async _issue(type: string,
