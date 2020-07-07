@@ -50,9 +50,9 @@ contract('ProofPoints', () => {
     expect(validity.statusCode).to.eq(ProofPointStatus.Valid);
   });
 
-  it('should return tx hash and pp hash and a pp object', async() => {
+  it('should return tx hash and pp ID and a pp object', async() => {
     const results = await subject.issue(type, admin, content);
-    expect(results.proofPointHash).to.exist;
+    expect(results.proofPointId).to.exist;
     expect(results.transactionHash).to.exist;
     expect(results.proofPointObject).to.exist;
   });
@@ -65,17 +65,17 @@ contract('ProofPoints', () => {
     expect(validity.statusCode).to.eq(ProofPointStatus.NotFound);
   });
 
-  it('should validate a valid pp by hash', async() => {
+  it('should validate a valid pp by ID', async() => {
     const results = await subject.issue(type, admin, content);
-    const validity = await subject.validateByHash(results.proofPointHash);
+    const validity = await subject.validateById(results.proofPointId);
     expect(validity.isValid).to.be.true;
     expect(validity.statusCode).to.eq(ProofPointStatus.Valid);
   });
 
-  it('should revoke a valid pp by hash', async() => {
+  it('should revoke a valid pp by ID', async() => {
     const results = await subject.issue(type, admin, content);
-    await subject.revokeByHash(results.proofPointHash);
-    const validity = await subject.validateByHash(results.proofPointHash);
+    await subject.revokeById(results.proofPointId);
+    const validity = await subject.validateById(results.proofPointId);
     expect(validity.isValid).to.be.false;
     expect(validity.statusCode).to.eq(ProofPointStatus.NotFound);
   });
@@ -137,14 +137,14 @@ contract('ProofPoints', () => {
     expect(validity.statusCode).to.eq(ProofPointStatus.NonTrustedRegistry);
   });
 
-  it('should return the correct Proof Point document when getByHash is called', async() => {
+  it('should return the correct Proof Point document when getById is called', async() => {
     const results = await subject.issue(
       type,
       admin,
       content
     );
 
-    const fetched = await subject.getByHash(results.proofPointHash);
+    const fetched = await subject.getById(results.proofPointId);
 
     expect(JSON.stringify(fetched)).to.eq(JSON.stringify(results.proofPointObject));
   });
@@ -162,11 +162,11 @@ contract('ProofPoints', () => {
 
     // should include the issued and revoked one and the committed one
     expect(list.length).to.eq(2);
-    expect(list[0]).to.eq(result1.proofPointHash);
-    expect(list[1]).to.eq(result2.proofPointHash);
+    expect(list[0]).to.eq(result1.proofPointId);
+    expect(list[1]).to.eq(result2.proofPointId);
   });
 
-  it('should return a list of all related events when getHistoryByHash is called', async() => {
+  it('should return a list of all related events when getHistoryById is called', async() => {
     // issue a pp
     const result = await subject.issue(type, admin, content );
     // issue another one
@@ -177,7 +177,7 @@ contract('ProofPoints', () => {
     await subject.commit(type, admin, content );
 
     // get history of first one
-    const history = await subject.getHistoryByHash(result.proofPointHash);
+    const history = await subject.getHistoryById(result.proofPointId);
 
     // should be Issue, Revoke, Commit and not include the other pp
     expect(history.length).to.eq(3);

@@ -27,7 +27,7 @@ interface ProofPoint {
 };
 
 interface ProofPointIssueResult {
-  proofPointHash: string;
+  proofPointId: string;
   transactionHash: string;
   proofPointObject: ProofPoint;
 };
@@ -95,9 +95,9 @@ interface ProofPointEvent {
    */
   issuer: string;
   /**
-   * The identifying hash of the Proof Point.
+   * The ID of the Proof Point.
    */
-  proofPointHash: string;
+  proofPointId: string;
 }
 
 const PROOF_TYPE = 'https://open.provenance.org/ontology/ptf/v2/ProvenanceProofType1';
@@ -296,11 +296,11 @@ class ProofPointRegistry {
   }
 
   /**
-   * Revoke a Proof Point identified by its hash ID. You must control the account that originally issued the Proof Point. The account must be sufficiently funded to execute the revoke transaction.
-   * @param proofPointHash The hash identifier of the Proof Point to revoke. This is the value returned in the @param proofPointHash field of the {@link ProofPointIssueResult} when the Proof Point was issued.
+   * Revoke a Proof Point identified by it's ID. You must control the account that originally issued the Proof Point. The account must be sufficiently funded to execute the revoke transaction.
+   * @param proofPointId The ID of the Proof Point to revoke. This is the value returned in the @param proofPointId field of the {@link ProofPointIssueResult} when the Proof Point was issued.
    */
-  async revokeByHash(proofPointHash: string): Promise<void> {
-    const storedData = await this._storage.get(proofPointHash);
+  async revokeById(proofPointId: string): Promise<void> {
+    const storedData = await this._storage.get(proofPointId);
     const proofPointObject = JSON.parse(storedData.data);
     await this.revoke(proofPointObject);
   }
@@ -319,21 +319,21 @@ class ProofPointRegistry {
     }
 
     const { hash } = await this.canonicalizeAndStoreObject(proofPointObject);
-    const proofPointHashBytes = web3.utils.asciiToHex(hash);
+    const proofPointIdBytes = web3.utils.asciiToHex(hash);
     await this
       ._registry
       .methods
-      .revoke(proofPointHashBytes)
+      .revoke(proofPointIdBytes)
       .send({ from: proofPointObject.issuer, gas: GAS_LIMIT });
   }
 
   /**
-   * Validate a Proof Point identified by its hash ID. This does not involve a blockchain transaction.
-   * @param proofPointHash The hash identifier of the Proof Point to revoke. This is the value returned in the @param proofPointHash field of the {@link ProofPointIssueResult} when the Proof Point was issued.
+   * Validate a Proof Point identified by its ID. This does not involve a blockchain transaction.
+   * @param proofPointId The ID of the Proof Point to revoke.
    * @returns true if the Proof Point passes all validation checks, otherwise false.
    */
-  async validateByHash(proofPointHash: string): Promise<ProofPointValidateResult> {
-    const storedData = await this._storage.get(proofPointHash);
+  async validateById(proofPointId: string): Promise<ProofPointValidateResult> {
+    const storedData = await this._storage.get(proofPointId);
     const proofPointObject = JSON.parse(storedData.data);
     return this.validate(proofPointObject);
   }
@@ -384,12 +384,12 @@ class ProofPointRegistry {
     }
 
     const { hash } = await this.canonicalizeAndStoreObject(proofPointObject);
-    const proofPointHashBytes = web3.utils.asciiToHex(hash);
+    const proofPointIdBytes = web3.utils.asciiToHex(hash);
 
     const isValid = await this
       ._registry
       .methods
-      .validate(proofPointObject.issuer, proofPointHashBytes)
+      .validate(proofPointObject.issuer, proofPointIdBytes)
       .call();
 
     if (isValid) {
@@ -408,17 +408,17 @@ class ProofPointRegistry {
   }
 
   /**
-   * Fetch the Proof Point document identified by its hash ID.
-   * @param proofPointHash The hash identifier of the Proof Point document to fetch.
+   * Fetch the Proof Point document identified by its ID.
+   * @param proofPointId The ID of the Proof Point document to fetch.
    */
-  async getByHash(proofPointHash: string): Promise<ProofPoint> {
-    const storedData = await this._storage.get(proofPointHash);
+  async getById(proofPointId: string): Promise<ProofPoint> {
+    const storedData = await this._storage.get(proofPointId);
     const proofPointObject = JSON.parse(storedData.data);
     return proofPointObject;
   }
 
   /**
-   * Get a list of the hashes of all Proof Points ever issued or committed
+   * Get a list of the IDs of all Proof Points ever issued or committed
    * to this registry.
    */
   async getAll(): Promise<Array<string>> {
@@ -436,18 +436,18 @@ class ProofPointRegistry {
   }
 
   /**
-   * Gets a list of all events related to the given Proof Point, identified by its hash.
-   * @param proofPointHash the identifying hash of the Proof Point.
+   * Gets a list of all events related to the given Proof Point, identified by its ID.
+   * @param proofPointId the ID of the Proof Point.
    * @returns a list of {@link ProofPointEvent} describing the history of the Proof Point.
    */
-  async getHistoryByHash(proofPointHash: string): Promise<Array<ProofPointEvent>> {
+  async getHistoryById(proofPointId: string): Promise<Array<ProofPointEvent>> {
     const events = await this
       ._registry
       .getPastEvents(
         "allEvents", 
         { 
           // TODO filter doesn't work for some reason
-          // filter: {_claim: Web3.utils.keccak256(proofPointHash) },
+          // filter: {_claim: Web3.utils.keccak256(proofPointId) },
           fromBlock: 0, 
           toBlock: "latest"
         }
@@ -455,14 +455,14 @@ class ProofPointRegistry {
 
     return events
       // TODO remove this client side filter once filter bug is fixed
-      .filter(ev => ev.returnValues._claim === Web3.utils.keccak256(proofPointHash))
+      .filter(ev => ev.returnValues._claim === Web3.utils.keccak256(proofPointId))
       .filter(ev => ev.event !== "Published")
       .map(ev => {
         return {
           blockNumber: ev.blockNumber,
           type: this._eventNameToEventType(ev.event),
           issuer: ev.returnValues._issuer,
-          proofPointHash: proofPointHash
+          proofPointId: proofPointId
         }
       });
   }
@@ -490,13 +490,13 @@ class ProofPointRegistry {
     );
 
     const { hash, canonicalisedObject } = await this.canonicalizeAndStoreObject(proofPointObject);
-    const proofPointHashBytes = web3.utils.asciiToHex(hash);
+    const proofPointIdBytes = web3.utils.asciiToHex(hash);
 
-    const transactionReceipt = await issueFunction(proofPointHashBytes)
+    const transactionReceipt = await issueFunction(proofPointIdBytes)
       .send({ from: issuerAddress, gas: GAS_LIMIT });
 
     return {
-      proofPointHash: hash,
+      proofPointId: hash,
       transactionHash: transactionReceipt.transactionHash,
       proofPointObject: canonicalisedObject
     };

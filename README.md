@@ -27,17 +27,17 @@ $ npm i @provenance/proof-points
 Import the package in your Javascript
 
 ```
-const Provenance = require('@provenance/proof-points');
+import { ProofPointRegistry } from '@provenance/proof-points';
 ```
 
-Construct a provenance object
+Construct a ProofPointRegistry object
 
 ```
 // construct an instance of the Provenance object
-const provenance = new Provenance({
-    web3: web3,
-    proofPointStorageAddress: '0x...'
-  });
+const api = new ProofPointRegistry(
+    proofPointStorageAddress, // The Ethereum address of the eternal storage contract. Public registry addresses are available at https://open.provenance.org/developers/
+    web3                      // A web3 instance  to use for interacting with the Ethereum network.
+  );
 
 // initialize the instance
 await provenance.init();
@@ -49,7 +49,7 @@ Each Proof Point has a type, an issuer and some data. The issuer should be a fun
 
 ```
 // issue a Proof Point
-const result = await provenance.proofPoint.issue(
+const result = await api.issue(
     'https://open.provenance.org/ontology/ptf/v2/...', // A type identifying URL, such as one from the Provenance ontology
     '0x...', // The issuer account, a funded account that you control
     { a: 'b' }, // The data payload of the Proof Point, should match the schema defined by the type
@@ -62,7 +62,7 @@ The returned `result` has three fields:
 
 | Field | Notes |
 |-------|-------|
-| `proofPointHash` | A unique identifier for the Proof Point that is also the IPFS address of the Proof Point object |
+| `proofPointId` | A unique identifier (ID) for the Proof Point that is also the IPFS address of the Proof Point document |
 | `proofPointObject` | A javascript object that can be serialized to JSON to form the self describing JSON representation of the Proof Point |
 | `transactionHash` | The Ethereum transaction hash of the transaction that issued the Proof Point |
 
@@ -70,25 +70,25 @@ The returned `result` has three fields:
 
 ```
 // validate a Proof Point object
-const isValid = await provenance.proofPoint.validate(proofPointObject);
+const isValid = await api.validate(proofPointObject);
 
-// validate a Proof Point given its identifier
-const isValid = await provenance.proofPoint.validateByHash(proofPointHash);
+// validate a Proof Point given its ID
+const isValid = await api.validateById(proofPointId);
 ```
 
 ### Revoke a Proof Point
 
 ```
 // revoke a Proof Point object
-await provenance.proofPoint.revoke(proofPointObject);
+await api.revoke(proofPointObject);
 
-// revoke a Proof Point given its identifier
-await provenance.proofPoint.revokeByHash(proofPointHash);
+// revoke a Proof Point given its ID
+await api.revokeById(proofPointId);
 ```
 
 ## Contribute
 
-This section covers how to set up so that you can build the smart contracts and Javascript library and run the unit tests. This is mainly of interest for developers who wish to contribute to the smart contracts of Javascript library.
+This section covers how to set up so that you can build the smart contracts and Javascript library and run the unit tests. This is mainly of interest for developers who wish to contribute to the smart contracts or Javascript library.
 
 Clone the repo
 
@@ -106,13 +106,31 @@ npm install
 Compile solidity contracts
 
 ```
-npm run compile
+npm run compile-solidity
+```
+
+Compile the typescript
+
+```
+npm run compile-typescript
 ```
 
 [Install IPFS](https://docs.ipfs.io/guides/guides/install/) then in a separate shell start an IPFS daemon
 
 ```
 ipfs daemon
+```
+
+Install `ganache-cli`
+
+```
+npm i -g ganache-cli
+```
+
+In a separate terminal start an `ganache-cli` instance
+
+```
+ganache-cli
 ```
 
 Run unit tests
