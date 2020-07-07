@@ -14,9 +14,10 @@ This repo contains everything you need to work with [Provenance Proof Points](ht
 
 This section covers how to use the NPM package to issue, revoke and validate Proof Points.
 
-All Proof Point functionality is accessed through an instance of the `Provenance` object. To construct a `Provenance` object you will need a `web3` instance and the address of a `ProofPointRegistryStorage1` contract. The production instance of the `ProofPointRegistryStorage1` contract is deployed on kovan and its address is published at [Provenance Public Ethereum Addresses](https://open.provenance.org/developers#provenance-public-ethereum-addresses). If you want to `issue` a Proof Point you will also need a funded Ethereum account.
+All Proof Point functionality is accessed through an instance of the `ProofPointRegistry` object. To construct a `ProofPointRegistry` object you will need a `web3` instance and the address of a `ProofPointRegistryStorage1` contract. The production instance of the `ProofPointRegistryStorage1` contract is deployed on kovan and its address is published at https://open.provenance.org/developers . If you want to `issue` a Proof Point you will also need a funded Ethereum account.
 
-> If you want to deploy your own instance of the Proof Point registry contracts you can use `truffle migrate`. For more information see the [Truffle documentation](https://www.trufflesuite.com/docs)
+> If you want to deploy your own instance of the Proof Point registry contracts you can use `truffle migrate`. For more information see the [Truffle documentation](https://www.trufflesuite.com/docs), alternatively you
+can use the static `ProofPointRegistry.deploy(...)` method.
 
 Install the NPM package
 
@@ -30,22 +31,22 @@ Import the package in your Javascript
 import { ProofPointRegistry } from '@provenance/proof-points';
 ```
 
-Construct a ProofPointRegistry object
+Construct a `ProofPointRegistry` object
 
 ```
-// construct an instance of the Provenance object
+// construct an instance of the ProofPointRegistry object
 const api = new ProofPointRegistry(
     proofPointStorageAddress, // The Ethereum address of the eternal storage contract. Public registry addresses are available at https://open.provenance.org/developers/
     web3                      // A web3 instance  to use for interacting with the Ethereum network.
   );
 
-// initialize the instance
+// initialize the instance. The promise must resolve before the registry can be used.
 await provenance.init();
 ```
 
 ### Issue a Proof Point
 
-Each Proof Point has a type, an issuer and some data. The issuer should be a funded Ethereum account that you control. The type should be a type identifying string, for example one of the types defined in the [Provenance ontology](https://open.provenance.org/ontology). The data can be any javascript object but when serialized to JSON should meet any specification for the type.
+Each Proof Point has a type, an issuer and some data. The issuer should be a funded Ethereum account that you control. The type should be a type identifying string, for example one of the types documented [here](https://open.provenance.org/developers/specification/). The data can be any javascript object but when serialized to JSON should meet any specification for the type.
 
 ```
 // issue a Proof Point
@@ -53,8 +54,8 @@ const result = await api.issue(
     'https://open.provenance.org/ontology/ptf/v2/...', // A type identifying URL, such as one from the Provenance ontology
     '0x...', // The issuer account, a funded account that you control
     { a: 'b' }, // The data payload of the Proof Point, should match the schema defined by the type
-    '2020-10-10', // Optional valid from date,
-    '2030-10-10', // optional valid until date
+    '2020-01-01', // Optional valid from date,
+    '2030-01-01', // optional valid until date
 );
 ```
 

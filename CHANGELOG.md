@@ -16,6 +16,7 @@ event `Published` which is used to record a list of all Proof Point IDs.
 ## Breaking Changes
 
 - The way the API is initialized and used has changed. To construct an instance of the API for a pre-existing registry deployment use the constructor `const api = new ProofPointRegistry(...)`. You must then initialize the API: `await api.init()`. Interact with the Proof Point registry using methods directly on the API object e.g. `api.issue(...)`.
+- Proof point 'hash' is now referred to as 'ID' throughout and this has changed some API names for example `ProofPointRegistry.getByHash` is renamed to `getById` and the field `ProofPointIssueResult.proofPointHash` is renamed to `proofPointId`.
 
 # 2.4.0
 
