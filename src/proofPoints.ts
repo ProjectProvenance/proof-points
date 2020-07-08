@@ -111,6 +111,10 @@ interface ProofPointEvent {
    * The ID of the Proof Point.
    */
   proofPointId: string;
+  /**
+   * The Ethereum transaction hash of the transaction that emitted this event
+   */
+  transactionHash: string;
 }
 
 const PROOF_TYPE = 'https://open.provenance.org/ontology/ptf/v2/ProvenanceProofType1';
@@ -477,7 +481,9 @@ class ProofPointRegistry {
         }
       );
 
-    return publishEvents.map(ev => Web3.utils.hexToAscii(ev.returnValues._claim));
+    const nonUniqueIds = publishEvents.map(ev => Web3.utils.hexToAscii(ev.returnValues._claim));
+    const unqiueIds = nonUniqueIds.filter((v, i, a) => a.indexOf(v) === i);
+    return unqiueIds; 
   }
 
   /**
@@ -536,7 +542,8 @@ class ProofPointRegistry {
             blockNumber: ev.blockNumber,
             type: this._eventNameToEventType(ev.event),
             issuer: ev.returnValues._issuer,
-            proofPointId: proofPointId
+            proofPointId: proofPointId,
+            transactionHash: ev.transactionHash
           }
         });
 

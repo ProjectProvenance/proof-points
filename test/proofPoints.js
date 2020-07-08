@@ -201,10 +201,13 @@ contract('ProofPoints', () => {
     expect(history.length).to.eq(3);
     expect(history[0].type).to.eq(ProofPointEventType.Issued);
     expect(history[0].issuer).to.eq(admin);
+    expect(history[0].transactionHash).to.not.be.null;
     expect(history[1].type).to.eq(ProofPointEventType.Revoked);
     expect(history[1].issuer).to.eq(admin);
+    expect(history[1].transactionHash).to.not.be.null;
     expect(history[2].type).to.eq(ProofPointEventType.Committed);
     expect(history[2].issuer).to.eq(admin);
+    expect(history[2].transactionHash).to.not.be.null;
   });
 
   it('should not upgrade a latest version repo', async() => {
@@ -475,5 +478,17 @@ contract('ProofPoints', () => {
     validity = await subject.validateById(proofPointId);
     expect(validity.isValid).to.be.false;
     expect(validity.statusMessage).to.eq(`The issuer 'did:web:example.com' could not be resolved to an Ethereum address.`);
+  });
+
+  it('getAll should not return duplicate values', async() => {
+
+    // issue the same proof point multiple times
+    await subject.issue(type, admin, content);
+    await subject.issue(type, admin, content);
+
+    const allIds = await subject.getAll();
+
+    // The Proof Point Id should not be duplicated in getAll
+    expect(allIds.length).to.eq(1);
   });
 });
