@@ -481,7 +481,9 @@ class ProofPointRegistry {
         }
       );
 
-    return publishEvents.map(ev => Web3.utils.hexToAscii(ev.returnValues._claim));
+    const nonUniqueIds = publishEvents.map(ev => Web3.utils.hexToAscii(ev.returnValues._claim));
+    const unqiueIds = nonUniqueIds.filter((v, i, a) => a.indexOf(v) === i);
+    return unqiueIds; 
   }
 
   /**
