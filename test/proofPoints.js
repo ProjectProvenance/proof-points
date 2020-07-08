@@ -1,6 +1,8 @@
 const { expect } = require('chai');
 const { ProofPointRegistry, ProofPointStatus, ProofPointEventType } = require('../dist/src/index');
 const FakeStorageProvider = require('./fixtures/FakeStorageProvider');
+const FakeHttpClient = require('./fixtures/FakeHttpClient');
+
 const ProofPointRegistryV1Abi = require('../build/contracts/ProofPointRegistry.json');
 const ProofPointRegistryStorage1Abi = require('../build/contracts/ProofPointRegistryStorage1.json');
 
@@ -10,6 +12,7 @@ contract('ProofPoints', () => {
   let type;
   let content;
   let admin;
+  let httpClient;
 
   beforeEach(async() => {
     storageProvider = new FakeStorageProvider();
@@ -17,7 +20,22 @@ contract('ProofPoints', () => {
     const accounts = await web3.eth.getAccounts();
     [admin] = accounts;
 
-    subject = await ProofPointRegistry.deploy(admin, web3, storageProvider);
+    httpClient = new FakeHttpClient('https://example.com/.well-known/did.json', `{
+      "@context": "https://w3id.org/did/v1",
+      "id": "did:web:example.com",
+      "publicKey": [{
+           "id": "did:web:example.com#owner",
+           "type": "Secp256k1VerificationKey2018",
+           "owner": "did:web:example.com",
+           "ethereumAddress": "${admin}"
+      }],
+      "authentication": [{
+           "type": "Secp256k1SignatureAuthentication2018",
+           "publicKey": "did:web:example.com#owner"
+      }]
+    }`);
+
+    subject = await ProofPointRegistry.deploy(admin, web3, storageProvider, httpClient);
 
     type = 'http://open.provenance.org/ontology/ptf/v1/TestProofPoint';
     content = {
@@ -183,10 +201,13 @@ contract('ProofPoints', () => {
     expect(history.length).to.eq(3);
     expect(history[0].type).to.eq(ProofPointEventType.Issued);
     expect(history[0].issuer).to.eq(admin);
+    expect(history[0].transactionHash).to.not.be.null;
     expect(history[1].type).to.eq(ProofPointEventType.Revoked);
     expect(history[1].issuer).to.eq(admin);
+    expect(history[1].transactionHash).to.not.be.null;
     expect(history[2].type).to.eq(ProofPointEventType.Committed);
     expect(history[2].issuer).to.eq(admin);
+    expect(history[2].transactionHash).to.not.be.null;
   });
 
   it('should not upgrade a latest version repo', async() => {
@@ -270,5 +291,192 @@ contract('ProofPoints', () => {
 
     // events from before the upgrade should be present
     expect(history.length).to.eq(2);
+  });
+
+  it('did:web issuer happy path', async() => {
+    const result = await subject.issue(type, 'did:web:example.com', content);
+    expect(result.proofPointObject.issuer).to.eq('did:web:example.com');
+    const { isValid } = await subject.validate(result.proofPointObject);
+    expect(isValid).to.be.true;
+  });
+
+  it('did:web issuer wrong context', async() => {
+    httpClient._body = `{
+      "@context": "wrongContext",
+      "id": "did:web:example.com",
+      "publicKey": [{
+           "id": "did:web:example.com#owner",
+           "type": "Secp256k1VerificationKey2018",
+           "owner": "did:web:example.com",
+           "ethereumAddress": "${admin}"
+      }],
+      "authentication": [{
+           "type": "Secp256k1SignatureAuthentication2018",
+           "publicKey": "did:web:example.com#owner"
+      }]
+    }`;
+
+    try{
+      await subject.issue(type, 'did:web:example.com', content);
+    } catch(_){
+      return;
+    }
+
+    expect(false);
+  });
+
+  it('did:web issuer wrong id', async() => {
+    httpClient._body = `{
+      "@context": "https://w3id.org/did/v1",
+      "id": "wrongId",
+      "publicKey": [{
+           "id": "did:web:example.com#owner",
+           "type": "Secp256k1VerificationKey2018",
+           "owner": "did:web:example.com",
+           "ethereumAddress": "${admin}"
+      }],
+      "authentication": [{
+           "type": "Secp256k1SignatureAuthentication2018",
+           "publicKey": "did:web:example.com#owner"
+      }]
+    }`;
+
+    try{
+      await subject.issue(type, 'did:web:example.com', content);
+    } catch(_){
+      return;
+    }
+
+    expect(false);
+  });
+
+  it('did:web issuer wrong publicKey type', async() => {
+    httpClient._body = `{
+      "@context": "https://w3id.org/did/v1",
+      "id": "did:web:example.com",
+      "publicKey": [{
+           "id": "did:web:example.com#owner",
+           "type": "wrongType",
+           "owner": "did:web:example.com",
+           "ethereumAddress": "${admin}"
+      }],
+      "authentication": [{
+           "type": "Secp256k1SignatureAuthentication2018",
+           "publicKey": "did:web:example.com#owner"
+      }]
+    }`;
+
+    try{
+      await subject.issue(type, 'did:web:example.com', content);
+    } catch(_){
+      return;
+    }
+
+    expect(false);
+  });
+
+  it('did:web issuer wrong publicKey owner', async() => {
+    httpClient._body = `{
+      "@context": "https://w3id.org/did/v1",
+      "id": "did:web:example.com",
+      "publicKey": [{
+           "id": "did:web:example.com#owner",
+           "type": "Secp256k1VerificationKey2018",
+           "owner": "wrongOwner",
+           "ethereumAddress": "${admin}"
+      }],
+      "authentication": [{
+           "type": "Secp256k1SignatureAuthentication2018",
+           "publicKey": "did:web:example.com#owner"
+      }]
+    }`;
+
+    try{
+      await subject.issue(type, 'did:web:example.com', content);
+    } catch(_){
+      return;
+    }
+
+    expect(false);
+  });
+
+  it('did:web issuer wrong publicKey ethereumAddress', async() => {
+    httpClient._body = `{
+      "@context": "https://w3id.org/did/v1",
+      "id": "did:web:example.com",
+      "publicKey": [{
+           "id": "did:web:example.com#owner",
+           "type": "Secp256k1VerificationKey2018",
+           "owner": "did:web:example.com",
+           "ethereumAddress": "invalidAddress"
+      }],
+      "authentication": [{
+           "type": "Secp256k1SignatureAuthentication2018",
+           "publicKey": "did:web:example.com#owner"
+      }]
+    }`;
+
+    try{
+      await subject.issue(type, 'did:web:example.com', content);
+    } catch(_){
+      return;
+    }
+
+    expect(false);
+  });
+
+  it('should handle did:web issuer on revoke', async() => {
+    const result = await subject.issue(type, 'did:web:example.com', content);
+    await subject.revokeById(result.proofPointId);
+    const { isValid } = await subject.validate(result.proofPointObject);
+    expect(isValid).to.be.false;
+  });
+
+  it('should handle did:web issuer on validate', async() => {
+
+    // issue a proof point from a web domain which maps to an ethereum address
+    const { proofPointId } = await subject.issue(type, 'did:web:example.com', content);
+
+    // it should be valid
+    let validity = await subject.validateById(proofPointId);
+    expect(validity.isValid).to.be.true;
+
+    // remap the web domain to a different ethereum address
+    httpClient._body = `{
+      "@context": "https://w3id.org/did/v1",
+      "id": "did:web:example.com",
+      "publicKey": [{
+           "id": "did:web:example.com#owner",
+           "type": "Secp256k1VerificationKey2018",
+           "owner": "did:web:example.com",
+           "ethereumAddress": "0x0000000000000000000000000000000000000000"
+      }],
+      "authentication": [{
+           "type": "Secp256k1SignatureAuthentication2018",
+           "publicKey": "did:web:example.com#owner"
+      }]
+    }`;
+
+    // now the proof point should be invalid
+    validity = await subject.validateById(proofPointId);
+    expect(validity.isValid).to.be.false;
+  });
+
+  it('should handle did:web issuer when DID document is missing', async() => {
+
+    // issue a proof point from a web domain which maps to an ethereum address
+    const { proofPointId } = await subject.issue(type, 'did:web:example.com', content);
+
+    // it should be valid
+    let validity = await subject.validateById(proofPointId);
+    expect(validity.isValid).to.be.true;
+
+    // remap the web domain to an invalid document
+    httpClient._body = '';
+
+    // now the proof point should be invalid
+    validity = await subject.validateById(proofPointId);
+    expect(validity.isValid).to.be.false;
+    expect(validity.statusMessage).to.eq(`The issuer 'did:web:example.com' could not be resolved to an Ethereum address.`);
   });
 });

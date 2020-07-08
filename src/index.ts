@@ -1,5 +1,6 @@
 import { 
   Web3,
+  HttpClient,
   ProofPoint, 
   ProofPointIssueResult, 
   ProofPointRegistry, 
@@ -12,6 +13,7 @@ import { StorageProvider, IpfsStorageProvider, IpfsStorageProviderSettings } fro
 
 export { 
   Web3,
+  HttpClient,
   ProofPointRegistry, 
   StorageProvider, 
   IpfsStorageProvider, 
@@ -23,3 +25,4 @@ export {
   ProofPointEventType,
   ProofPointEvent
 }
+

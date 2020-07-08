@@ -5,13 +5,14 @@ const ProofPointRegistryAbi = [
   undefined,
   ProofPointRegistryAbiV1,
   ProofPointRegistryAbiV2
-]
+];
 
 import ProofPointRegistryStorage1Abi from '../build/contracts/ProofPointRegistryStorage1.json';
 
 import { StorageProvider, IpfsStorageProvider } from './storage';
 import { Contract } from 'web3-eth-contract';
 import Web3 from 'web3';
+import { HTTP } from 'http-call';
 
 import canonicalizeJson = require('canonicalize');
 import localISOdt = require('local-iso-dt');
@@ -65,6 +66,10 @@ enum ProofPointStatus {
    */
   NotFound,
   /**
+   * The issuer of the Proof Point could not be resolved to an Ethereum address
+   */
+  UnknownIssuer,
+  /**
    * The Proof Point has passed all of the validation checks. If you trust the issuer you can trust the meaning
    * of the Proof Point.
    */
@@ -106,24 +111,41 @@ interface ProofPointEvent {
    * The ID of the Proof Point.
    */
   proofPointId: string;
+  /**
+   * The Ethereum transaction hash of the transaction that emitted this event
+   */
+  transactionHash: string;
 }
 
 const PROOF_TYPE = 'https://open.provenance.org/ontology/ptf/v2/ProvenanceProofType1';
 const web3 = new Web3();
+
+interface HttpClient {
+    fetch(url: string): Promise<string>;
+}
+
+class RealHttpClient {
+    async fetch(url: string): Promise<string> {
+        const { body } = await HTTP.get(url);
+        return String(body);
+    }
+}
 
 class ProofPointRegistry {
   private _web3: Web3;
   private _address: string;
   private _registry: Contract;
   private _storage: StorageProvider;
+  private _httpClient: HttpClient;
 
   /**
    * Creates an instance of Proof Point registry for interacting with a pre-existing deployment of the registry contracts.
    * @param address the Ethereum address of the deployed eternal storage contract.
    * @param web3 a web instance to use for interacting with the Ethereum blockchain.
    * @param storage a {@link StorageProvider} to use for storing/retrieving off-chain data or null to use the default implementation.
+   * @param httpClient a {@link HttpClient} to use for fetching DID documents in order to support did:web issuers or null to use the default implementation.
    */
-  constructor(address: string, web3: Web3, storage: StorageProvider | null) {
+  constructor(address: string, web3: Web3, storage: StorageProvider | null = null, httpClient: HttpClient | null = null) {
     this._address = address;
     this._web3 = web3;
     this._storage = storage;
@@ -136,6 +158,12 @@ class ProofPointRegistry {
         protocol: 'https'
       });
     }
+
+    if (httpClient === null ){
+      this._httpClient = new RealHttpClient();
+    } else {
+        this._httpClient = httpClient;
+    }
   }
 
   /**
@@ -144,12 +172,14 @@ class ProofPointRegistry {
    * @param fromAddress the Ethereum account to use for signing transactions. This will become the admin account that must be used for all future smart contract upgrades.
    * @param web3 a web3 instance to use for interacting with the Ethereum blockchain.
    * @param storage a {@link StorageProvider} to use for storing/retrieving off-chain data, or null to use the default provider.
+   * @param httpClient a {@link HttpClient} to use for fetching DID documents in order to support did:web issuers or null to use the default implementation.
    * @returns a {@link ProofPointRegistry} for interacting with the newly deployed contracts. 
    */
   static async deploy(
     fromAddress: string,
     web3: Web3, 
-    storage: StorageProvider | null
+    storage: StorageProvider | null = null,
+    httpClient: HttpClient | null = null
   ): Promise<ProofPointRegistry>{
     // deploy eternal storage contract
     const eternalStorageContract = new web3.eth.Contract(ProofPointRegistryStorage1Abi.abi as any);
@@ -170,7 +200,7 @@ class ProofPointRegistry {
       .send({from: fromAddress, gas: GAS_LIMIT});
 
     // construct and return a ProofPointRegistry object for the newly deployed setup
-    const registry = new ProofPointRegistry(eternalStorage.options.address, web3, storage);
+    const registry = new ProofPointRegistry(eternalStorage.options.address, web3, storage, httpClient);
     await registry.init();
 
     return registry;
@@ -253,20 +283,20 @@ class ProofPointRegistry {
   /**
    * Issue a new Proof Point
    * @param type A URI string identifying the type of Proof Point to issue. This may be one of the values defined in the Provenance ontology.
-   * @param issuerAddress The Ethereum address from which to issue the Proof Point. This must be an account that you control and must be sufficiently funded to pay for the issuance transaction.
+   * @param issuer A string identifying the Ethereum address from which to issue the Proof Point. This may be either an Ethereum address or a did:web URI. It must represent an account that you control and must be sufficiently funded to pay for the issuance transaction.
    * @param content A javascript object representing the type specific content of the payload. The shape of the data should conform to the specification of the @param type parameter.
    * @param [validFromDate] Optional date from which the issued Proof Point will be valid. If null then there is no earliest date at which the Proof Point is valid.
    * @param [validUntilDate] Optional date until which the issued Proof Point will be valid. If null then there is no latest date at which the Proof Point is valid.
    * @returns A ProofPointIssueResult describing the result of the action.
    */
   async issue(type: string,
-    issuerAddress: string,
+    issuer: string,
     content: unknown,
     validFromDate: Date | null = null,
     validUntilDate: Date | null = null
   ): Promise<ProofPointIssueResult> {
     return this._issue(type,
-      issuerAddress,
+      issuer,
       content,
       this._registry.methods.issue,
       validFromDate,
@@ -277,7 +307,7 @@ class ProofPointRegistry {
   /**
    * Commit a new Proof Point
    * @param type A URI string identifying the type of Proof Point to issue. This may be one of the values defined in the Provenance ontology.
-   * @param issuerAddress The Ethereum address from which to issue the Proof Point. This must be an account that you control and must be sufficiently funded to pay for the issuance transaction.
+   * @param issuer A string identifying the Ethereum address from which to commit the Proof Point. This may be either an Ethereum address or a did:web URI. It must represent an account that you control and must be sufficiently funded to pay for the issuance transaction.
    * @param content A javascript object representing the type specific content of the payload. The shape of the data should conform to the specification of the @param type parameter.
    * @param [validFromDate] Optional date from which the issued Proof Point will be valid. If null then there is no earliest date at which the Proof Point is valid.
    * @param [validUntilDate] Optional date until which the issued Proof Point will be valid. If null then there is no latest date at which the Proof Point is valid.
@@ -321,13 +351,18 @@ class ProofPointRegistry {
       throw new Error("Registry mismatch");
     }
 
-    const { hash } = await this.canonicalizeAndStoreObject(proofPointObject);
+    const issuerAddress = await this._resolveIssuerToEthereumAddress(proofPointObject.issuer);
+    if(issuerAddress === null) {
+      throw new Error("Unknown issuer");
+    }
+
+    const { hash } = await this._canonicalizeAndStoreObject(proofPointObject);
     const proofPointIdBytes = web3.utils.asciiToHex(hash);
     await this
       ._registry
       .methods
       .revoke(proofPointIdBytes)
-      .send({ from: proofPointObject.issuer, gas: GAS_LIMIT });
+      .send({ from: issuerAddress, gas: GAS_LIMIT });
   }
 
   /**
@@ -386,13 +421,24 @@ class ProofPointRegistry {
       };
     }
 
-    const { hash } = await this.canonicalizeAndStoreObject(proofPointObject);
+    const issuerAddress = await this._resolveIssuerToEthereumAddress(proofPointObject.issuer);
+
+    if(issuerAddress === null) {
+      return {
+        isValid: false,
+        statusCode: ProofPointStatus.UnknownIssuer,
+        statusMessage: `The issuer '${proofPointObject.issuer}' could not be resolved to an Ethereum address.`
+      };
+    }
+    
+
+    const { hash } = await this._canonicalizeAndStoreObject(proofPointObject);
     const proofPointIdBytes = web3.utils.asciiToHex(hash);
 
     const isValid = await this
       ._registry
       .methods
-      .validate(proofPointObject.issuer, proofPointIdBytes)
+      .validate(issuerAddress, proofPointIdBytes)
       .call();
 
     if (isValid) {
@@ -494,7 +540,8 @@ class ProofPointRegistry {
             blockNumber: ev.blockNumber,
             type: this._eventNameToEventType(ev.event),
             issuer: ev.returnValues._issuer,
-            proofPointId: proofPointId
+            proofPointId: proofPointId,
+            transactionHash: ev.transactionHash
           }
         });
 
@@ -512,21 +559,24 @@ class ProofPointRegistry {
   }
 
   private async _issue(type: string,
-    issuerAddress: string,
+    issuer: string,
     content: unknown,
     issueFunction: any,
     validFromDate: Date | null = null,
     validUntilDate: Date | null = null
   ): Promise<ProofPointIssueResult> {
+
+    const issuerAddress = await this._resolveIssuerToEthereumAddress(issuer);
+
     const proofPointObject = this.buildJson(
       type,
-      issuerAddress,
+      issuer,
       content,
       validFromDate,
       validUntilDate
     );
 
-    const { hash, canonicalisedObject } = await this.canonicalizeAndStoreObject(proofPointObject);
+    const { hash, canonicalisedObject } = await this._canonicalizeAndStoreObject(proofPointObject);
     const proofPointIdBytes = web3.utils.asciiToHex(hash);
 
     const transactionReceipt = await issueFunction(proofPointIdBytes)
@@ -541,12 +591,11 @@ class ProofPointRegistry {
 
   private buildJson(
     type: string,
-    issuerAddress: string,
+    issuer: string,
     content: unknown,
     validFromDate: Date | null = null,
     validUntilDate: Date | null = null
   ): ProofPoint {
-    const issuerAddressChecksum = web3.utils.toChecksumAddress(issuerAddress);
 
     const proofPoint: ProofPoint = {
       '@context': [
@@ -554,13 +603,13 @@ class ProofPointRegistry {
         'https://provenance.org/ontology/ptf/v2'
       ],
       type: ['VerifiableCredential', type],
-      issuer: issuerAddressChecksum,
+      issuer: issuer,
       credentialSubject: content,
       proof: {
         type: PROOF_TYPE,
         registryRoot: this._address,
         proofPurpose: 'assertionMethod',
-        verificationMethod: issuerAddressChecksum
+        verificationMethod: issuer
       },
       validFrom: undefined,
       validUntil: undefined
@@ -581,6 +630,41 @@ class ProofPointRegistry {
     return proofPoint.proof.registryRoot.toLowerCase() === this._address.toLowerCase();
   }
 
+  private async _resolveIssuerToEthereumAddress(issuer: string): Promise<string> {
+    if (/^0x[a-fA-F0-9]{40}$/.test(issuer)) {
+        return web3.utils.toChecksumAddress(issuer);
+    }
+
+    if(/^did\:web\:.+$/.test(issuer)) {
+        const didDocumentUri = `https://${issuer.substr(8)}/.well-known/did.json`;
+
+        try {
+
+            const body = await this._httpClient.fetch(didDocumentUri);
+            const didDocument = JSON.parse(body);
+
+            if (didDocument['@context'] !== 'https://w3id.org/did/v1'
+                || didDocument.id !== issuer
+                || typeof didDocument.publicKey === 'undefined'
+                || didDocument.publicKey[0].type !== 'Secp256k1VerificationKey2018'
+                || didDocument.publicKey[0].owner !== issuer
+                || !/^0x[a-fA-F0-9]{40}$/.test(didDocument.publicKey[0].ethereumAddress)
+            ) {
+              // DID document is invalid or unsupported
+              return null;
+            }
+
+            return web3.utils.toChecksumAddress(didDocument.publicKey[0].ethereumAddress);
+        } catch(e) {
+          // DID document could not be fetched
+          return null;
+        }
+    }
+
+    // Unsupported issuer format
+    return null;
+  }
+
   private static removeEmptyFields(obj: any): any {
     Object.keys(obj).forEach((key) => {
     if (obj[key] && typeof obj[key] === 'object') ProofPointRegistry.removeEmptyFields(obj[key]);
@@ -590,7 +674,7 @@ class ProofPointRegistry {
     return obj;
   }
 
-  private async canonicalizeAndStoreObject(dataObject: any): Promise<{hash: string; canonicalisedObject: any}> {
+  private async _canonicalizeAndStoreObject(dataObject: any): Promise<{hash: string; canonicalisedObject: any}> {
     // TODO enforce SHA-256 hash alg
     // TODO add method to compute hash without storing
 
@@ -610,6 +694,7 @@ class ProofPointRegistry {
 
 export { 
   Web3,
+  HttpClient,
   ProofPoint, 
   ProofPointIssueResult, 
   ProofPointRegistry, 
@@ -618,3 +703,4 @@ export {
   ProofPointEventType,
   ProofPointEvent 
 };
+

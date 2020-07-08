@@ -1,3 +1,13 @@
+# NEXT
+
+## New Features
+
+- `transactionHash` field added to `ProofPointEvent` type.
+
+## Bug Fixes
+
+## Breaking Changes
+
 # 3.0.0
 
 ## New Features
