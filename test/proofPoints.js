@@ -201,10 +201,13 @@ contract('ProofPoints', () => {
     expect(history.length).to.eq(3);
     expect(history[0].type).to.eq(ProofPointEventType.Issued);
     expect(history[0].issuer).to.eq(admin);
+    expect(history[0].transactionHash).to.not.be.null;
     expect(history[1].type).to.eq(ProofPointEventType.Revoked);
     expect(history[1].issuer).to.eq(admin);
+    expect(history[1].transactionHash).to.not.be.null;
     expect(history[2].type).to.eq(ProofPointEventType.Committed);
     expect(history[2].issuer).to.eq(admin);
+    expect(history[2].transactionHash).to.not.be.null;
   });
 
   it('should not upgrade a latest version repo', async() => {
