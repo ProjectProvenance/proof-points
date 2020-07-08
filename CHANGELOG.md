@@ -1,12 +1,17 @@
-# NEXT
+# 3.1.0
 
 ## New Features
 
 - `transactionHash` field added to `ProofPointEvent` type.
+- Added support for `did:web` issuer. This is now possible: `await api.issue(<type>, 'did:web:example.com', <content>);`.
 
 ## Bug Fixes
 
+None
+
 ## Breaking Changes
+
+None
 
 # 3.0.0
 
