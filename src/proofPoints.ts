@@ -125,8 +125,9 @@ interface HttpClient {
 
 class RealHttpClient {
     async fetch(url: string): Promise<string> {
-        const { body } = await HTTP.get(url);
-        return String(body);
+      const response = await fetch(url);
+      const body = await response.text();
+      return body;
     }
 }
 
@@ -352,7 +353,7 @@ class ProofPointRegistry {
 
     const issuerAddress = await this._resolveIssuerToEthereumAddress(proofPointObject.issuer);
     if(issuerAddress === null) {
-      throw new Error("Unknown issuer");
+      throw new Error(`Cannot resolve issuer: ${proofPointObject.issuer}`);
     }
 
     const { hash } = await this._canonicalizeAndStoreObject(proofPointObject);
@@ -568,6 +569,9 @@ class ProofPointRegistry {
   ): Promise<ProofPointIssueResult> {
 
     const issuerAddress = await this._resolveIssuerToEthereumAddress(issuer);
+    if(issuerAddress === null) {
+      throw new Error(`Cannot resolve issuer: ${issuer}`);
+    }
 
     const proofPointObject = this.buildJson(
       type,
@@ -640,8 +644,7 @@ class ProofPointRegistry {
         const didDocumentUri = `https://${issuer.substr(8)}/.well-known/did.json`;
 
         try {
-            const response = await fetch(didDocumentUri);
-            const body = await response.text();
+            const body = await this._httpClient.fetch(didDocumentUri);
             const didDocument = JSON.parse(body);
             if (didDocument['@context'] !== 'https://w3id.org/did/v1'
                 || didDocument.id !== issuer
