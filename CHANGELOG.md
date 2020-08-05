@@ -1,3 +1,17 @@
+# NEXT
+
+## New Features
+
+None
+
+## Bug Fixes
+
+- Fixed: `did:web` issuer doesn't work in browser. 
+
+## Breaking Changes
+
+None
+
 # 3.1.0
 
 ## New Features

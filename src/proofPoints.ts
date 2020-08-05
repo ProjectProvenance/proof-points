@@ -12,7 +12,6 @@ import ProofPointRegistryStorage1Abi from '../build/contracts/ProofPointRegistry
 import { StorageProvider, IpfsStorageProvider } from './storage';
 import { Contract } from 'web3-eth-contract';
 import Web3 from 'web3';
-import { HTTP } from 'http-call';
 
 import canonicalizeJson = require('canonicalize');
 import localISOdt = require('local-iso-dt');
@@ -641,10 +640,9 @@ class ProofPointRegistry {
         const didDocumentUri = `https://${issuer.substr(8)}/.well-known/did.json`;
 
         try {
-
-            const body = await this._httpClient.fetch(didDocumentUri);
+            const response = await fetch(didDocumentUri);
+            const body = await response.text();
             const didDocument = JSON.parse(body);
-
             if (didDocument['@context'] !== 'https://w3id.org/did/v1'
                 || didDocument.id !== issuer
                 || typeof didDocument.publicKey === 'undefined'
@@ -658,6 +656,7 @@ class ProofPointRegistry {
 
             return web3.utils.toChecksumAddress(didDocument.publicKey[0].ethereumAddress);
         } catch(e) {
+          console.log(e);
           // DID document could not be fetched
           return null;
         }
