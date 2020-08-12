@@ -1,28 +1,31 @@
-import { 
+import {
   Web3,
   HttpClient,
-  ProofPoint, 
-  ProofPointIssueResult, 
-  ProofPointRegistry, 
-  ProofPointValidateResult, 
+  ProofPoint,
+  ProofPointIssueResult,
+  ProofPointRegistry,
+  ProofPointValidateResult,
   ProofPointStatus,
   ProofPointEventType,
-  ProofPointEvent 
-} from './proofPoints';
-import { StorageProvider, IpfsStorageProvider, IpfsStorageProviderSettings } from './storage';
+  ProofPointEvent,
+} from "./proofPoints";
+import {
+  StorageProvider,
+  IpfsStorageProvider,
+  IpfsStorageProviderSettings,
+} from "./storage";
 
-export { 
+export {
   Web3,
   HttpClient,
-  ProofPointRegistry, 
-  StorageProvider, 
-  IpfsStorageProvider, 
+  ProofPointRegistry,
+  StorageProvider,
+  IpfsStorageProvider,
   IpfsStorageProviderSettings,
   ProofPoint,
   ProofPointIssueResult,
   ProofPointValidateResult,
   ProofPointStatus,
   ProofPointEventType,
-  ProofPointEvent
-}
-
+  ProofPointEvent,
+};

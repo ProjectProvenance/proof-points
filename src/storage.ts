@@ -1,4 +1,4 @@
-import IPFS from 'ipfs-mini';
+import IPFS from "ipfs-mini";
 
 interface StorageProviderAddResult {
   digest: string;
@@ -28,12 +28,12 @@ class IpfsStorageProvider {
 
   async add(msg: string): Promise<StorageProviderAddResult> {
     const result: string = await this.ipfs.add(Buffer.from(msg));
-    return ({ digest: result });
+    return { digest: result };
   }
 
   async get(digest: string): Promise<StorageProviderGetResult> {
     const result = await this.ipfs.cat(digest);
-    return ({ data: result });
+    return { data: result };
   }
 }
 

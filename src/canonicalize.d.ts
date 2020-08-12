@@ -1,1 +1,1 @@
-declare module 'canonicalize';
+declare module "canonicalize";

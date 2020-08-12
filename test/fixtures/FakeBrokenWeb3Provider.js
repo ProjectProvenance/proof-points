@@ -1,3 +1,3 @@
-const Web3 = require('web3');
+const Web3 = require("web3");
 
-module.exports = new Web3.providers.HttpProvider('http://not.found');
+module.exports = new Web3.providers.HttpProvider("http://not.found");

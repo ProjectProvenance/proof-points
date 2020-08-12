@@ -10,7 +10,7 @@
   "scripts": {
     "compile-typescript": "tsc --resolveJsonModule",
     "compile-solidity": "truffle compile",
-    "lint-typescript": "eslint .",
+    "lint-typescript": "eslint **/*.ts",
     "test": "truffle test"
   },
   "prePublish": "tsc --resolveJsonModule",
@@ -29,18 +29,19 @@
     "canonicalize": "^1.0.1",
     "ipfs-mini": "1.1.5",
     "local-iso-dt": "^1.2.2",
-    "web3": "^1.2.5",
-    "http-call": "^5.3.0"
+    "web3": "^1.2.5"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "latest",
+    "@typescript-eslint/parser": "latest",
     "blueimp-md5": "2.12.0",
     "chai": "4.2.0",
     "eslint": "6.8.0",
-    "@typescript-eslint/parser": "latest",
-    "@typescript-eslint/eslint-plugin": "latest",
+    "eslint-plugin-prettier": "^3.1.4",
     "expect-to-be-a-promise": "1.0.2",
     "mocha": "^7.1.1",
-    "truffle": "5.1.26",
+    "prettier": "^2.0.5",
+    "truffle": "^5.1.39",
     "typescript": "^3.8.3"
   }
 }

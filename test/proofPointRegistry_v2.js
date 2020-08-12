@@ -1,10 +1,12 @@
-const Web3 = require('web3');
-const { assert } = require('chai');
+const Web3 = require("web3");
+const { assert } = require("chai");
 
-const ppsRegistryEternalStorage1 = artifacts.require('./ProofPointRegistryStorage1.sol');
-const ppsRegistry2 = artifacts.require('./ProofPointRegistry_v2.sol');
+const ppsRegistryEternalStorage1 = artifacts.require(
+  "./ProofPointRegistryStorage1.sol"
+);
+const ppsRegistry2 = artifacts.require("./ProofPointRegistry_v2.sol");
 
-contract('ProofPointRegistry_v2', (accounts) => {
+contract("ProofPointRegistry_v2", (accounts) => {
   const admin = accounts[0];
   const user1 = accounts[1];
   const user2 = accounts[2];
@@ -14,75 +16,75 @@ contract('ProofPointRegistry_v2', (accounts) => {
   const pp4 = Web3.utils.randomHex(32);
   let subject;
 
-  beforeEach(async() => {
+  beforeEach(async () => {
     const storage = await ppsRegistryEternalStorage1.new({ from: admin });
     subject = await ppsRegistry2.new(storage.address, { from: admin });
     await storage.setOwner(subject.address, { from: admin });
-  })
+  });
 
-  it('user can issue pp in own name', async() => {
+  it("user can issue pp in own name", async () => {
     await subject.issue(pp1, { from: user1 });
     assert(await subject.validate(user1, pp1));
   });
 
-  it('user cannot issue pp in other name', async() => {
+  it("user cannot issue pp in other name", async () => {
     await subject.issue(pp1, { from: user1 });
-    assert(!await subject.validate(user2, pp1));
+    assert(!(await subject.validate(user2, pp1)));
   });
 
-  it('only specified pp is issued', async() => {
+  it("only specified pp is issued", async () => {
     await subject.issue(pp1, { from: user1 });
-    assert(!await subject.validate(user1, pp2));
+    assert(!(await subject.validate(user1, pp2)));
   });
 
-  it('issuer can revoke pp', async() => {
+  it("issuer can revoke pp", async () => {
     await subject.issue(pp1, { from: user1 });
     await subject.revoke(pp1, { from: user1 });
-    assert(!await subject.validate(user1, pp1));
+    assert(!(await subject.validate(user1, pp1)));
   });
 
-  it('non-issuer cannot revoke pp', async() => {
+  it("non-issuer cannot revoke pp", async () => {
     await subject.issue(pp1, { from: user1 });
     await subject.revoke(pp1, { from: user2 });
     assert(await subject.validate(user1, pp1));
   });
 
-  it('user can commit pp in own name', async() => {
+  it("user can commit pp in own name", async () => {
     await subject.commit(pp1, { from: user1 });
     assert(await subject.validate(user1, pp1));
   });
 
-  it('user cannot commit pp in other name', async() => {
+  it("user cannot commit pp in other name", async () => {
     await subject.commit(pp1, { from: user1 });
-    assert(!await subject.validate(user2, pp1));
+    assert(!(await subject.validate(user2, pp1)));
   });
 
-  it('only specified pp is committed', async() => {
+  it("only specified pp is committed", async () => {
     await subject.commit(pp1, { from: user1 });
-    assert(!await subject.validate(user1, pp2));
+    assert(!(await subject.validate(user1, pp2)));
   });
 
-  it('committer cannot revoke pp', async() => {
+  it("committer cannot revoke pp", async () => {
     await subject.commit(pp1, { from: user1 });
     await subject.revoke(pp1, { from: user1 });
     assert(await subject.validate(user1, pp1));
   });
 
-  it('publishes issued Proof Point', async() => {
+  it("publishes issued Proof Point", async () => {
     const results = await subject.issue(pp1, { from: user1 });
     assert(results.logs[1].event === "Published");
     assert(results.logs[1].args._claim === pp1);
   });
 
-  it('publishes committed Proof Point', async() => {
+  it("publishes committed Proof Point", async () => {
     const results = await subject.commit(pp1, { from: user1 });
     assert(results.logs[1].event === "Published");
     assert(results.logs[1].args._claim === pp1);
   });
 
-  it('v2 is backwards compatible with v1', async() => {
+  it("v2 is backwards compatible with v1", async () => {
     // deploy a v1 registry
-    const ppsRegistry1 = artifacts.require('./ProofPointRegistry.sol');
+    const ppsRegistry1 = artifacts.require("./ProofPointRegistry.sol");
     const storage = await ppsRegistryEternalStorage1.new({ from: admin });
     const v1 = await ppsRegistry1.new(storage.address, { from: admin });
     await storage.setOwner(v1.address, { from: admin });
@@ -96,7 +98,10 @@ contract('ProofPointRegistry_v2', (accounts) => {
     const v2 = await ppsRegistry2.at(v1.address);
 
     // It should be possible to recover data from past events
-    const events = await v2.getPastEvents("AllEvents", {fromBlock: 0, toBlock: "latest"});
+    const events = await v2.getPastEvents("AllEvents", {
+      fromBlock: 0,
+      toBlock: "latest",
+    });
     const issueEvent = events[0];
     assert(issueEvent.event === "Issued");
     assert(issueEvent.returnValues._issuer === user1);
@@ -139,7 +144,7 @@ contract('ProofPointRegistry_v2', (accounts) => {
     assert(!isValid);
   });
 
-  it('v1 is forwards compatible with v2', async() => {
+  it("v1 is forwards compatible with v2", async () => {
     // deploy a v2 registry
     const storage = await ppsRegistryEternalStorage1.new({ from: admin });
     const v2 = await ppsRegistry2.new(storage.address, { from: admin });
@@ -151,11 +156,14 @@ contract('ProofPointRegistry_v2', (accounts) => {
     await v2.commit(pp1, { from: user1 });
 
     // use the v1 ABI to interact with the v2 registry
-    const ppsRegistry1 = artifacts.require('./ProofPointRegistry.sol');
+    const ppsRegistry1 = artifacts.require("./ProofPointRegistry.sol");
     const v1 = await ppsRegistry1.at(v2.address);
 
     // It should be possible to recover data from past events
-    const events = await v1.getPastEvents("AllEvents", {fromBlock: 0, toBlock: "latest"});
+    const events = await v1.getPastEvents("AllEvents", {
+      fromBlock: 0,
+      toBlock: "latest",
+    });
     const issueEvent = events[0];
     assert(issueEvent.event === "Issued");
     assert(issueEvent.returnValues._issuer === user1);
@@ -198,9 +206,9 @@ contract('ProofPointRegistry_v2', (accounts) => {
     assert(!isValid);
   });
 
-  it('upgrade from v1 works', async() => {
+  it("upgrade from v1 works", async () => {
     // deploy a v1 registry
-    const ppsRegistry1 = artifacts.require('./ProofPointRegistry.sol');
+    const ppsRegistry1 = artifacts.require("./ProofPointRegistry.sol");
     const storage = await ppsRegistryEternalStorage1.new({ from: admin });
     const v1 = await ppsRegistry1.new(storage.address, { from: admin });
     await storage.setOwner(v1.address, { from: admin });
@@ -227,23 +235,21 @@ contract('ProofPointRegistry_v2', (accounts) => {
     assert(isValid);
 
     // old registry cannot be used to issue
-    try{
+    try {
       await v1.issue(pp3, { from: user1 });
       assert(false);
-    } catch(e){
-    }
+    } catch (e) {}
 
     // old registry cannot be used to commit
-    try{
+    try {
       await v1.commit(pp4, { from: user1 });
       assert(false);
-    } catch(e){
-    }
+    } catch (e) {}
   });
 
-  it('version', async() => {
+  it("version", async () => {
     // Deploy a v1 registry
-    const ppsRegistry1 = artifacts.require('./ProofPointRegistry.sol');
+    const ppsRegistry1 = artifacts.require("./ProofPointRegistry.sol");
     const storage = await ppsRegistryEternalStorage1.new({ from: admin });
     const v1 = await ppsRegistry1.new(storage.address, { from: admin });
     await storage.setOwner(v1.address, { from: admin });

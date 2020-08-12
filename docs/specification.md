@@ -16,7 +16,7 @@ In general the system supports the following functionality:
 
 - A Proof Point is a claim by an `issuer` that a given property or relation is held by one or more `subject`s
 - The Proof Point is represented by a self-describing JSON document that meets the [W3C Verifiable Credentials](https://www.w3.org/TR/vc-data-model/) specification and an associated blockchain record which serves to authenticate (or by its absence revoke) the document 
-- The `issuer` is represented by an Ethereum address
+- The `issuer` is represented by an Ethereum address, or a [did:web](https://w3c-ccg.github.io/did-method-web/) identifier.
 - The `subject` may be represented by any URI
 - The system supports four functions
   1. `issue` by which an `issuer` may create and publish a new Proof Point
@@ -133,7 +133,7 @@ contract ProofPointRegistry {
 
 ## Proof Point Issuer
 
-Each Proof Point declares an `issuer` which is an Ethereum address represented either directly or using the did:web protocol. Where the `issuer` is represented using a did:web URI it will be neccesary to resolve this
+Each Proof Point declares an `issuer` which is an Ethereum address represented either directly or using the [did:web](https://w3c-ccg.github.io/did-method-web/) protocol. Where the `issuer` is represented using a `did:web` URI it will be necessary to resolve this
 to an Ethereum address in order to either `issue`, `commit` or `validate` it. For more information on how to
 do this please see the [did:web Decentralized Identifier Method Specification](https://w3c-ccg.github.io/did-method-web/)
 
