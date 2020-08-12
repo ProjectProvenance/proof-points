@@ -569,7 +569,7 @@ class ProofPointRegistry {
   ): Promise<ProofPointIssueResult> {
 
     const issuerAddress = await this._resolveIssuerToEthereumAddress(issuer);
-    if(issuerAddress === null) {
+    if (issuerAddress === null) {
       throw new Error(`Cannot resolve issuer: ${issuer}`);
     }
 

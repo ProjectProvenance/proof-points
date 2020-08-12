@@ -10,7 +10,13 @@ module.exports = {
   rules: {
     // Place to specify ESLint rules. Can be used to overwrite rules specified from the extended configs
     // e.g. "@typescript-eslint/explicit-function-return-type": "off",
+
+    "prettier/prettier": "error",
+    "func-names": 0
   },
+
+  plugins: ["prettier"],
+
   overrides: [
     {
       files: "**/*.js",

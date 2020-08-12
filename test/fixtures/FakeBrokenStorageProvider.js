@@ -1,15 +1,15 @@
 /* eslint-disable class-methods-use-this, no-unused-vars  */
 class FakeBrokenStorageProvider {
   constructor() {
-    this.name = 'FakeBrokenStorageProvider';
+    this.name = "FakeBrokenStorageProvider";
   }
 
   add() {
-    return Promise.reject(new Error('storage is down'));
+    return Promise.reject(new Error("storage is down"));
   }
 
   get() {
-    return Promise.reject(new Error('storage is down'));
+    return Promise.reject(new Error("storage is down"));
   }
 }
 

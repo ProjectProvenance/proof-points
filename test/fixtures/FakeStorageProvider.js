@@ -1,14 +1,14 @@
-const md5 = require('blueimp-md5')
+const md5 = require("blueimp-md5");
 
 class FakeStorageProvider {
   constructor() {
-    this.name = 'FakeStorageProvider';
-    this.store = {}
+    this.name = "FakeStorageProvider";
+    this.store = {};
   }
 
   add(msg) {
     const digest = md5(msg);
-    this.store[digest] = msg
+    this.store[digest] = msg;
     return Promise.resolve({ digest });
   }
 
