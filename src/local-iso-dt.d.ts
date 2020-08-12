@@ -1,1 +1,1 @@
-declare module 'local-iso-dt';
+declare module "local-iso-dt";

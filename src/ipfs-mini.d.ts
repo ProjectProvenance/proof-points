@@ -1,1 +1,1 @@
-declare module 'ipfs-mini';
+declare module "ipfs-mini";
