@@ -10,7 +10,7 @@
   "scripts": {
     "compile-typescript": "tsc --resolveJsonModule",
     "compile-solidity": "truffle compile",
-    "lint-typescript": "eslint .",
+    "lint-typescript": "eslint **/*.ts",
     "test": "truffle test"
   },
   "prePublish": "tsc --resolveJsonModule",
