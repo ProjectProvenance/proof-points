@@ -24,23 +24,38 @@ contract("ProofPoints", () => {
     const accounts = await web3.eth.getAccounts();
     [admin] = accounts;
 
-    httpClient = new FakeHttpClient(
-      "https://example.com/.well-known/did.json",
-      `{
-      "@context": "https://w3id.org/did/v1",
-      "id": "did:web:example.com",
-      "publicKey": [{
-           "id": "did:web:example.com#owner",
-           "type": "Secp256k1VerificationKey2018",
-           "owner": "did:web:example.com",
-           "ethereumAddress": "${admin}"
-      }],
-      "authentication": [{
-           "type": "Secp256k1SignatureAuthentication2018",
-           "publicKey": "did:web:example.com#owner"
-      }]
-    }`
-    );
+    httpClient = new FakeHttpClient({
+      "https://example.com/.well-known/did.json": `
+      {
+        "@context": "https://w3id.org/did/v1",
+        "id": "did:web:example.com",
+        "publicKey": [{
+            "id": "did:web:example.com#owner",
+            "type": "Secp256k1VerificationKey2018",
+            "owner": "did:web:example.com",
+            "ethereumAddress": "${admin}"
+        }],
+        "authentication": [{
+            "type": "Secp256k1SignatureAuthentication2018",
+            "publicKey": "did:web:example.com#owner"
+        }]
+      }`,
+      "https://example.com/subpath/did.json": `
+      {
+        "@context": "https://w3id.org/did/v1",
+        "id": "did:web:example.com:subpath",
+        "publicKey": [{
+            "id": "did:web:example.com:subpath#owner",
+            "type": "Secp256k1VerificationKey2018",
+            "owner": "did:web:example.com:subpath",
+            "ethereumAddress": "${admin}"
+        }],
+        "authentication": [{
+            "type": "Secp256k1SignatureAuthentication2018",
+            "publicKey": "did:web:example.com:subpath#owner"
+        }]
+      }`
+    });
 
     subject = await ProofPointRegistry.deploy(
       admin,
@@ -328,8 +343,19 @@ contract("ProofPoints", () => {
     expect(isValid).to.be.true;
   });
 
+  it("did:web issuer subpath", async () => {
+    const result = await subject.issue(
+      type,
+      "did:web:example.com:subpath",
+      content
+    );
+    expect(result.proofPointObject.issuer).to.eq("did:web:example.com:subpath");
+    const { isValid } = await subject.validate(result.proofPointObject);
+    expect(isValid).to.be.true;
+  });
+
   it("did:web issuer wrong context", async () => {
-    httpClient._body = `{
+    httpClient._responses["https://example.com/.well-known/did.json"] = `{
       "@context": "wrongContext",
       "id": "did:web:example.com",
       "publicKey": [{
@@ -354,7 +380,7 @@ contract("ProofPoints", () => {
   });
 
   it("did:web issuer wrong id", async () => {
-    httpClient._body = `{
+    httpClient._responses["https://example.com/.well-known/did.json"] = `{
       "@context": "https://w3id.org/did/v1",
       "id": "wrongId",
       "publicKey": [{
@@ -379,7 +405,7 @@ contract("ProofPoints", () => {
   });
 
   it("did:web issuer wrong publicKey type", async () => {
-    httpClient._body = `{
+    httpClient._responses["https://example.com/.well-known/did.json"] = `{
       "@context": "https://w3id.org/did/v1",
       "id": "did:web:example.com",
       "publicKey": [{
@@ -404,7 +430,7 @@ contract("ProofPoints", () => {
   });
 
   it("did:web issuer wrong publicKey owner", async () => {
-    httpClient._body = `{
+    httpClient._responses["https://example.com/.well-known/did.json"] = `{
       "@context": "https://w3id.org/did/v1",
       "id": "did:web:example.com",
       "publicKey": [{
@@ -429,7 +455,7 @@ contract("ProofPoints", () => {
   });
 
   it("did:web issuer wrong publicKey ethereumAddress", async () => {
-    httpClient._body = `{
+    httpClient._responses["https://example.com/.well-known/did.json"] = `{
       "@context": "https://w3id.org/did/v1",
       "id": "did:web:example.com",
       "publicKey": [{
@@ -473,7 +499,7 @@ contract("ProofPoints", () => {
     expect(validity.isValid).to.be.true;
 
     // remap the web domain to a different ethereum address
-    httpClient._body = `{
+    httpClient._responses["https://example.com/.well-known/did.json"] = `{
       "@context": "https://w3id.org/did/v1",
       "id": "did:web:example.com",
       "publicKey": [{
@@ -506,7 +532,7 @@ contract("ProofPoints", () => {
     expect(validity.isValid).to.be.true;
 
     // remap the web domain to an invalid document
-    httpClient._body = "";
+    httpClient._responses["https://example.com/.well-known/did.json"] = "";
 
     // now the proof point should be invalid
     validity = await subject.validateById(proofPointId);

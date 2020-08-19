@@ -677,6 +677,24 @@ class ProofPointRegistry {
     );
   }
 
+  /**
+   * Did to url. Translate a did:web identifier to the URL at which the corresponding DID document can be found
+   * according to spec at https://w3c-ccg.github.io/did-method-web/#crud-operation-definitions
+   * @param did a valid did:web ID string
+   * @returns an https URL string representing the location of the corresponding DID document
+   */
+  private didToUrl(did: string): string {
+    const parts = did.split(":");
+    if (parts.length === 3) {
+      // did:web:<x>
+      return `https://${parts[2]}/.well-known/did.json`;
+    } else {
+      // did:web:<a>:<b>:...:<z>
+      const path = parts.slice(2).join("/");
+      return `https://${path}/did.json`;
+    }
+  }
+
   private async _resolveIssuerToEthereumAddress(
     issuer: string
   ): Promise<string> {
@@ -685,8 +703,7 @@ class ProofPointRegistry {
     }
 
     if (/^did\:web\:.+$/.test(issuer)) {
-      const didDocumentUri = `https://${issuer.substr(8)}/.well-known/did.json`;
-
+      const didDocumentUri = this.didToUrl(issuer);
       try {
         const body = await this._httpClient.fetch(didDocumentUri);
         const didDocument = JSON.parse(body);

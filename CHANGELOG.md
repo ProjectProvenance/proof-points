@@ -7,6 +7,7 @@ None
 ## Bug Fixes
 
 - Fixed: `did:web` issuer doesn't work in browser. 
+- Fixed: `did:web` issuer doesn't support ids with subpaths such as `did:web:example.com:subpath`
 
 ## Breaking Changes
 

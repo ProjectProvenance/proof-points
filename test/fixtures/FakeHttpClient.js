@@ -1,14 +1,13 @@
 class FakeHttpClient {
-  constructor(url, body) {
-    this._url = url;
-    this._body = body;
+  constructor(responses) {
+    this._responses = responses;
   }
 
   async fetch(url) {
-    if (url != this._url) {
+    if (!url in this._responses) {
       throw new Error("unexpected URL fetched");
     }
-    return Promise.resolve(this._body);
+    return Promise.resolve(this._responses[url]);
   }
 }
 
