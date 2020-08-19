@@ -686,8 +686,10 @@ class ProofPointRegistry {
   private didToUrl(did: string): string {
     const parts = did.split(":");
     if (parts.length === 3) {
+      // did:web:<x>
       return `https://${parts[2]}/.well-known/did.json`;
     } else {
+      // did:web:<a>:<b>:...:<z>
       const path = parts.slice(2).join("/");
       return `https://${path}/did.json`;
     }
