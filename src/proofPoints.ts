@@ -677,6 +677,12 @@ class ProofPointRegistry {
     );
   }
 
+  /**
+   * Did to url. Translate a did:web identifier to the URL at which the corresponding DID document can be found
+   * according to spec at https://w3c-ccg.github.io/did-method-web/#crud-operation-definitions
+   * @param did a valid did:web ID string
+   * @returns an https URL string representing the location of the corresponding DID document
+   */
   private didToUrl(did: string): string {
     const parts = did.split(":");
     if (parts.length === 3) {
