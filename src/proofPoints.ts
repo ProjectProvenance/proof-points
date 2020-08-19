@@ -677,6 +677,16 @@ class ProofPointRegistry {
     );
   }
 
+  private didToUrl(did: string): string {
+    const parts = did.split(":");
+    if (parts.length === 3) {
+      return `https://${parts[2]}/.well-known/did.json`;
+    } else {
+      const path = parts.slice(2).join("/");
+      return `https://${path}/did.json`;
+    }
+  }
+
   private async _resolveIssuerToEthereumAddress(
     issuer: string
   ): Promise<string> {
@@ -685,8 +695,7 @@ class ProofPointRegistry {
     }
 
     if (/^did\:web\:.+$/.test(issuer)) {
-      const didDocumentUri = `https://${issuer.substr(8)}/.well-known/did.json`;
-
+      const didDocumentUri = this.didToUrl(issuer);
       try {
         const body = await this._httpClient.fetch(didDocumentUri);
         const didDocument = JSON.parse(body);
