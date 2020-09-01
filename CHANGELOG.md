@@ -1,3 +1,17 @@
+# NEXT
+
+## New Features
+
+- Proper handling of did:web identifiers including ports: `did:web:example.com%3A1234`
+
+## Bug Fixes
+
+None
+
+## Breaking Changes
+
+None
+
 # 3.1.1
 
 ## New Features

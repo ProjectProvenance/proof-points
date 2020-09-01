@@ -687,11 +687,13 @@ class ProofPointRegistry {
     const parts = did.split(":");
     if (parts.length === 3) {
       // did:web:<x>
-      return `https://${parts[2]}/.well-known/did.json`;
+      const hostname = decodeURIComponent(parts[2]);
+      return `https://${hostname}/.well-known/did.json`;
     } else {
       // did:web:<a>:<b>:...:<z>
-      const path = parts.slice(2).join("/");
-      return `https://${path}/did.json`;
+      const hostname = decodeURIComponent(parts[2]);
+      const path = parts.slice(3).join("/");
+      return `https://${hostname}/${path}/did.json`;
     }
   }
 
