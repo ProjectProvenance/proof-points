@@ -54,7 +54,37 @@ contract("ProofPoints", () => {
             "type": "Secp256k1SignatureAuthentication2018",
             "publicKey": "did:web:example.com:subpath#owner"
         }]
-      }`
+      }`,
+      "https://example.com:1234/.well-known/did.json": `
+      {
+        "@context": "https://w3id.org/did/v1",
+        "id": "did:web:example.com%3A1234",
+        "publicKey": [{
+            "id": "did:web:example.com%3A1234#owner",
+            "type": "Secp256k1VerificationKey2018",
+            "owner": "did:web:example.com%3A1234",
+            "ethereumAddress": "${admin}"
+        }],
+        "authentication": [{
+            "type": "Secp256k1SignatureAuthentication2018",
+            "publicKey": "did:web:example.com%3A1234#owner"
+        }]
+      }`,
+      "https://example.com:1234/subpath/did.json": `
+      {
+        "@context": "https://w3id.org/did/v1",
+        "id": "did:web:example.com%3A1234:subpath",
+        "publicKey": [{
+            "id": "did:web:example.com%3A1234:subpath#owner",
+            "type": "Secp256k1VerificationKey2018",
+            "owner": "did:web:example.com%3A1234:subpath",
+            "ethereumAddress": "${admin}"
+        }],
+        "authentication": [{
+            "type": "Secp256k1SignatureAuthentication2018",
+            "publicKey": "did:web:example.com%3A1234:subpath#owner"
+        }]
+      }`,
     });
 
     subject = await ProofPointRegistry.deploy(
@@ -350,6 +380,30 @@ contract("ProofPoints", () => {
       content
     );
     expect(result.proofPointObject.issuer).to.eq("did:web:example.com:subpath");
+    const { isValid } = await subject.validate(result.proofPointObject);
+    expect(isValid).to.be.true;
+  });
+
+  it("did:web issuer port", async () => {
+    const result = await subject.issue(
+      type,
+      "did:web:example.com%3A1234",
+      content
+    );
+    expect(result.proofPointObject.issuer).to.eq("did:web:example.com%3A1234");
+    const { isValid } = await subject.validate(result.proofPointObject);
+    expect(isValid).to.be.true;
+  });
+
+  it("did:web issuer port and subpath", async () => {
+    const result = await subject.issue(
+      type,
+      "did:web:example.com%3A1234:subpath",
+      content
+    );
+    expect(result.proofPointObject.issuer).to.eq(
+      "did:web:example.com%3A1234:subpath"
+    );
     const { isValid } = await subject.validate(result.proofPointObject);
     expect(isValid).to.be.true;
   });
