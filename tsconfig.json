@@ -2,7 +2,14 @@
     "files": [
         "src/index.ts",
         "src/storage.ts",
-        "src/proofPoints.ts",
+        "src/httpClient.ts",
+        "src/proofPoint.ts",
+        "src/proofPointEvent.ts",
+        "src/proofPointEventType.ts",
+        "src/proofPointIssueResult.ts",
+        "src/proofPointRegistry.ts",
+        "src/proofPointRegistryRoot.ts",
+        "src/proofPointStatus.ts",
         "src/canonicalize.d.ts",
         "src/local-iso-dt.d.ts",
         "src/ipfs-mini.d.ts"
