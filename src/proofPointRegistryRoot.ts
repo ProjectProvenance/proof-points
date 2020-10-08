@@ -44,8 +44,11 @@ class ProofPointRegistryRoot {
     storage: StorageProvider | null = null,
     httpClient: HttpClient | null = null
   ): Promise<ProofPointRegistry> {
-    const logicAddress = await this._contract.methods.getOwner().call();
+    const logicAddress = EthereumAddress.parse(
+      await this._contract.methods.getOwner().call()
+    );
     const registry = new ProofPointRegistry(
+      this._address,
       logicAddress,
       this._web3,
       storage,

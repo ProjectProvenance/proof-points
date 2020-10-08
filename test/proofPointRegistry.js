@@ -18,6 +18,7 @@ contract("ProofPointRegistry", () => {
   let content;
   let admin;
   let httpClient;
+  let rootAddress;
 
   beforeEach(async () => {
     storageProvider = new FakeStorageProvider();
@@ -89,6 +90,7 @@ contract("ProofPointRegistry", () => {
     });
 
     const registryRoot = await ProofPointRegistryRoot.deploy(admin, web3);
+    rootAddress = registryRoot._address;
     subject = await registryRoot.getRegistry(storageProvider, httpClient);
 
     type = "http://open.provenance.org/ontology/ptf/v1/TestProofPoint";
@@ -113,6 +115,13 @@ contract("ProofPointRegistry", () => {
     const validity = await subject.validate(results.proofPointObject);
     expect(validity.isValid).to.be.true;
     expect(validity.statusCode).to.eq(ProofPointStatus.Valid);
+  });
+
+  it("should correctly set registryRoot of issued proof point", async () => {
+    const results = await subject.issue(type, admin, content);
+    expect(results.proofPointObject.proof.registryRoot).to.eq(
+      rootAddress.toString()
+    );
   });
 
   it("should commit a valid pp", async () => {

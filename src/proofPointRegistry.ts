@@ -32,7 +32,8 @@ const web3 = new Web3();
 
 class ProofPointRegistry {
   private _web3: Web3;
-  private _address: string;
+  private _rootAddress: EthereumAddress;
+  private _address: EthereumAddress;
   private _registry: Contract;
   private _storage: StorageProvider;
   private _httpClient: HttpClient;
@@ -45,11 +46,13 @@ class ProofPointRegistry {
    * @param httpClient a {@link HttpClient} to use for fetching DID documents in order to support did:web issuers or null to use the default implementation.
    */
   constructor(
-    address: string,
+    rootAddress: EthereumAddress,
+    address: EthereumAddress,
     web3: Web3,
     storage: StorageProvider | null = null,
     httpClient: HttpClient | null = null
   ) {
+    this._rootAddress = rootAddress;
     this._address = address;
     this._web3 = web3;
     this._storage = storage;
@@ -71,7 +74,7 @@ class ProofPointRegistry {
 
     this._registry = new this._web3.eth.Contract(
       ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].abi as any,
-      this._address,
+      this._address.toString(),
       { data: ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].bytecode }
     );
   }
@@ -417,7 +420,7 @@ class ProofPointRegistry {
       credentialSubject: content,
       proof: {
         type: PROOF_TYPE,
-        registryRoot: this._address,
+        registryRoot: this._rootAddress.toString(),
         proofPurpose: "assertionMethod",
         verificationMethod: issuer,
       },
@@ -439,13 +442,13 @@ class ProofPointRegistry {
   private isSameRegistry(proofPoint: ProofPoint): boolean {
     return (
       proofPoint.proof.registryRoot.toLowerCase() ===
-      this._address.toLowerCase()
+      this._rootAddress.toString().toLowerCase()
     );
   }
 
   /**
    * Did to url. Translate a did:web identifier to the URL at which the corresponding DID document can be found
-   * according to spec at https://w3c-ccg.github.io/did-method-web/#crud-operation-definitions .
+   * according to spec at https://w3c-ccg.github.io/did-method-web/#crud-operation-definitions.
    * @param did a valid did:web ID string
    * @returns an https URL string representing the location of the corresponding DID document
    */
