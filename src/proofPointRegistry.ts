@@ -1,136 +1,34 @@
+import Web3 from "web3";
+import canonicalizeJson = require("canonicalize");
+import localISOdt = require("local-iso-dt");
+
 import ProofPointRegistryAbiV1 from "../build/contracts/ProofPointRegistry_v2.json";
 import ProofPointRegistryAbiV2 from "../build/contracts/ProofPointRegistry_v2.json";
+import { StorageProvider, IpfsStorageProvider } from "./storage";
+import { Contract } from "web3-eth-contract";
+import { ProofPointStatus } from "./proofPointStatus";
+import { ProofPointIssueResult } from "./proofPointIssueResult";
+import { ProofPoint } from "./proofPoint";
+import { ProofPointEventType } from "./proofPointEventType";
+import {
+  ProofPointEvent,
+  ProofPointId,
+  EthereumAddress,
+  EthereumTransactionHash,
+} from "./proofPointEvent";
+import { HttpClient, RealHttpClient } from "./httpClient";
+import { ProofPointValidateResult } from "./proofPointValidateResult";
 
 const ProofPointRegistryAbi = [
   undefined,
   ProofPointRegistryAbiV1,
   ProofPointRegistryAbiV2,
 ];
-
-import ProofPointRegistryStorage1Abi from "../build/contracts/ProofPointRegistryStorage1.json";
-
-import { StorageProvider, IpfsStorageProvider } from "./storage";
-import { Contract } from "web3-eth-contract";
-import Web3 from "web3";
-
-import canonicalizeJson = require("canonicalize");
-import localISOdt = require("local-iso-dt");
-
 const PROOF_POINT_REGISTRY_VERSION = 2;
 const GAS_LIMIT = 1000000;
-
-interface ProofPoint {
-  "@context": Array<string>;
-  type: Array<string>;
-  issuer: string;
-  credentialSubject: unknown;
-  proof: {
-    type: string;
-    registryRoot: string;
-    proofPurpose: string;
-    verificationMethod: string;
-  };
-  validFrom: string;
-  validUntil: string;
-}
-
-interface ProofPointIssueResult {
-  proofPointId: string;
-  transactionHash: string;
-  proofPointObject: ProofPoint;
-}
-
-enum ProofPointStatus {
-  /**
-   * The Proof Point object is badly formed. The Proof Point is invalid.
-   */
-  BadlyFormed,
-  /**
-   * The validFrom date is in the future. The Proof Point is invalid.
-   */
-  Pending,
-  /**
-   * The validUntil date is in the past. The Proof Point is invalid.
-   */
-  Expired,
-  /**
-   * The proof.registryRoot field references a smart contract that is not a whitelisted Proof Point registry,
-   * the validation provided is not trusted so the Proof Point is considered invalid.
-   */
-  NonTrustedRegistry,
-  /**
-   * The Proof Point registry smart contract does not contain this Proof Point issued by this issuer. Either
-   * the issuer never issued the Proof Point or it was issued and later revoked by the issuer. The proof
-   * point is invalid.
-   */
-  NotFound,
-  /**
-   * The issuer of the Proof Point could not be resolved to an Ethereum address
-   */
-  UnknownIssuer,
-  /**
-   * The Proof Point has passed all of the validation checks. If you trust the issuer you can trust the meaning
-   * of the Proof Point.
-   */
-  Valid,
-}
-
-interface ProofPointValidateResult {
-  isValid: boolean;
-  statusCode: ProofPointStatus;
-  statusMessage: string | null;
-}
-
-/**
- * Proof Point event type, the type of an {@link ProofPointEvent}.
- */
-enum ProofPointEventType {
-  Issued,
-  Committed,
-  Revoked,
-}
-
-/**
- * Proof Point event, describes a single event in the history of a Proof Point.
- */
-interface ProofPointEvent {
-  /**
-   * The blockchain block number at which the event occurred.
-   * */
-  blockNumber: number;
-  /**
-   * The type of event e.g. Issued, Revoked etc.
-   */
-  type: ProofPointEventType;
-  /**
-   * The sender address that initiated the event.
-   */
-  issuer: string;
-  /**
-   * The ID of the Proof Point.
-   */
-  proofPointId: string;
-  /**
-   * The Ethereum transaction hash of the transaction that emitted this event
-   */
-  transactionHash: string;
-}
-
 const PROOF_TYPE =
   "https://open.provenance.org/ontology/ptf/v2/ProvenanceProofType1";
 const web3 = new Web3();
-
-interface HttpClient {
-  fetch(url: string): Promise<string>;
-}
-
-class RealHttpClient {
-  async fetch(url: string): Promise<string> {
-    const response = await fetch(url);
-    const body = await response.text();
-    return body;
-  }
-}
 
 class ProofPointRegistry {
   private _web3: Web3;
@@ -170,137 +68,12 @@ class ProofPointRegistry {
     } else {
       this._httpClient = httpClient;
     }
-  }
 
-  /**
-   * Deploys an instance of the Proof Point registry, including an eternal storage contract and a logic
-   * contract.
-   * @param fromAddress the Ethereum account to use for signing transactions. This will become the admin account that must be used for all future smart contract upgrades.
-   * @param web3 a web3 instance to use for interacting with the Ethereum blockchain.
-   * @param storage a {@link StorageProvider} to use for storing/retrieving off-chain data, or null to use the default provider.
-   * @param httpClient a {@link HttpClient} to use for fetching DID documents in order to support did:web issuers or null to use the default implementation.
-   * @returns a {@link ProofPointRegistry} for interacting with the newly deployed contracts.
-   */
-  static async deploy(
-    fromAddress: string,
-    web3: Web3,
-    storage: StorageProvider | null = null,
-    httpClient: HttpClient | null = null
-  ): Promise<ProofPointRegistry> {
-    // deploy eternal storage contract
-    const eternalStorageContract = new web3.eth.Contract(
-      ProofPointRegistryStorage1Abi.abi as any
-    );
-    const eternalStorage = await eternalStorageContract
-      .deploy({ data: ProofPointRegistryStorage1Abi.bytecode })
-      .send({ from: fromAddress, gas: GAS_LIMIT });
-
-    // deploy logic contract pointing to eternal storage
-    const logicContract = new web3.eth.Contract(
-      ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].abi as any
-    );
-    const logic = await logicContract
-      .deploy({
-        data: ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].bytecode,
-        arguments: [eternalStorage.options.address],
-      })
-      .send({ from: fromAddress, gas: GAS_LIMIT });
-
-    // set logic contract as owner of eternal storage
-    await eternalStorage.methods
-      .setOwner(logic.options.address)
-      .send({ from: fromAddress, gas: GAS_LIMIT });
-
-    // construct and return a ProofPointRegistry object for the newly deployed setup
-    const registry = new ProofPointRegistry(
-      eternalStorage.options.address,
-      web3,
-      storage,
-      httpClient
-    );
-    await registry.init();
-
-    return registry;
-  }
-
-  /**
-   * Gets the address of the registry root - which is the address of the eternal storage contract
-   * @returns address of registry root.
-   */
-  getAddress(): string {
-    return this._address;
-  }
-
-  /**
-   * Determines whether the deployed logic contract is the latest known version. If not then the
-   * {@link upgrade} method can be called to deploy the latest logic contract and update the plumbing
-   * so that the latest version will be used for future interactions.
-   * @returns true if the {@link upgrade} method can be called to upgrade the logic contract.
-   */
-  async canUpgrade(): Promise<boolean> {
-    const version = await this._getVersion();
-    return version < PROOF_POINT_REGISTRY_VERSION;
-  }
-
-  /**
-   * Upgrades Proof Point registry. Performs the upgrade procedure to deploy an instance of the latest
-   * logic contract, then set that as the owner of the eternal storage contract. You must control the admin
-   * account to do this. Throws if already at latest version. Use {@link canUpgrade} to determine whether
-   * this method can be called.
-   */
-  async upgrade(): Promise<void> {
-    if (!(await this.canUpgrade())) {
-      throw new Error(
-        "Cannot upgrade Proof Point registry: Already at or above current version."
-      );
-    }
-
-    // get the admin account from which to perform the upgrade
-    const eternalStorage = new this._web3.eth.Contract(
-      ProofPointRegistryStorage1Abi.abi as any,
-      this._address,
-      { data: ProofPointRegistryStorage1Abi.bytecode }
-    );
-    const admin = await eternalStorage.methods.getAdmin().call();
-
-    // deploy logic contract pointing to eternal storage
-    const logicContract = new this._web3.eth.Contract(
-      ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].abi as any
-    );
-    const logic = await logicContract
-      .deploy({
-        data: ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].bytecode,
-        arguments: [this._address],
-      })
-      .send({ from: admin, gas: GAS_LIMIT });
-
-    // set logic contract as owner of eternal storage
-    eternalStorage.methods
-      .setOwner(logic.options.address)
-      .send({ from: admin, gas: GAS_LIMIT });
-
-    this._registry = logic;
-  }
-
-  /**
-   * Initialises the Proof Point registry. Must be completed before the {@link ProofPointRegistry} can be used.
-   */
-  async init(): Promise<void> {
-    // Use the storage contract to locate the logic contract
-    const eternalStorage = new this._web3.eth.Contract(
-      ProofPointRegistryStorage1Abi.abi as any,
-      this._address,
-      { data: ProofPointRegistryStorage1Abi.bytecode }
-    );
-    const logicAddress = await eternalStorage.methods.getOwner().call();
-
-    // Prepare and store proxy object for the logic contract
-    const registry = new this._web3.eth.Contract(
+    this._registry = new this._web3.eth.Contract(
       ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].abi as any,
-      logicAddress,
+      this._address,
       { data: ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].bytecode }
     );
-    this._registry = registry;
   }
 
   /**
@@ -385,11 +158,11 @@ class ProofPointRegistry {
       throw new Error(`Cannot resolve issuer: ${proofPointObject.issuer}`);
     }
 
-    const { hash } = await this._canonicalizeAndStoreObject(proofPointObject);
-    const proofPointIdBytes = web3.utils.asciiToHex(hash);
+    const { id } = await this._canonicalizeAndStoreObject(proofPointObject);
+    const proofPointIdBytes = web3.utils.asciiToHex(id.toString());
     await this._registry.methods
       .revoke(proofPointIdBytes)
-      .send({ from: issuerAddress, gas: GAS_LIMIT });
+      .send({ from: issuerAddress.toString(), gas: GAS_LIMIT });
   }
 
   /**
@@ -462,11 +235,11 @@ class ProofPointRegistry {
       };
     }
 
-    const { hash } = await this._canonicalizeAndStoreObject(proofPointObject);
-    const proofPointIdBytes = web3.utils.asciiToHex(hash);
+    const { id } = await this._canonicalizeAndStoreObject(proofPointObject);
+    const proofPointIdBytes = web3.utils.asciiToHex(id.toString());
 
     const isValid = await this._registry.methods
-      .validate(issuerAddress, proofPointIdBytes)
+      .validate(issuerAddress.toString(), proofPointIdBytes)
       .call();
 
     if (isValid) {
@@ -516,7 +289,9 @@ class ProofPointRegistry {
    * @param proofPointId the ID of the Proof Point.
    * @returns a list of {@link ProofPointEvent} describing the history of the Proof Point.
    */
-  async getHistoryById(proofPointId: string): Promise<Array<ProofPointEvent>> {
+  async getHistoryById(
+    proofPointId: ProofPointId
+  ): Promise<Array<ProofPointEvent>> {
     const version = await this._getVersion();
     const history = await this._getHistory(
       version,
@@ -533,20 +308,10 @@ class ProofPointRegistry {
     throw new Error(`Invalid Proof Point event name: ${eventName}`);
   }
 
-  private async _getVersion(): Promise<number> {
-    try {
-      const version = await this._registry.methods.getVersion().call();
-      return version;
-    } catch (e) {
-      // version 1 does not have the getVersion method.
-      return 1;
-    }
-  }
-
   private async _getHistory(
     version: number,
     logicContractAddress: string,
-    proofPointId: string
+    proofPointId: ProofPointId
   ): Promise<ProofPointEvent[]> {
     // Prepare and store proxy object for the logic contract
     const registry = new this._web3.eth.Contract(
@@ -565,16 +330,18 @@ class ProofPointRegistry {
     const events = eventsRaw
       // TODO remove this client side filter once filter bug is fixed
       .filter(
-        (ev) => ev.returnValues._claim === Web3.utils.keccak256(proofPointId)
+        (ev) =>
+          ev.returnValues._claim ===
+          Web3.utils.keccak256(proofPointId.toString())
       )
       .filter((ev) => ev.event !== "Published")
       .map((ev) => {
         return {
           blockNumber: ev.blockNumber,
           type: this._eventNameToEventType(ev.event),
-          issuer: ev.returnValues._issuer,
+          issuer: EthereumAddress.parse(ev.returnValues._issuer),
           proofPointId: proofPointId,
-          transactionHash: ev.transactionHash,
+          transactionHash: EthereumTransactionHash.parse(ev.transactionHash),
         };
       });
 
@@ -616,19 +383,18 @@ class ProofPointRegistry {
       validUntilDate
     );
 
-    const {
-      hash,
-      canonicalisedObject,
-    } = await this._canonicalizeAndStoreObject(proofPointObject);
-    const proofPointIdBytes = web3.utils.asciiToHex(hash);
+    const { id, canonicalisedObject } = await this._canonicalizeAndStoreObject(
+      proofPointObject
+    );
+    const proofPointIdBytes = web3.utils.asciiToHex(id.toString());
 
     const transactionReceipt = await issueFunction(proofPointIdBytes).send({
-      from: issuerAddress,
+      from: issuerAddress.toString(),
       gas: GAS_LIMIT,
     });
 
     return {
-      proofPointId: hash,
+      proofPointId: id,
       transactionHash: transactionReceipt.transactionHash,
       proofPointObject: canonicalisedObject,
     };
@@ -679,7 +445,7 @@ class ProofPointRegistry {
 
   /**
    * Did to url. Translate a did:web identifier to the URL at which the corresponding DID document can be found
-   * according to spec at https://w3c-ccg.github.io/did-method-web/#crud-operation-definitions
+   * according to spec at https://w3c-ccg.github.io/did-method-web/#crud-operation-definitions .
    * @param did a valid did:web ID string
    * @returns an https URL string representing the location of the corresponding DID document
    */
@@ -699,9 +465,9 @@ class ProofPointRegistry {
 
   private async _resolveIssuerToEthereumAddress(
     issuer: string
-  ): Promise<string> {
+  ): Promise<EthereumAddress> {
     if (/^0x[a-fA-F0-9]{40}$/.test(issuer)) {
-      return web3.utils.toChecksumAddress(issuer);
+      return EthereumAddress.parse(issuer);
     }
 
     if (/^did\:web\:.+$/.test(issuer)) {
@@ -721,9 +487,7 @@ class ProofPointRegistry {
           return null;
         }
 
-        return web3.utils.toChecksumAddress(
-          didDocument.publicKey[0].ethereumAddress
-        );
+        return EthereumAddress.parse(didDocument.publicKey[0].ethereumAddress);
       } catch (e) {
         // DID document could not be fetched
         return null;
@@ -746,7 +510,7 @@ class ProofPointRegistry {
 
   private async _canonicalizeAndStoreObject(
     dataObject: any
-  ): Promise<{ hash: string; canonicalisedObject: any }> {
+  ): Promise<{ id: ProofPointId; canonicalisedObject: any }> {
     // TODO enforce SHA-256 hash alg
     // TODO add method to compute hash without storing
 
@@ -758,20 +522,25 @@ class ProofPointRegistry {
     const storageResult = await this._storage.add(dataStr);
 
     return {
-      hash: storageResult.digest,
+      id: ProofPointId.parse(storageResult.digest),
       canonicalisedObject: JSON.parse(dataStr),
     };
+  }
+
+  private async _getVersion(): Promise<number> {
+    try {
+      const version = await this._registry.methods.getVersion().call();
+      return version;
+    } catch (e) {
+      // version 1 does not have the getVersion method.
+      return 1;
+    }
   }
 }
 
 export {
-  Web3,
-  HttpClient,
-  ProofPoint,
-  ProofPointIssueResult,
   ProofPointRegistry,
-  ProofPointValidateResult,
-  ProofPointStatus,
-  ProofPointEventType,
-  ProofPointEvent,
+  PROOF_POINT_REGISTRY_VERSION,
+  ProofPointRegistryAbi,
+  GAS_LIMIT,
 };
