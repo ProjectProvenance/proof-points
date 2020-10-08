@@ -1,3 +1,17 @@
+# 4.0.0
+
+## New Features
+
+None
+
+## Bug Fixes
+
+None
+
+## Breaking Changes
+
+- The way to construct an instance of the `ProofPointRegistry` object hash changed. See README.md for details
+
 # 3.2.0
 
 ## New Features

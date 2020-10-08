@@ -45,9 +45,9 @@ Each Proof Point has a type, an issuer and some data. The issuer should be a fun
 
 ```
 // issue a Proof Point
-const result = await api.issue(
+const result = await registry.issue(
     'https://open.provenance.org/ontology/ptf/v2/...', // A type identifying URL, such as one from the Provenance ontology
-    '0x...', // The issuer account, a funded account that you control
+    '0x...', // The issuer account, a funded account that you control or a did:web identifier that maps to such an account
     { a: 'b' }, // The data payload of the Proof Point, should match the schema defined by the type
     '2020-01-01', // Optional valid from date,
     '2030-01-01', // optional valid until date
@@ -66,20 +66,20 @@ The returned `result` has three fields:
 
 ```
 // validate a Proof Point object
-const isValid = await api.validate(proofPointObject);
+const isValid = await registry.validate(proofPointObject);
 
 // validate a Proof Point given its ID
-const isValid = await api.validateById(proofPointId);
+const isValid = await registry.validateById(proofPointId);
 ```
 
 ### Revoke a Proof Point
 
 ```
 // revoke a Proof Point object
-await api.revoke(proofPointObject);
+await registry.revoke(proofPointObject);
 
 // revoke a Proof Point given its ID
-await api.revokeById(proofPointId);
+await registry.revokeById(proofPointId);
 ```
 
 ## Contribute
