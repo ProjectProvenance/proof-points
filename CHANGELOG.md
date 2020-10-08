@@ -1,3 +1,17 @@
+# 4.0.1
+
+## New Features
+
+None
+
+## Bug Fixes
+
+- Fixed: proof point is issued with `proof.registryRoot` field wrongly set
+
+## Breaking Changes
+
+None
+
 # 4.0.0
 
 ## New Features
