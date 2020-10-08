@@ -1,8 +1,9 @@
 import { ProofPoint } from "./proofPoint";
+import { EthereumTransactionHash, ProofPointId } from "./proofPointEvent";
 
 interface ProofPointIssueResult {
-  proofPointId: string;
-  transactionHash: string;
+  proofPointId: ProofPointId;
+  transactionHash: EthereumTransactionHash;
   proofPointObject: ProofPoint;
 }
 

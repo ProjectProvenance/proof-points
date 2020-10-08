@@ -232,8 +232,8 @@ contract("ProofPointRegistry", () => {
 
     // should include the issued and revoked one and the committed one
     expect(list.length).to.eq(2);
-    expect(list[0]).to.eq(result1.proofPointId);
-    expect(list[1]).to.eq(result2.proofPointId);
+    expect(list[0]).to.eq(result1.proofPointId.toString());
+    expect(list[1]).to.eq(result2.proofPointId.toString());
   });
 
   it("should return a list of all related events when getHistoryById is called", async () => {
@@ -252,13 +252,13 @@ contract("ProofPointRegistry", () => {
     // should be Issue, Revoke, Commit and not include the other pp
     expect(history.length).to.eq(3);
     expect(history[0].type).to.eq(ProofPointEventType.Issued);
-    expect(history[0].issuer).to.eq(admin);
+    expect(history[0].issuer.toString()).to.eq(admin);
     expect(history[0].transactionHash).to.not.be.null;
     expect(history[1].type).to.eq(ProofPointEventType.Revoked);
-    expect(history[1].issuer).to.eq(admin);
+    expect(history[1].issuer.toString()).to.eq(admin);
     expect(history[1].transactionHash).to.not.be.null;
     expect(history[2].type).to.eq(ProofPointEventType.Committed);
-    expect(history[2].issuer).to.eq(admin);
+    expect(history[2].issuer.toString()).to.eq(admin);
     expect(history[2].transactionHash).to.not.be.null;
   });
 

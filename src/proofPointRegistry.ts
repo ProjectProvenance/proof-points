@@ -1,29 +1,31 @@
+import Web3 from "web3";
+import canonicalizeJson = require("canonicalize");
+import localISOdt = require("local-iso-dt");
+
 import ProofPointRegistryAbiV1 from "../build/contracts/ProofPointRegistry_v2.json";
 import ProofPointRegistryAbiV2 from "../build/contracts/ProofPointRegistry_v2.json";
+import { StorageProvider, IpfsStorageProvider } from "./storage";
+import { Contract } from "web3-eth-contract";
+import { ProofPointStatus } from "./proofPointStatus";
+import { ProofPointIssueResult } from "./proofPointIssueResult";
+import { ProofPoint } from "./proofPoint";
+import { ProofPointEventType } from "./proofPointEventType";
+import {
+  ProofPointEvent,
+  ProofPointId,
+  EthereumAddress,
+  EthereumTransactionHash,
+} from "./proofPointEvent";
+import { HttpClient, RealHttpClient } from "./httpClient";
+import { ProofPointValidateResult } from "./proofPointValidateResult";
 
 const ProofPointRegistryAbi = [
   undefined,
   ProofPointRegistryAbiV1,
   ProofPointRegistryAbiV2,
 ];
-
-import { StorageProvider, IpfsStorageProvider } from "./storage";
-import { Contract } from "web3-eth-contract";
-import Web3 from "web3";
-import { ProofPointStatus } from "./proofPointStatus";
-import { ProofPointIssueResult } from "./proofPointIssueResult";
-import { ProofPoint } from "./proofPoint";
-import { ProofPointEventType } from "./proofPointEventType";
-import { ProofPointEvent } from "./proofPointEvent";
-import { HttpClient, RealHttpClient } from "./httpClient";
-import { ProofPointValidateResult } from "./proofPointValidateResult";
-
-import canonicalizeJson = require("canonicalize");
-import localISOdt = require("local-iso-dt");
-
 const PROOF_POINT_REGISTRY_VERSION = 2;
 const GAS_LIMIT = 1000000;
-
 const PROOF_TYPE =
   "https://open.provenance.org/ontology/ptf/v2/ProvenanceProofType1";
 const web3 = new Web3();
@@ -156,11 +158,11 @@ class ProofPointRegistry {
       throw new Error(`Cannot resolve issuer: ${proofPointObject.issuer}`);
     }
 
-    const { hash } = await this._canonicalizeAndStoreObject(proofPointObject);
-    const proofPointIdBytes = web3.utils.asciiToHex(hash);
+    const { id } = await this._canonicalizeAndStoreObject(proofPointObject);
+    const proofPointIdBytes = web3.utils.asciiToHex(id.toString());
     await this._registry.methods
       .revoke(proofPointIdBytes)
-      .send({ from: issuerAddress, gas: GAS_LIMIT });
+      .send({ from: issuerAddress.toString(), gas: GAS_LIMIT });
   }
 
   /**
@@ -233,11 +235,11 @@ class ProofPointRegistry {
       };
     }
 
-    const { hash } = await this._canonicalizeAndStoreObject(proofPointObject);
-    const proofPointIdBytes = web3.utils.asciiToHex(hash);
+    const { id } = await this._canonicalizeAndStoreObject(proofPointObject);
+    const proofPointIdBytes = web3.utils.asciiToHex(id.toString());
 
     const isValid = await this._registry.methods
-      .validate(issuerAddress, proofPointIdBytes)
+      .validate(issuerAddress.toString(), proofPointIdBytes)
       .call();
 
     if (isValid) {
@@ -287,7 +289,9 @@ class ProofPointRegistry {
    * @param proofPointId the ID of the Proof Point.
    * @returns a list of {@link ProofPointEvent} describing the history of the Proof Point.
    */
-  async getHistoryById(proofPointId: string): Promise<Array<ProofPointEvent>> {
+  async getHistoryById(
+    proofPointId: ProofPointId
+  ): Promise<Array<ProofPointEvent>> {
     const version = await this._getVersion();
     const history = await this._getHistory(
       version,
@@ -307,7 +311,7 @@ class ProofPointRegistry {
   private async _getHistory(
     version: number,
     logicContractAddress: string,
-    proofPointId: string
+    proofPointId: ProofPointId
   ): Promise<ProofPointEvent[]> {
     // Prepare and store proxy object for the logic contract
     const registry = new this._web3.eth.Contract(
@@ -326,16 +330,18 @@ class ProofPointRegistry {
     const events = eventsRaw
       // TODO remove this client side filter once filter bug is fixed
       .filter(
-        (ev) => ev.returnValues._claim === Web3.utils.keccak256(proofPointId)
+        (ev) =>
+          ev.returnValues._claim ===
+          Web3.utils.keccak256(proofPointId.toString())
       )
       .filter((ev) => ev.event !== "Published")
       .map((ev) => {
         return {
           blockNumber: ev.blockNumber,
           type: this._eventNameToEventType(ev.event),
-          issuer: ev.returnValues._issuer,
+          issuer: EthereumAddress.parse(ev.returnValues._issuer),
           proofPointId: proofPointId,
-          transactionHash: ev.transactionHash,
+          transactionHash: EthereumTransactionHash.parse(ev.transactionHash),
         };
       });
 
@@ -377,19 +383,18 @@ class ProofPointRegistry {
       validUntilDate
     );
 
-    const {
-      hash,
-      canonicalisedObject,
-    } = await this._canonicalizeAndStoreObject(proofPointObject);
-    const proofPointIdBytes = web3.utils.asciiToHex(hash);
+    const { id, canonicalisedObject } = await this._canonicalizeAndStoreObject(
+      proofPointObject
+    );
+    const proofPointIdBytes = web3.utils.asciiToHex(id.toString());
 
     const transactionReceipt = await issueFunction(proofPointIdBytes).send({
-      from: issuerAddress,
+      from: issuerAddress.toString(),
       gas: GAS_LIMIT,
     });
 
     return {
-      proofPointId: hash,
+      proofPointId: id,
       transactionHash: transactionReceipt.transactionHash,
       proofPointObject: canonicalisedObject,
     };
@@ -440,7 +445,7 @@ class ProofPointRegistry {
 
   /**
    * Did to url. Translate a did:web identifier to the URL at which the corresponding DID document can be found
-   * according to spec at https://w3c-ccg.github.io/did-method-web/#crud-operation-definitions
+   * according to spec at https://w3c-ccg.github.io/did-method-web/#crud-operation-definitions .
    * @param did a valid did:web ID string
    * @returns an https URL string representing the location of the corresponding DID document
    */
@@ -460,9 +465,9 @@ class ProofPointRegistry {
 
   private async _resolveIssuerToEthereumAddress(
     issuer: string
-  ): Promise<string> {
+  ): Promise<EthereumAddress> {
     if (/^0x[a-fA-F0-9]{40}$/.test(issuer)) {
-      return web3.utils.toChecksumAddress(issuer);
+      return EthereumAddress.parse(issuer);
     }
 
     if (/^did\:web\:.+$/.test(issuer)) {
@@ -482,9 +487,7 @@ class ProofPointRegistry {
           return null;
         }
 
-        return web3.utils.toChecksumAddress(
-          didDocument.publicKey[0].ethereumAddress
-        );
+        return EthereumAddress.parse(didDocument.publicKey[0].ethereumAddress);
       } catch (e) {
         // DID document could not be fetched
         return null;
@@ -507,7 +510,7 @@ class ProofPointRegistry {
 
   private async _canonicalizeAndStoreObject(
     dataObject: any
-  ): Promise<{ hash: string; canonicalisedObject: any }> {
+  ): Promise<{ id: ProofPointId; canonicalisedObject: any }> {
     // TODO enforce SHA-256 hash alg
     // TODO add method to compute hash without storing
 
@@ -519,7 +522,7 @@ class ProofPointRegistry {
     const storageResult = await this._storage.add(dataStr);
 
     return {
-      hash: storageResult.digest,
+      id: ProofPointId.parse(storageResult.digest),
       canonicalisedObject: JSON.parse(dataStr),
     };
   }

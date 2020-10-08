@@ -1,6 +1,7 @@
-import ProofPointRegistryStorage1Abi from "../build/contracts/ProofPointRegistryStorage1.json";
 import { Contract } from "web3-eth-contract";
 import Web3 from "web3";
+
+import ProofPointRegistryStorage1Abi from "../build/contracts/ProofPointRegistryStorage1.json";
 import { StorageProvider } from "./storage";
 import {
   ProofPointRegistry,
@@ -9,34 +10,35 @@ import {
   GAS_LIMIT,
 } from "./proofPointRegistry";
 import { HttpClient } from "./httpClient";
+import { EthereumAddress } from "./proofPointEvent";
 
 /**
  * Proof point registry root
  * Represents the eternal storage contract of the ProofPointRegistry, which has a well known address
  * and provides methods to deploy and upgrade the logic contract as well as to get a proxy to the logic
- * contract by looking up its address in the eternal storage contract
+ * contract by looking up its address in the eternal storage contract.
  */
 class ProofPointRegistryRoot {
   private _web3: Web3;
-  private _address: string;
+  private _address: EthereumAddress;
   private _contract: Contract;
 
-  constructor(address: string, web3: Web3) {
+  constructor(address: EthereumAddress, web3: Web3) {
     this._address = address;
     this._web3 = web3;
     this._contract = new this._web3.eth.Contract(
       ProofPointRegistryStorage1Abi.abi as any,
-      this._address,
+      this._address.toString(),
       { data: ProofPointRegistryStorage1Abi.bytecode }
     );
   }
 
   /**
    * Gets an instance of ProofPointRegistry representing the current logic contract that is controlling
-   * this eternal storage contract
-   * @param storage A @StorageProvider to use for storing and retrieving bulk data
-   * @param httpClient An @HttpClient to use for fetching DID documents
-   * @returns An instance of @ProofPointRegistry to use for interacting with proof points
+   * this eternal storage contract.
+   * @param storage A @StorageProvider to use for storing and retrieving bulk data.
+   * @param httpClient An @HttpClient to use for fetching DID documents.
+   * @returns An instance of @ProofPointRegistry to use for interacting with proof points.
    */
   async getRegistry(
     storage: StorageProvider | null = null,
@@ -54,10 +56,10 @@ class ProofPointRegistryRoot {
   }
 
   /**
-   * Gets the address of the registry root - which is the address of the eternal storage contract
+   * Gets the address of the registry root - which is the address of the eternal storage contract.
    * @returns address of registry root.
    */
-  getAddress(): string {
+  getAddress(): EthereumAddress {
     return this._address;
   }
 
@@ -80,7 +82,7 @@ class ProofPointRegistryRoot {
    * @returns a {@link ProofPointRegistryRoot} for interacting with the newly deployed contracts.
    */
   static async deploy(
-    fromAddress: string,
+    fromAddress: EthereumAddress,
     web3: Web3
   ): Promise<ProofPointRegistryRoot> {
     // deploy eternal storage contract
@@ -89,7 +91,7 @@ class ProofPointRegistryRoot {
     );
     const eternalStorage = await eternalStorageContract
       .deploy({ data: ProofPointRegistryStorage1Abi.bytecode })
-      .send({ from: fromAddress, gas: GAS_LIMIT });
+      .send({ from: fromAddress.toString(), gas: GAS_LIMIT });
 
     // deploy logic contract pointing to eternal storage
     const logicContract = new web3.eth.Contract(
@@ -100,16 +102,16 @@ class ProofPointRegistryRoot {
         data: ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].bytecode,
         arguments: [eternalStorage.options.address],
       })
-      .send({ from: fromAddress, gas: GAS_LIMIT });
+      .send({ from: fromAddress.toString(), gas: GAS_LIMIT });
 
     // set logic contract as owner of eternal storage
     await eternalStorage.methods
       .setOwner(logic.options.address)
-      .send({ from: fromAddress, gas: GAS_LIMIT });
+      .send({ from: fromAddress.toString(), gas: GAS_LIMIT });
 
     // construct and return a ProofPointRegistry object for the newly deployed setup
     const registryRoot = new ProofPointRegistryRoot(
-      eternalStorage.options.address,
+      EthereumAddress.parse(eternalStorage.options.address),
       web3
     );
 

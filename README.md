@@ -28,20 +28,15 @@ $ npm i @provenance/proof-points
 Import the package in your Javascript
 
 ```
-import { ProofPointRegistry } from '@provenance/proof-points';
+import { EthereumAddress, ProofPointRegistryRoot, ProofPointRegistry } from '@provenance/proof-points';
 ```
 
 Construct a `ProofPointRegistry` object
 
 ```
-// construct an instance of the ProofPointRegistry object
-const api = new ProofPointRegistry(
-    proofPointStorageAddress,
-    web3
-  );
-
-// initialize the instance. The promise must resolve before the registry can be used.
-await provenance.init();
+const registryRootAddress = EthereumAddress.parse('0x...');
+const registryRoot = new ProofPointRegistryRoot(registryRootAddress, web3);
+const registry = await registryRoot.getRegistry();
 ```
 
 ### Issue a Proof Point

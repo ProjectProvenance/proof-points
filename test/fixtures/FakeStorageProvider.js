@@ -1,4 +1,6 @@
-const md5 = require("blueimp-md5");
+const multihashing = require("multihashing");
+const multibase = require("multibase");
+const multihashes = require("multihashes");
 
 class FakeStorageProvider {
   constructor() {
@@ -7,13 +9,15 @@ class FakeStorageProvider {
   }
 
   add(msg) {
-    const digest = md5(msg);
-    this.store[digest] = msg;
-    return Promise.resolve({ digest });
+    const buf = Buffer.from(msg);
+    const hashBytes = multihashing(buf, "sha2-256");
+    const hash = multihashes.toB58String(hashBytes);
+    this.store[hash] = msg;
+    return Promise.resolve({ digest: hash });
   }
 
-  get(digest) {
-    return Promise.resolve({ data: this.store[digest] });
+  get(id) {
+    return Promise.resolve({ data: this.store[id] });
   }
 }
 
