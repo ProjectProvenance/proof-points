@@ -1,10 +1,10 @@
-pragma solidity 0.5.16;
+pragma solidity 0.6.2;
 
-contract Versioned {
+abstract contract Versioned {
     int version;
     address previous;
 
-    constructor(int _version, address _previous) internal {
+    constructor(int _version, address _previous) public {
         version = _version;
         previous = _previous;
     }
