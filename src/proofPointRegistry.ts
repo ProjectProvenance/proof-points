@@ -310,13 +310,6 @@ class ProofPointRegistry {
     return history.sort((a, b) => a.blockNumber - b.blockNumber);
   }
 
-  // private _eventNameToEventType(eventName: string): ProofPointEventType {
-  //   if (eventName === "Issued") return ProofPointEventType.Issued;
-  //   if (eventName === "Committed") return ProofPointEventType.Committed;
-  //   if (eventName === "Revoked") return ProofPointEventType.Revoked;
-  //   throw new Error(`Invalid Proof Point event name: ${eventName}`);
-  // }
-
   private proofPointIdToBytes(id: ProofPointId): string {
     const idBytes = ethers.utils.toUtf8Bytes(id.toString());
     const idBytesHex = ethers.utils.hexlify(idBytes);
@@ -600,5 +593,5 @@ class ProofPointRegistry {
 export {
   ProofPointRegistry,
   PROOF_POINT_REGISTRY_VERSION,
-  ProofPointRegistryAbi
+  ProofPointRegistryAbi,
 };
