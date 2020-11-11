@@ -1,18 +1,10 @@
-import Web3 from "web3";
+import ethers from "ethers";
 
 class EthereumAddress {
   private _addr: string;
 
   static parse(input: string): EthereumAddress {
-    if (!Web3.utils.isAddress(input)) {
-      throw new Error("Invalid Ethereum address");
-    }
-
-    if (!Web3.utils.checkAddressChecksum(input)) {
-      throw new Error("Invalid checksum");
-    }
-
-    return new EthereumAddress(input);
+    return new EthereumAddress(ethers.utils.getAddress(input));
   }
 
   toString(): string {

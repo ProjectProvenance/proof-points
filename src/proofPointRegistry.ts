@@ -1,11 +1,10 @@
-import Web3 from "web3";
+import ethers from "ethers";
 import canonicalizeJson = require("canonicalize");
 import localISOdt = require("local-iso-dt");
 
-import ProofPointRegistryAbiV1 from "../build/contracts/ProofPointRegistry_v2.json";
-import ProofPointRegistryAbiV2 from "../build/contracts/ProofPointRegistry_v2.json";
+import ProofPointRegistryAbiV1 from "../build/ProofPointRegistry_v2.json";
+import ProofPointRegistryAbiV2 from "../build/ProofPointRegistry_v2.json";
 import { StorageProvider, IpfsStorageProvider } from "./storage";
-import { Contract } from "web3-eth-contract";
 import { ProofPointStatus } from "./proofPointStatus";
 import { ProofPointIssueResult } from "./proofPointIssueResult";
 import { ProofPoint } from "./proofPoint";
@@ -28,15 +27,14 @@ const PROOF_POINT_REGISTRY_VERSION = 2;
 const GAS_LIMIT = 1000000;
 const PROOF_TYPE =
   "https://open.provenance.org/ontology/ptf/v2/ProvenanceProofType1";
-const web3 = new Web3();
 
 class ProofPointRegistry {
-  private _web3: Web3;
   private _rootAddress: EthereumAddress;
   private _address: EthereumAddress;
-  private _registry: Contract;
+  private _registry: ethers.Contract;
   private _storage: StorageProvider;
   private _httpClient: HttpClient;
+  private _provider: ethers.providers.JsonRpcProvider;
 
   /**
    * Creates an instance of Proof Point registry for interacting with a pre-existing deployment of the registry contracts.
@@ -48,13 +46,13 @@ class ProofPointRegistry {
   constructor(
     rootAddress: EthereumAddress,
     address: EthereumAddress,
-    web3: Web3,
+    provider: ethers.providers.JsonRpcProvider,
     storage: StorageProvider | null = null,
     httpClient: HttpClient | null = null
   ) {
     this._rootAddress = rootAddress;
     this._address = address;
-    this._web3 = web3;
+    this._provider = provider;
     this._storage = storage;
 
     if (storage === null || typeof storage === "undefined") {
@@ -72,10 +70,10 @@ class ProofPointRegistry {
       this._httpClient = httpClient;
     }
 
-    this._registry = new this._web3.eth.Contract(
-      ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].abi as any,
+    this._registry = new ethers.Contract(
       this._address.toString(),
-      { data: ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].bytecode }
+      ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].abi,
+      provider
     );
   }
 
@@ -99,7 +97,7 @@ class ProofPointRegistry {
       type,
       issuer,
       content,
-      this._registry.methods.issue,
+      (c: ethers.Contract, d: any) => c.issue(d),
       validFromDate,
       validUntilDate
     );
@@ -125,7 +123,7 @@ class ProofPointRegistry {
       type,
       issuerAddress,
       content,
-      this._registry.methods.commit,
+      (c: ethers.Contract, d: any) => c.commit(d),
       validFromDate,
       validUntilDate
     );
@@ -162,10 +160,11 @@ class ProofPointRegistry {
     }
 
     const { id } = await this._canonicalizeAndStoreObject(proofPointObject);
-    const proofPointIdBytes = web3.utils.asciiToHex(id.toString());
-    await this._registry.methods
-      .revoke(proofPointIdBytes)
-      .send({ from: issuerAddress.toString(), gas: GAS_LIMIT });
+    const proofPointIdBytes = ethers.utils.hexlify(id.toString()); // TODO is this correct
+
+    const signer = this._provider.getSigner(issuerAddress.toString());
+    const registryWithSigner = this._registry.connect(signer);
+    await registryWithSigner.revoke(proofPointIdBytes);
   }
 
   /**
@@ -239,7 +238,7 @@ class ProofPointRegistry {
     }
 
     const { id } = await this._canonicalizeAndStoreObject(proofPointObject);
-    const proofPointIdBytes = web3.utils.asciiToHex(id.toString());
+    const proofPointIdBytes = ethers.utils.hexlify(id.toString());
 
     const isValid = await this._registry.methods
       .validate(issuerAddress.toString(), proofPointIdBytes)
@@ -275,13 +274,24 @@ class ProofPointRegistry {
    * to this registry.
    */
   async getAll(): Promise<Array<string>> {
-    const publishEvents = await this._registry.getPastEvents("Published", {
+    const filter = {
+      address: this._registry.address,
+      topics: [ethers.utils.id("Published(bytes)")],
       fromBlock: 0,
       toBlock: "latest",
-    });
+    };
+    const publishEvents = await this._provider.getLogs(filter);
+
+    // const publishEvents = await this._registry.getPastEvents("Published", {
+    //   fromBlock: 0,
+    //   toBlock: "latest",
+    // });
+
+    // TODO
+    console.log(JSON.stringify(publishEvents, null, " "));
 
     const nonUniqueIds = publishEvents.map((ev) =>
-      Web3.utils.hexToAscii(ev.returnValues._claim)
+      ethers.utils.toUtf8String(ev.data)
     );
     const unqiueIds = nonUniqueIds.filter((v, i, a) => a.indexOf(v) === i);
     return unqiueIds;
@@ -298,17 +308,27 @@ class ProofPointRegistry {
     const version = await this._getVersion();
     const history = await this._getHistory(
       version,
-      this._registry.options.address,
+      this._registry.address,
       proofPointId
     );
     return history.sort((a, b) => a.blockNumber - b.blockNumber);
   }
 
-  private _eventNameToEventType(eventName: string): ProofPointEventType {
-    if (eventName === "Issued") return ProofPointEventType.Issued;
-    if (eventName === "Committed") return ProofPointEventType.Committed;
-    if (eventName === "Revoked") return ProofPointEventType.Revoked;
-    throw new Error(`Invalid Proof Point event name: ${eventName}`);
+  // private _eventNameToEventType(eventName: string): ProofPointEventType {
+  //   if (eventName === "Issued") return ProofPointEventType.Issued;
+  //   if (eventName === "Committed") return ProofPointEventType.Committed;
+  //   if (eventName === "Revoked") return ProofPointEventType.Revoked;
+  //   throw new Error(`Invalid Proof Point event name: ${eventName}`);
+  // }
+
+  private _topicToEventType(topic: string): ProofPointEventType {
+    if (topic === ethers.utils.id("Issued(address,bytes)"))
+      return ProofPointEventType.Issued;
+    if (topic === ethers.utils.id("Commited(address,bytes)"))
+      return ProofPointEventType.Committed;
+    if (topic === ethers.utils.id("Revoked(address,bytes)"))
+      return ProofPointEventType.Revoked;
+    throw new Error(`Invalid Proof Point event type topic: ${topic}`);
   }
 
   private async _getHistory(
@@ -317,32 +337,48 @@ class ProofPointRegistry {
     proofPointId: ProofPointId
   ): Promise<ProofPointEvent[]> {
     // Prepare and store proxy object for the logic contract
-    const registry = new this._web3.eth.Contract(
-      ProofPointRegistryAbi[version].abi as any,
+    const registry = new ethers.Contract(
       logicContractAddress,
-      { data: ProofPointRegistryAbi[version].bytecode }
+      ProofPointRegistryAbi[version].abi,
+      this._provider
     );
 
-    const eventsRaw = await registry.getPastEvents("allEvents", {
-      // TODO filter doesn't work for some reason
-      // filter: {_claim: Web3.utils.keccak256(proofPointId) },
+    // const registry = new this._web3.eth.Contract(
+    //   ProofPointRegistryAbi[version].abi as any,
+    //   logicContractAddress,
+    //   { data: ProofPointRegistryAbi[version].bytecode }
+    // );
+
+    const filter = {
+      address: this._registry.address,
       fromBlock: 0,
       toBlock: "latest",
-    });
+    };
+    const eventsRaw = await this._provider.getLogs(filter);
+
+    // TODO
+    console.log(JSON.stringify(eventsRaw, null, " "));
+
+    // const eventsRaw = await registry.getPastEvents("allEvents", {
+    //   // TODO filter doesn't work for some reason
+    //   // filter: {_claim: Web3.utils.keccak256(proofPointId) },
+    //   fromBlock: 0,
+    //   toBlock: "latest",
+    // });
 
     const events = eventsRaw
       // TODO remove this client side filter once filter bug is fixed
       .filter(
-        (ev) =>
-          ev.returnValues._claim ===
-          Web3.utils.keccak256(proofPointId.toString())
+        (ev) => ev.data === ethers.utils.keccak256(proofPointId.toString()) // TODO
       )
-      .filter((ev) => ev.event !== "Published")
+      .filter((ev) => ev.topics[0] !== ethers.utils.id("Published(bytes)"))
       .map((ev) => {
         return {
           blockNumber: ev.blockNumber,
-          type: this._eventNameToEventType(ev.event),
-          issuer: EthereumAddress.parse(ev.returnValues._issuer),
+          type: this._topicToEventType(ev.topics[0]),
+          issuer: EthereumAddress.parse(
+            ethers.utils.hexStripZeros(ev.topics[1])
+          ), // TODO correct?
           proofPointId: proofPointId,
           transactionHash: EthereumTransactionHash.parse(ev.transactionHash),
         };
@@ -389,12 +425,15 @@ class ProofPointRegistry {
     const { id, canonicalisedObject } = await this._canonicalizeAndStoreObject(
       proofPointObject
     );
-    const proofPointIdBytes = web3.utils.asciiToHex(id.toString());
+    // TODO is this correct?
+    const proofPointIdBytes = ethers.utils.hexlify(id.toString());
 
-    const transactionReceipt = await issueFunction(proofPointIdBytes).send({
-      from: issuerAddress.toString(),
-      gas: GAS_LIMIT,
-    });
+    const signer = this._provider.getSigner(issuerAddress.toString());
+    const connectedContract = this._registry.connect(signer);
+    const transactionReceipt = await issueFunction(
+      connectedContract,
+      proofPointIdBytes
+    );
 
     return {
       proofPointId: id,
