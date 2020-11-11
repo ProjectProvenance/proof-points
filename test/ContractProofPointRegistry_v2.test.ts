@@ -312,7 +312,7 @@ describe("ProofPointRegistry_v2", () => {
     } catch (e) {}
   });
 
-  it("version", async () => {
+  it("getVersion returns current version and getPrevious returns address of previous logic contract", async () => {
     // deploy a v1 registry
     const storage = await deployContract(
       adminWallet,

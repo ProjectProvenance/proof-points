@@ -346,16 +346,18 @@ class ProofPointRegistry {
       this._provider
     );
 
+    const issuerFilter: any = null;
+
     const filterIssued = registry.filters.Issued(
-      null,
+      issuerFilter,
       this.proofPointIdToBytes(proofPointId)
     );
     const filterCommitted = registry.filters.Committed(
-      null,
+      issuerFilter,
       this.proofPointIdToBytes(proofPointId)
     );
     const filterRevoked = registry.filters.Revoked(
-      null,
+      issuerFilter,
       this.proofPointIdToBytes(proofPointId)
     );
 
