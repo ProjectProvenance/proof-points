@@ -24,7 +24,6 @@ const ProofPointRegistryAbi = [
   ProofPointRegistryAbiV2,
 ];
 const PROOF_POINT_REGISTRY_VERSION = 2;
-const GAS_LIMIT = 1000000;
 const PROOF_TYPE =
   "https://open.provenance.org/ontology/ptf/v2/ProvenanceProofType1";
 
@@ -601,6 +600,5 @@ class ProofPointRegistry {
 export {
   ProofPointRegistry,
   PROOF_POINT_REGISTRY_VERSION,
-  ProofPointRegistryAbi,
-  GAS_LIMIT,
+  ProofPointRegistryAbi
 };
