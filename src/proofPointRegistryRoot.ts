@@ -141,10 +141,11 @@ class ProofPointRegistryRoot {
       ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].bytecode,
       signer
     );
-    const logic = await factory.deploy(this._address);
+    const logic = await factory.deploy(this._address.toString());
 
     // set logic contract as owner of eternal storage
-    await this._contract.setOwner(logic.address);
+    const contractWithSigner = this._contract.connect(signer);
+    await contractWithSigner.setOwner(logic.address);
   }
 
   private async getLogicContractVersion(): Promise<number> {

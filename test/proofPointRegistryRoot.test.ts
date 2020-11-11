@@ -1,29 +1,64 @@
-import { expect, use } from "chai";
-import { Contract, utils, Wallet } from "ethers";
-import { deployContract, MockProvider, solidity } from "ethereum-waffle";
+import { expect } from "chai";
+import { ContractFactory } from "ethers";
+import { MockProvider } from "ethereum-waffle";
 import ProofPointRegistryStorage1Abi from "../build/ProofPointRegistryStorage1.json";
-import ProofPointRegistry2 from "../build/ProofPointRegistry_v2.json";
 import ProofPointRegistryV1Abi from "../build/ProofPointRegistry.json";
-import { ProofPointRegistryRoot } from "../dist/src/index";
+import { Wallet } from "ethers";
+import {
+  EthereumAddress,
+  ProofPointRegistryRoot,
+  StorageProvider,
+} from "../dist/src/index";
 import FakeStorageProvider from "./fixtures/FakeStorageProvider";
 import FakeHttpClient from "./fixtures/FakeHttpClient";
 
 describe("ProofPointRegistryRoot", () => {
-  let storageProvider;
-  let subject;
-  let type;
-  let content;
-  let admin;
-  let httpClient;
+  let storageProvider: StorageProvider;
+  let subject: ProofPointRegistryRoot;
+  let type: string;
+  let content: any;
+  let provider: MockProvider;
+  let admin: Wallet;
+  let httpClient: FakeHttpClient;
+
+  async function deployV1(): Promise<void> {
+    // deploy eternal storage contract
+    let factory = new ContractFactory(
+      ProofPointRegistryStorage1Abi.abi,
+      ProofPointRegistryStorage1Abi.bytecode,
+      admin
+    );
+    const eternalStorage = await factory.deploy();
+
+    // deploy logic contract pointing to eternal storage
+    factory = new ContractFactory(
+      ProofPointRegistryV1Abi.abi,
+      ProofPointRegistryV1Abi.bytecode,
+      admin
+    );
+    const logic = await factory.deploy(eternalStorage.address);
+
+    // set logic contract as owner of eternal storage
+    await eternalStorage.setOwner(logic.address);
+
+    // construct and return a ProofPointRegistry object for the newly deployed setup
+    subject = new ProofPointRegistryRoot(
+      EthereumAddress.parse(eternalStorage.address),
+      provider
+    );
+  }
 
   beforeEach(async () => {
     storageProvider = new FakeStorageProvider();
     httpClient = new FakeHttpClient({});
 
-    admin = new MockProvider().getWallets()[0];
+    provider = new MockProvider();
+    admin = provider.getWallets()[0];
 
-
-    subject = await ProofPointRegistryRoot.deploy(admin, web3);
+    subject = await ProofPointRegistryRoot.deploy(
+      provider,
+      EthereumAddress.parse(admin.address)
+    );
 
     type = "http://open.provenance.org/ontology/ptf/v1/TestProofPoint";
     content = {
@@ -47,31 +82,7 @@ describe("ProofPointRegistryRoot", () => {
 
   it("upgrade happy path", async () => {
     // deploy v1 registry
-
-    // deploy eternal storage contract
-    const eternalStorageContract = new web3.eth.Contract(
-      ProofPointRegistryStorage1Abi.abi
-    );
-    const eternalStorage = await eternalStorageContract
-      .deploy({ data: ProofPointRegistryStorage1Abi.bytecode })
-      .send({ from: admin, gas: 1000000 });
-
-    // deploy logic contract pointing to eternal storage
-    const logicContract = new web3.eth.Contract(ProofPointRegistryV1Abi.abi);
-    const logic = await logicContract
-      .deploy({
-        data: ProofPointRegistryV1Abi.bytecode,
-        arguments: [eternalStorage.options.address],
-      })
-      .send({ from: admin, gas: 1000000 });
-
-    // set logic contract as owner of eternal storage
-    await eternalStorage.methods
-      .setOwner(logic.options.address)
-      .send({ from: admin, gas: 1000000 });
-
-    // construct and return a ProofPointRegistry object for the newly deployed setup
-    subject = new ProofPointRegistryRoot(eternalStorage.options.address, web3);
+    await deployV1();
 
     let canUpgrade = await subject.canUpgrade();
     expect(canUpgrade).to.be.true;
@@ -84,36 +95,12 @@ describe("ProofPointRegistryRoot", () => {
 
   it("history still available after upgrade", async () => {
     // deploy v1 registry
-
-    // deploy eternal storage contract
-    const eternalStorageContract = new web3.eth.Contract(
-      ProofPointRegistryStorage1Abi.abi
-    );
-    const eternalStorage = await eternalStorageContract
-      .deploy({ data: ProofPointRegistryStorage1Abi.bytecode })
-      .send({ from: admin, gas: 1000000 });
-
-    // deploy logic contract pointing to eternal storage
-    const logicContract = new web3.eth.Contract(ProofPointRegistryV1Abi.abi);
-    const logic = await logicContract
-      .deploy({
-        data: ProofPointRegistryV1Abi.bytecode,
-        arguments: [eternalStorage.options.address],
-      })
-      .send({ from: admin, gas: 1000000 });
-
-    // set logic contract as owner of eternal storage
-    await eternalStorage.methods
-      .setOwner(logic.options.address)
-      .send({ from: admin, gas: 1000000 });
-
-    // construct and return a ProofPointRegistry object for the newly deployed setup
-    subject = new ProofPointRegistryRoot(eternalStorage.options.address, web3);
+    await deployV1();
 
     const registry = await subject.getRegistry(storageProvider, httpClient);
 
     // create some history activity
-    const { proofPointId } = await registry.issue(type, admin, content);
+    const { proofPointId } = await registry.issue(type, admin.address, content);
     await registry.revokeById(proofPointId);
 
     // upgrade the registry contract

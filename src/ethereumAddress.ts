@@ -1,4 +1,4 @@
-import ethers from "ethers";
+import { ethers } from "ethers";
 
 class EthereumAddress {
   private _addr: string;

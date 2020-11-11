@@ -1,4 +1,4 @@
-import ethers from "ethers";
+import { ethers } from "ethers";
 import canonicalizeJson = require("canonicalize");
 import localISOdt = require("local-iso-dt");
 
@@ -133,8 +133,8 @@ class ProofPointRegistry {
    * Revoke a Proof Point identified by it's ID. You must control the account that originally issued the Proof Point. The account must be sufficiently funded to execute the revoke transaction.
    * @param proofPointId The ID of the Proof Point to revoke. This is the value returned in the @param proofPointId field of the {@link ProofPointIssueResult} when the Proof Point was issued.
    */
-  async revokeById(proofPointId: string): Promise<void> {
-    const storedData = await this._storage.get(proofPointId);
+  async revokeById(proofPointId: ProofPointId): Promise<void> {
+    const storedData = await this._storage.get(proofPointId.toString());
     const proofPointObject = JSON.parse(storedData.data);
     await this.revoke(proofPointObject);
   }
@@ -160,8 +160,7 @@ class ProofPointRegistry {
     }
 
     const { id } = await this._canonicalizeAndStoreObject(proofPointObject);
-    const proofPointIdBytes = ethers.utils.hexlify(id.toString()); // TODO is this correct
-
+    const proofPointIdBytes = this.proofPointIdToBytes(id);
     const signer = this._provider.getSigner(issuerAddress.toString());
     const registryWithSigner = this._registry.connect(signer);
     await registryWithSigner.revoke(proofPointIdBytes);
@@ -172,8 +171,10 @@ class ProofPointRegistry {
    * @param proofPointId The ID of the Proof Point to revoke.
    * @returns true if the Proof Point passes all validation checks, otherwise false.
    */
-  async validateById(proofPointId: string): Promise<ProofPointValidateResult> {
-    const storedData = await this._storage.get(proofPointId);
+  async validateById(
+    proofPointId: ProofPointId
+  ): Promise<ProofPointValidateResult> {
+    const storedData = await this._storage.get(proofPointId.toString());
     const proofPointObject = JSON.parse(storedData.data);
     return this.validate(proofPointObject);
   }
@@ -238,11 +239,12 @@ class ProofPointRegistry {
     }
 
     const { id } = await this._canonicalizeAndStoreObject(proofPointObject);
-    const proofPointIdBytes = ethers.utils.hexlify(id.toString());
+    const proofPointIdBytes = this.proofPointIdToBytes(id);
 
-    const isValid = await this._registry.methods
-      .validate(issuerAddress.toString(), proofPointIdBytes)
-      .call();
+    const isValid = await this._registry.validate(
+      issuerAddress.toString(),
+      proofPointIdBytes
+    );
 
     if (isValid) {
       return {
@@ -263,8 +265,8 @@ class ProofPointRegistry {
    * Fetch the Proof Point document identified by its ID.
    * @param proofPointId The ID of the Proof Point document to fetch.
    */
-  async getById(proofPointId: string): Promise<ProofPoint> {
-    const storedData = await this._storage.get(proofPointId);
+  async getById(proofPointId: ProofPointId): Promise<ProofPoint> {
+    const storedData = await this._storage.get(proofPointId.toString());
     const proofPointObject = JSON.parse(storedData.data);
     return proofPointObject;
   }
@@ -273,7 +275,7 @@ class ProofPointRegistry {
    * Get a list of the IDs of all Proof Points ever issued or committed
    * to this registry.
    */
-  async getAll(): Promise<Array<string>> {
+  async getAll(): Promise<Array<ProofPointId>> {
     const filter = {
       address: this._registry.address,
       topics: [ethers.utils.id("Published(bytes)")],
@@ -282,19 +284,14 @@ class ProofPointRegistry {
     };
     const publishEvents = await this._provider.getLogs(filter);
 
-    // const publishEvents = await this._registry.getPastEvents("Published", {
-    //   fromBlock: 0,
-    //   toBlock: "latest",
-    // });
-
-    // TODO
-    console.log(JSON.stringify(publishEvents, null, " "));
-
-    const nonUniqueIds = publishEvents.map((ev) =>
-      ethers.utils.toUtf8String(ev.data)
+    const nonUniqueIds = publishEvents.map((ev) => {
+      return this.logDataToProofPointId(ev.data);
+    });
+    const uniqueIds = nonUniqueIds.filter(
+      (val, idx, arr) =>
+        arr.findIndex((id) => id.toString() === val.toString()) === idx
     );
-    const unqiueIds = nonUniqueIds.filter((v, i, a) => a.indexOf(v) === i);
-    return unqiueIds;
+    return uniqueIds;
   }
 
   /**
@@ -321,10 +318,24 @@ class ProofPointRegistry {
   //   throw new Error(`Invalid Proof Point event name: ${eventName}`);
   // }
 
+  private proofPointIdToBytes(id: ProofPointId): string {
+    const idBytes = ethers.utils.toUtf8Bytes(id.toString());
+    const idBytesHex = ethers.utils.hexlify(idBytes);
+    return idBytesHex;
+  }
+
+  private logDataToProofPointId(data: string): ProofPointId {
+    // For some reason there are 64 bytes before the actual log data, plus the 0x
+    // and the log data is zero right-padded to a multiple of 32 bytes
+    const idStrHex = data.substr(130, 92);
+    const idStr = ethers.utils.toUtf8String("0x" + idStrHex);
+    return ProofPointId.parse(idStr);
+  }
+
   private _topicToEventType(topic: string): ProofPointEventType {
     if (topic === ethers.utils.id("Issued(address,bytes)"))
       return ProofPointEventType.Issued;
-    if (topic === ethers.utils.id("Commited(address,bytes)"))
+    if (topic === ethers.utils.id("Committed(address,bytes)"))
       return ProofPointEventType.Committed;
     if (topic === ethers.utils.id("Revoked(address,bytes)"))
       return ProofPointEventType.Revoked;
@@ -343,52 +354,36 @@ class ProofPointRegistry {
       this._provider
     );
 
-    // const registry = new this._web3.eth.Contract(
-    //   ProofPointRegistryAbi[version].abi as any,
-    //   logicContractAddress,
-    //   { data: ProofPointRegistryAbi[version].bytecode }
-    // );
+    const filterIssued = registry.filters.Issued(
+      null,
+      this.proofPointIdToBytes(proofPointId)
+    );
+    const filterCommitted = registry.filters.Committed(
+      null,
+      this.proofPointIdToBytes(proofPointId)
+    );
+    const filterRevoked = registry.filters.Revoked(
+      null,
+      this.proofPointIdToBytes(proofPointId)
+    );
 
-    const filter = {
-      address: this._registry.address,
-      fromBlock: 0,
-      toBlock: "latest",
-    };
-    const eventsRaw = await this._provider.getLogs(filter);
+    const allEvents: ProofPointEvent[] = [];
 
-    // TODO
-    console.log(JSON.stringify(eventsRaw, null, " "));
-
-    // const eventsRaw = await registry.getPastEvents("allEvents", {
-    //   // TODO filter doesn't work for some reason
-    //   // filter: {_claim: Web3.utils.keccak256(proofPointId) },
-    //   fromBlock: 0,
-    //   toBlock: "latest",
-    // });
-
-    const events = eventsRaw
-      // TODO remove this client side filter once filter bug is fixed
-      .filter(
-        (ev) => ev.data === ethers.utils.keccak256(proofPointId.toString()) // TODO
-      )
-      .filter((ev) => ev.topics[0] !== ethers.utils.id("Published(bytes)"))
-      .map((ev) => {
-        return {
-          blockNumber: ev.blockNumber,
-          type: this._topicToEventType(ev.topics[0]),
-          issuer: EthereumAddress.parse(
-            ethers.utils.hexStripZeros(ev.topics[1])
-          ), // TODO correct?
-          proofPointId: proofPointId,
-          transactionHash: EthereumTransactionHash.parse(ev.transactionHash),
-        };
-      });
+    allEvents.push(
+      ...(await this.getEventsByFilter(filterIssued, proofPointId))
+    );
+    allEvents.push(
+      ...(await this.getEventsByFilter(filterCommitted, proofPointId))
+    );
+    allEvents.push(
+      ...(await this.getEventsByFilter(filterRevoked, proofPointId))
+    );
 
     if (version === 1) {
-      return events;
+      return allEvents;
     }
 
-    const priorAddress = await registry.methods.getPrevious().call();
+    const priorAddress = await registry.getPrevious();
 
     const priorEvents = await this._getHistory(
       version - 1,
@@ -396,9 +391,33 @@ class ProofPointRegistry {
       proofPointId
     );
 
-    events.push(...priorEvents);
+    allEvents.push(...priorEvents);
 
-    return events;
+    return allEvents;
+  }
+
+  private async getEventsByFilter(
+    filter: ethers.EventFilter,
+    proofPointId: ProofPointId
+  ): Promise<ProofPointEvent[]> {
+    // TODO
+    // There seems to be a bug in ethers that you cannot specify the from and to block
+    // on the EventFilter type but if you don't then you don't get all logs.
+    // This is a workaround.
+    const f = filter as any;
+    f.fromBlock = 0;
+    f.toBlock = "latest";
+
+    const eventsRaw = await this._provider.getLogs(f);
+    return eventsRaw.map((ev) => {
+      return {
+        blockNumber: ev.blockNumber,
+        type: this._topicToEventType(ev.topics[0]),
+        issuer: EthereumAddress.parse(ethers.utils.hexStripZeros(ev.topics[1])), // TODO correct?
+        proofPointId: proofPointId,
+        transactionHash: EthereumTransactionHash.parse(ev.transactionHash),
+      };
+    });
   }
 
   private async _issue(
@@ -425,9 +444,8 @@ class ProofPointRegistry {
     const { id, canonicalisedObject } = await this._canonicalizeAndStoreObject(
       proofPointObject
     );
-    // TODO is this correct?
-    const proofPointIdBytes = ethers.utils.hexlify(id.toString());
 
+    const proofPointIdBytes = this.proofPointIdToBytes(id);
     const signer = this._provider.getSigner(issuerAddress.toString());
     const connectedContract = this._registry.connect(signer);
     const transactionReceipt = await issueFunction(
@@ -437,7 +455,7 @@ class ProofPointRegistry {
 
     return {
       proofPointId: id,
-      transactionHash: transactionReceipt.transactionHash,
+      transactionHash: EthereumTransactionHash.parse(transactionReceipt.hash),
       proofPointObject: canonicalisedObject,
     };
   }
@@ -571,7 +589,7 @@ class ProofPointRegistry {
 
   private async _getVersion(): Promise<number> {
     try {
-      const version = await this._registry.methods.getVersion().call();
+      const version = await this._registry.getVersion();
       return version;
     } catch (e) {
       // version 1 does not have the getVersion method.

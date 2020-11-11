@@ -16,7 +16,7 @@ interface StorageProvider {
 interface IpfsStorageProviderSettings {
   host: string;
   port: number;
-  protocol: string;
+  protocol?: string;
 }
 
 class IpfsStorageProvider {
