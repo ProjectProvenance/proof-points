@@ -413,7 +413,7 @@ class ProofPointRegistry {
       return {
         blockNumber: ev.blockNumber,
         type: this._topicToEventType(ev.topics[0]),
-        issuer: EthereumAddress.parse(ethers.utils.hexStripZeros(ev.topics[1])), // TODO correct?
+        issuer: EthereumAddress.parse(ethers.utils.hexStripZeros(ev.topics[1])),
         proofPointId: proofPointId,
         transactionHash: EthereumTransactionHash.parse(ev.transactionHash),
       };

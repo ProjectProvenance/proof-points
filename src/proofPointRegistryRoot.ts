@@ -6,7 +6,6 @@ import {
   ProofPointRegistry,
   PROOF_POINT_REGISTRY_VERSION,
   ProofPointRegistryAbi,
-  GAS_LIMIT, // TODO
 } from "./proofPointRegistry";
 import { HttpClient } from "./httpClient";
 import { EthereumAddress } from "./proofPointEvent";
