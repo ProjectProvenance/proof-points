@@ -21,6 +21,11 @@ class ProofPointRegistryRoot {
   private _contract: Contract;
   private _provider: ethers.providers.JsonRpcProvider;
 
+  /**
+   * Creates an instance of proof point registry root.
+   * @param address the well-known address of the deployed eternal storage contract.
+   * @param provider an ethers.providers.JsonRpcProvider to use for interacting with the blockchain.
+   */
   constructor(
     address: EthereumAddress,
     provider: ethers.providers.JsonRpcProvider

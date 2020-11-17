@@ -37,8 +37,9 @@ class ProofPointRegistry {
 
   /**
    * Creates an instance of Proof Point registry for interacting with a pre-existing deployment of the registry contracts.
-   * @param address the Ethereum address of the deployed eternal storage contract.
-   * @param web3 a web instance to use for interacting with the Ethereum blockchain.
+   * @param rootAddress the Ethereum address of the deployed eternal storage contract.
+   * @param address the Ethereum address of the current deployed logic contract.
+   * @param provider an ethers.providers.JsonRpcProvider to use for interacting with the blockchain.
    * @param storage a {@link StorageProvider} to use for storing/retrieving off-chain data or null to use the default implementation.
    * @param httpClient a {@link HttpClient} to use for fetching DID documents in order to support did:web issuers or null to use the default implementation.
    */
@@ -454,6 +455,7 @@ class ProofPointRegistry {
     const proofPointIdBytes = this.proofPointIdToBytes(id);
     const signer = this._provider.getSigner(issuerAddress.toString());
     const connectedContract = this._registry.connect(signer);
+
     const transactionReceipt = await issueFunction(
       connectedContract,
       proofPointIdBytes

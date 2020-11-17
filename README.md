@@ -14,28 +14,29 @@ This repo contains everything you need to work with [Provenance Proof Points](ht
 
 This section covers how to use the NPM package to issue, revoke and validate Proof Points.
 
-All Proof Point functionality is accessed through an instance of the `ProofPointRegistry` object. To construct a `ProofPointRegistry` object you will need a `web3` instance and the address of a `ProofPointRegistryStorage1` contract. The production instance of the `ProofPointRegistryStorage1` contract is deployed on kovan and its address is published at https://open.provenance.org/developers . If you want to `issue` a Proof Point you will also need a funded Ethereum account.
+All Proof Point functionality is accessed through an instance of the `ProofPointRegistry` object. To construct a `ProofPointRegistry` object you will need an `ethers.providers.JsonRpcProvider` instance and the address of a `ProofPointRegistryStorage1` contract. The production instance of the `ProofPointRegistryStorage1` contract is deployed on kovan and its address is published at https://open.provenance.org/developers . If you want to `issue` a Proof Point you will also need a funded Ethereum account.
 
-> If you want to deploy your own instance of the Proof Point registry contracts you can use `truffle migrate`. For more information see the [Truffle documentation](https://www.trufflesuite.com/docs), alternatively you
-can use the static `ProofPointRegistry.deploy(...)` method.
+> If you want to deploy your own instance of the Proof Point registry contracts you can use the static `ProofPointRegistryRoot.deploy(...)` method.
 
-Install the NPM package
+Install required NPM packages:
 
 ```
-$ npm i @provenance/proof-points
+$ npm i @provenance/proof-points ethers
 ```
 
-Import the package in your Javascript
+Import the packages in your Javascript
 
 ```
 import { EthereumAddress, ProofPointRegistryRoot, ProofPointRegistry } from '@provenance/proof-points';
+import { ethers } from ethers;
 ```
 
 Construct a `ProofPointRegistry` object
 
 ```
+const provider = new ethers.providers.JsonRpcProvider();
 const registryRootAddress = EthereumAddress.parse('0x...');
-const registryRoot = new ProofPointRegistryRoot(registryRootAddress, web3);
+const registryRoot = new ProofPointRegistryRoot(registryRootAddress, provider);
 const registry = await registryRoot.getRegistry();
 ```
 
@@ -117,25 +118,11 @@ npm run compile-typescript
 ipfs daemon
 ```
 
-Install `ganache-cli`
-
-```
-npm i -g ganache-cli
-```
-
-In a separate terminal start an `ganache-cli` instance
-
-```
-ganache-cli
-```
-
 Run unit tests
 
 ```
 npm test
 ```
-
-> For more advanced deployment and testing scenarios see the [Truffle documentation](https://www.trufflesuite.com/docs)
 
 ### Publishing NPM Package
 
