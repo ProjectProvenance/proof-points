@@ -347,21 +347,6 @@ class ProofPointRegistry {
       this._provider
     );
 
-    // const issuerFilter: any = null;
-
-    // const filterIssued = registry.filters.Issued(
-    //   issuerFilter,
-    //   this.proofPointIdToBytes(proofPointId)
-    // );
-    // const filterCommitted = registry.filters.Committed(
-    //   issuerFilter,
-    //   this.proofPointIdToBytes(proofPointId)
-    // );
-    // const filterRevoked = registry.filters.Revoked(
-    //   issuerFilter,
-    //   this.proofPointIdToBytes(proofPointId)
-    // );
-
     const allEvents: ProofPointEvent[] = [];
 
     allEvents.push(
