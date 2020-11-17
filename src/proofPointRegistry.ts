@@ -394,15 +394,7 @@ class ProofPointRegistry {
     filter: ethers.EventFilter,
     proofPointId: ProofPointId
   ): Promise<ProofPointEvent[]> {
-    // TODO
-    // There seems to be a bug in ethers that you cannot specify the from and to block
-    // on the EventFilter type but if you don't then you don't get all logs.
-    // This is a workaround.
-    const f = filter as any;
-    f.fromBlock = 0;
-    f.toBlock = "latest";
-
-    const eventsRaw = await this._provider.getLogs(f);
+    const eventsRaw = await this._registry.queryFilter(filter);
     return eventsRaw.map((ev) => {
       return {
         blockNumber: ev.blockNumber,
