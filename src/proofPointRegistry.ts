@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import { Contract, ethers } from "ethers";
 import canonicalizeJson = require("canonicalize");
 import localISOdt = require("local-iso-dt");
 
@@ -346,31 +346,43 @@ class ProofPointRegistry {
       this._provider
     );
 
-    const issuerFilter: any = null;
+    // const issuerFilter: any = null;
 
-    const filterIssued = registry.filters.Issued(
-      issuerFilter,
-      this.proofPointIdToBytes(proofPointId)
-    );
-    const filterCommitted = registry.filters.Committed(
-      issuerFilter,
-      this.proofPointIdToBytes(proofPointId)
-    );
-    const filterRevoked = registry.filters.Revoked(
-      issuerFilter,
-      this.proofPointIdToBytes(proofPointId)
-    );
+    // const filterIssued = registry.filters.Issued(
+    //   issuerFilter,
+    //   this.proofPointIdToBytes(proofPointId)
+    // );
+    // const filterCommitted = registry.filters.Committed(
+    //   issuerFilter,
+    //   this.proofPointIdToBytes(proofPointId)
+    // );
+    // const filterRevoked = registry.filters.Revoked(
+    //   issuerFilter,
+    //   this.proofPointIdToBytes(proofPointId)
+    // );
 
     const allEvents: ProofPointEvent[] = [];
 
     allEvents.push(
-      ...(await this.getEventsByFilter(filterIssued, proofPointId))
+      ...(await this.getEventsByFilter(
+        registry,
+        registry.filters.Issued.bind(registry.filters),
+        proofPointId
+      ))
     );
     allEvents.push(
-      ...(await this.getEventsByFilter(filterCommitted, proofPointId))
+      ...(await this.getEventsByFilter(
+        registry,
+        registry.filters.Committed.bind(registry.filters),
+        proofPointId
+      ))
     );
     allEvents.push(
-      ...(await this.getEventsByFilter(filterRevoked, proofPointId))
+      ...(await this.getEventsByFilter(
+        registry,
+        registry.filters.Revoked.bind(registry.filters),
+        proofPointId
+      ))
     );
 
     if (version === 1) {
@@ -391,10 +403,18 @@ class ProofPointRegistry {
   }
 
   private async getEventsByFilter(
-    filter: ethers.EventFilter,
+    registry: Contract,
+    filterFactory: any,
     proofPointId: ProofPointId
   ): Promise<ProofPointEvent[]> {
-    const eventsRaw = await this._registry.queryFilter(filter);
+    const issuerFilter: any = null;
+
+    const filter = filterFactory(
+      issuerFilter,
+      this.proofPointIdToBytes(proofPointId)
+    );
+
+    const eventsRaw = await registry.queryFilter(filter);
     return eventsRaw.map((ev) => {
       return {
         blockNumber: ev.blockNumber,
