@@ -1,5 +1,3 @@
-import Web3 from "web3";
-
 import { EthereumAddress } from "./ethereumAddress";
 import { HttpClient } from "./httpClient";
 import { ProofPoint } from "./proofPoint";
@@ -17,7 +15,6 @@ import {
 } from "./storage";
 
 export {
-  Web3,
   EthereumAddress,
   HttpClient,
   ProofPointRegistry,

@@ -1,13 +1,11 @@
-import { Contract } from "web3-eth-contract";
-import Web3 from "web3";
+import { ethers, Contract } from "ethers";
 
-import ProofPointRegistryStorage1Abi from "../build/contracts/ProofPointRegistryStorage1.json";
+import ProofPointRegistryStorage1Abi from "../build/ProofPointRegistryStorage1.json";
 import { StorageProvider } from "./storage";
 import {
   ProofPointRegistry,
   PROOF_POINT_REGISTRY_VERSION,
   ProofPointRegistryAbi,
-  GAS_LIMIT,
 } from "./proofPointRegistry";
 import { HttpClient } from "./httpClient";
 import { EthereumAddress } from "./proofPointEvent";
@@ -19,17 +17,25 @@ import { EthereumAddress } from "./proofPointEvent";
  * contract by looking up its address in the eternal storage contract.
  */
 class ProofPointRegistryRoot {
-  private _web3: Web3;
   private _address: EthereumAddress;
   private _contract: Contract;
+  private _provider: ethers.providers.JsonRpcProvider;
 
-  constructor(address: EthereumAddress, web3: Web3) {
+  /**
+   * Creates an instance of proof point registry root.
+   * @param address the well-known address of the deployed eternal storage contract.
+   * @param provider an ethers.providers.JsonRpcProvider to use for interacting with the blockchain.
+   */
+  constructor(
+    address: EthereumAddress,
+    provider: ethers.providers.JsonRpcProvider
+  ) {
     this._address = address;
-    this._web3 = web3;
-    this._contract = new this._web3.eth.Contract(
-      ProofPointRegistryStorage1Abi.abi as any,
+    this._provider = provider;
+    this._contract = new Contract(
       this._address.toString(),
-      { data: ProofPointRegistryStorage1Abi.bytecode }
+      ProofPointRegistryStorage1Abi.abi,
+      provider
     );
   }
 
@@ -44,13 +50,11 @@ class ProofPointRegistryRoot {
     storage: StorageProvider | null = null,
     httpClient: HttpClient | null = null
   ): Promise<ProofPointRegistry> {
-    const logicAddress = EthereumAddress.parse(
-      await this._contract.methods.getOwner().call()
-    );
+    const logicAddress = EthereumAddress.parse(await this._contract.getOwner());
     const registry = new ProofPointRegistry(
       this._address,
       logicAddress,
-      this._web3,
+      this._provider,
       storage,
       httpClient
     );
@@ -85,37 +89,34 @@ class ProofPointRegistryRoot {
    * @returns a {@link ProofPointRegistryRoot} for interacting with the newly deployed contracts.
    */
   static async deploy(
-    fromAddress: EthereumAddress,
-    web3: Web3
+    provider: ethers.providers.JsonRpcProvider,
+    from: EthereumAddress
   ): Promise<ProofPointRegistryRoot> {
+    const signer = provider.getSigner(from.toString());
+
     // deploy eternal storage contract
-    const eternalStorageContract = new web3.eth.Contract(
-      ProofPointRegistryStorage1Abi.abi as any
+    let factory = new ethers.ContractFactory(
+      ProofPointRegistryStorage1Abi.abi,
+      ProofPointRegistryStorage1Abi.bytecode,
+      signer
     );
-    const eternalStorage = await eternalStorageContract
-      .deploy({ data: ProofPointRegistryStorage1Abi.bytecode })
-      .send({ from: fromAddress.toString(), gas: GAS_LIMIT });
+    const eternalStorage = await factory.deploy();
 
     // deploy logic contract pointing to eternal storage
-    const logicContract = new web3.eth.Contract(
-      ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].abi as any
+    factory = new ethers.ContractFactory(
+      ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].abi,
+      ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].bytecode,
+      signer
     );
-    const logic = await logicContract
-      .deploy({
-        data: ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].bytecode,
-        arguments: [eternalStorage.options.address],
-      })
-      .send({ from: fromAddress.toString(), gas: GAS_LIMIT });
+    const logic = await factory.deploy(eternalStorage.address);
 
     // set logic contract as owner of eternal storage
-    await eternalStorage.methods
-      .setOwner(logic.options.address)
-      .send({ from: fromAddress.toString(), gas: GAS_LIMIT });
+    await eternalStorage.setOwner(logic.address);
 
     // construct and return a ProofPointRegistry object for the newly deployed setup
     const registryRoot = new ProofPointRegistryRoot(
-      EthereumAddress.parse(eternalStorage.options.address),
-      web3
+      EthereumAddress.parse(eternalStorage.address),
+      provider
     );
 
     return registryRoot;
@@ -135,35 +136,32 @@ class ProofPointRegistryRoot {
     }
 
     // get the admin account from which to perform the upgrade
-    const admin = await this._contract.methods.getAdmin().call();
+    const admin = await this._contract.getAdmin();
 
     // deploy logic contract pointing to eternal storage
-    const logicContract = new this._web3.eth.Contract(
-      ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].abi as any
+    const signer = this._provider.getSigner(admin);
+    const factory = new ethers.ContractFactory(
+      ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].abi,
+      ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].bytecode,
+      signer
     );
-    const logic = await logicContract
-      .deploy({
-        data: ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].bytecode,
-        arguments: [this._address],
-      })
-      .send({ from: admin, gas: GAS_LIMIT });
+    const logic = await factory.deploy(this._address.toString());
 
     // set logic contract as owner of eternal storage
-    await this._contract.methods
-      .setOwner(logic.options.address)
-      .send({ from: admin, gas: GAS_LIMIT });
+    const contractWithSigner = this._contract.connect(signer);
+    await contractWithSigner.setOwner(logic.address);
   }
 
   private async getLogicContractVersion(): Promise<number> {
-    const logicAddress = await this._contract.methods.getOwner().call();
-    const registry = new this._web3.eth.Contract(
-      ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].abi as any,
+    const logicAddress = await this._contract.getOwner();
+    const registry = new ethers.Contract(
       logicAddress,
-      { data: ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].bytecode }
+      ProofPointRegistryAbi[PROOF_POINT_REGISTRY_VERSION].abi,
+      this._provider
     );
 
     try {
-      const version = await registry.methods.getVersion().call();
+      const version = await registry.getVersion();
       return version;
     } catch (e) {
       // version 1 does not have the getVersion method.

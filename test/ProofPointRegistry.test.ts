@@ -1,30 +1,32 @@
-const { expect } = require("chai");
-const {
+import { expect } from "chai";
+import { Wallet } from "ethers";
+import {
   ProofPointRegistryRoot,
-  ProofPointRegistry,
   ProofPointStatus,
   ProofPointEventType,
-} = require("../dist/src/index");
-const FakeStorageProvider = require("./fixtures/FakeStorageProvider");
-const FakeHttpClient = require("./fixtures/FakeHttpClient");
+  EthereumAddress,
+  ProofPointRegistry,
+  StorageProvider,
+} from "../dist/src/index";
+import FakeStorageProvider from "./fixtures/FakeStorageProvider";
+import FakeHttpClient from "./fixtures/FakeHttpClient";
+import { MockProvider } from "ethereum-waffle";
 
-const ProofPointRegistryV1Abi = require("../build/contracts/ProofPointRegistry.json");
-const ProofPointRegistryStorage1Abi = require("../build/contracts/ProofPointRegistryStorage1.json");
-
-contract("ProofPointRegistry", () => {
-  let storageProvider;
-  let subject;
-  let type;
-  let content;
-  let admin;
-  let httpClient;
-  let rootAddress;
+describe("ProofPointRegistry", () => {
+  let storageProvider: StorageProvider;
+  let subject: ProofPointRegistry;
+  let type: string;
+  let content: any;
+  let provider: MockProvider;
+  let admin: Wallet;
+  let httpClient: FakeHttpClient;
+  let rootAddress: EthereumAddress;
 
   beforeEach(async () => {
     storageProvider = new FakeStorageProvider();
 
-    const accounts = await web3.eth.getAccounts();
-    [admin] = accounts;
+    provider = new MockProvider();
+    admin = provider.getWallets()[0];
 
     httpClient = new FakeHttpClient({
       "https://example.com/.well-known/did.json": `
@@ -35,7 +37,7 @@ contract("ProofPointRegistry", () => {
             "id": "did:web:example.com#owner",
             "type": "Secp256k1VerificationKey2018",
             "owner": "did:web:example.com",
-            "ethereumAddress": "${admin}"
+            "ethereumAddress": "${admin.address}"
         }],
         "authentication": [{
             "type": "Secp256k1SignatureAuthentication2018",
@@ -50,7 +52,7 @@ contract("ProofPointRegistry", () => {
             "id": "did:web:example.com:subpath#owner",
             "type": "Secp256k1VerificationKey2018",
             "owner": "did:web:example.com:subpath",
-            "ethereumAddress": "${admin}"
+            "ethereumAddress": "${admin.address}"
         }],
         "authentication": [{
             "type": "Secp256k1SignatureAuthentication2018",
@@ -65,7 +67,7 @@ contract("ProofPointRegistry", () => {
             "id": "did:web:example.com%3A1234#owner",
             "type": "Secp256k1VerificationKey2018",
             "owner": "did:web:example.com%3A1234",
-            "ethereumAddress": "${admin}"
+            "ethereumAddress": "${admin.address}"
         }],
         "authentication": [{
             "type": "Secp256k1SignatureAuthentication2018",
@@ -80,7 +82,7 @@ contract("ProofPointRegistry", () => {
             "id": "did:web:example.com%3A1234:subpath#owner",
             "type": "Secp256k1VerificationKey2018",
             "owner": "did:web:example.com%3A1234:subpath",
-            "ethereumAddress": "${admin}"
+            "ethereumAddress": "${admin.address}"
         }],
         "authentication": [{
             "type": "Secp256k1SignatureAuthentication2018",
@@ -89,8 +91,11 @@ contract("ProofPointRegistry", () => {
       }`,
     });
 
-    const registryRoot = await ProofPointRegistryRoot.deploy(admin, web3);
-    rootAddress = registryRoot._address;
+    const registryRoot = await ProofPointRegistryRoot.deploy(
+      provider,
+      EthereumAddress.parse(admin.address)
+    );
+    rootAddress = registryRoot.getAddress();
     subject = await registryRoot.getRegistry(storageProvider, httpClient);
 
     type = "http://open.provenance.org/ontology/ptf/v1/TestProofPoint";
@@ -102,44 +107,45 @@ contract("ProofPointRegistry", () => {
   });
 
   it("should use provenance IPFS for storage if not specified", async () => {
-    const accounts = await web3.eth.getAccounts();
-    [admin] = accounts;
-    const registryRoot = await ProofPointRegistryRoot.deploy(admin, web3);
+    const registryRoot = await ProofPointRegistryRoot.deploy(
+      provider,
+      EthereumAddress.parse(admin.address)
+    );
     subject = await registryRoot.getRegistry(null, httpClient);
-    await subject.issue(type, admin, content);
+    await subject.issue(type, admin.address, content);
     // no exception
   });
 
   it("should issue a valid pp", async () => {
-    const results = await subject.issue(type, admin, content);
+    const results = await subject.issue(type, admin.address, content);
     const validity = await subject.validate(results.proofPointObject);
     expect(validity.isValid).to.be.true;
     expect(validity.statusCode).to.eq(ProofPointStatus.Valid);
   });
 
   it("should correctly set registryRoot of issued proof point", async () => {
-    const results = await subject.issue(type, admin, content);
+    const results = await subject.issue(type, admin.address, content);
     expect(results.proofPointObject.proof.registryRoot).to.eq(
       rootAddress.toString()
     );
   });
 
   it("should commit a valid pp", async () => {
-    const results = await subject.commit(type, admin, content);
+    const results = await subject.commit(type, admin.address, content);
     const validity = await subject.validate(results.proofPointObject);
     expect(validity.isValid).to.be.true;
     expect(validity.statusCode).to.eq(ProofPointStatus.Valid);
   });
 
   it("should return tx hash and pp ID and a pp object", async () => {
-    const results = await subject.issue(type, admin, content);
+    const results = await subject.issue(type, admin.address, content);
     expect(results.proofPointId).to.exist;
     expect(results.transactionHash).to.exist;
     expect(results.proofPointObject).to.exist;
   });
 
   it("should revoke a pp", async () => {
-    const result = await subject.issue(type, admin, content);
+    const result = await subject.issue(type, admin.address, content);
     await subject.revoke(result.proofPointObject);
     const validity = await subject.validate(result.proofPointObject);
     expect(validity.isValid).to.be.false;
@@ -147,14 +153,14 @@ contract("ProofPointRegistry", () => {
   });
 
   it("should validate a valid pp by ID", async () => {
-    const results = await subject.issue(type, admin, content);
+    const results = await subject.issue(type, admin.address, content);
     const validity = await subject.validateById(results.proofPointId);
     expect(validity.isValid).to.be.true;
     expect(validity.statusCode).to.eq(ProofPointStatus.Valid);
   });
 
   it("should revoke a valid pp by ID", async () => {
-    const results = await subject.issue(type, admin, content);
+    const results = await subject.issue(type, admin.address, content);
     await subject.revokeById(results.proofPointId);
     const validity = await subject.validateById(results.proofPointId);
     expect(validity.isValid).to.be.false;
@@ -162,7 +168,7 @@ contract("ProofPointRegistry", () => {
   });
 
   it("should treat pp data canonically", async () => {
-    const results = await subject.issue(type, admin, content);
+    const results = await subject.issue(type, admin.address, content);
     const equivalentProofPointObject = results.proofPointObject;
     equivalentProofPointObject.credentialSubject = {
       id: "https://provenance.org/subject1",
@@ -177,9 +183,9 @@ contract("ProofPointRegistry", () => {
   it("pp should be invalid before issuanceDate", async () => {
     const results = await subject.issue(
       type,
-      admin,
+      admin.address,
       content,
-      Date.now() + 1000000
+      new Date(Date.now() + 1000000)
     );
     const validity = await subject.validate(results.proofPointObject);
     expect(validity.isValid).to.be.false;
@@ -189,10 +195,10 @@ contract("ProofPointRegistry", () => {
   it("pp should be invalid after expirationDate", async () => {
     const results = await subject.issue(
       type,
-      admin,
+      admin.address,
       content,
       null,
-      Date.now() - 1000000
+      new Date(Date.now() - 1000000)
     );
     const validity = await subject.validate(results.proofPointObject);
     expect(validity.isValid).to.be.false;
@@ -201,10 +207,13 @@ contract("ProofPointRegistry", () => {
 
   it("pp should be invalid if issued to a different registry", async () => {
     // issue a pp
-    const results = await subject.issue(type, admin, content);
+    const results = await subject.issue(type, admin.address, content);
 
     // deploy a second registry and use an API that trusts only the new registry
-    const altRegistryRoot = await ProofPointRegistryRoot.deploy(admin, web3);
+    const altRegistryRoot = await ProofPointRegistryRoot.deploy(
+      provider,
+      EthereumAddress.parse(admin.address)
+    );
     const altRegistry = await altRegistryRoot.getRegistry(
       storageProvider,
       httpClient
@@ -219,7 +228,7 @@ contract("ProofPointRegistry", () => {
   });
 
   it("should return the correct Proof Point document when getById is called", async () => {
-    const results = await subject.issue(type, admin, content);
+    const results = await subject.issue(type, admin.address, content);
 
     const fetched = await subject.getById(results.proofPointId);
 
@@ -230,30 +239,30 @@ contract("ProofPointRegistry", () => {
 
   it("should return a list of all issued and committed Proof Points when getAll is called", async () => {
     // issue a pp
-    const result1 = await subject.issue("type1", admin, content);
+    const result1 = await subject.issue("type1", admin.address, content);
     // revoke it
     await subject.revoke(result1.proofPointObject);
     // commit another pp
-    const result2 = await subject.commit("type2", admin, content);
+    const result2 = await subject.commit("type2", admin.address, content);
 
     // get all pps ever published
     const list = await subject.getAll();
 
     // should include the issued and revoked one and the committed one
     expect(list.length).to.eq(2);
-    expect(list[0]).to.eq(result1.proofPointId.toString());
-    expect(list[1]).to.eq(result2.proofPointId.toString());
+    expect(list[0].toString()).to.equal(result1.proofPointId.toString());
+    expect(list[1].toString()).to.equal(result2.proofPointId.toString());
   });
 
   it("should return a list of all related events when getHistoryById is called", async () => {
     // issue a pp
-    const result = await subject.issue(type, admin, content);
+    const result = await subject.issue(type, admin.address, content);
     // issue another one
-    await subject.issue("type2", admin, content);
+    await subject.issue("type2", admin.address, content);
     // revoke the first one
     await subject.revoke(result.proofPointObject);
     // commit the first one
-    await subject.commit(type, admin, content);
+    await subject.commit(type, admin.address, content);
 
     // get history of first one
     const history = await subject.getHistoryById(result.proofPointId);
@@ -261,13 +270,13 @@ contract("ProofPointRegistry", () => {
     // should be Issue, Revoke, Commit and not include the other pp
     expect(history.length).to.eq(3);
     expect(history[0].type).to.eq(ProofPointEventType.Issued);
-    expect(history[0].issuer.toString()).to.eq(admin);
+    expect(history[0].issuer.toString()).to.eq(admin.address);
     expect(history[0].transactionHash).to.not.be.null;
     expect(history[1].type).to.eq(ProofPointEventType.Revoked);
-    expect(history[1].issuer.toString()).to.eq(admin);
+    expect(history[1].issuer.toString()).to.eq(admin.address);
     expect(history[1].transactionHash).to.not.be.null;
     expect(history[2].type).to.eq(ProofPointEventType.Committed);
-    expect(history[2].issuer.toString()).to.eq(admin);
+    expect(history[2].issuer.toString()).to.eq(admin.address);
     expect(history[2].transactionHash).to.not.be.null;
   });
 
@@ -321,7 +330,7 @@ contract("ProofPointRegistry", () => {
            "id": "did:web:example.com#owner",
            "type": "Secp256k1VerificationKey2018",
            "owner": "did:web:example.com",
-           "ethereumAddress": "${admin}"
+           "ethereumAddress": "${admin.address}"
       }],
       "authentication": [{
            "type": "Secp256k1SignatureAuthentication2018",
@@ -346,7 +355,7 @@ contract("ProofPointRegistry", () => {
            "id": "did:web:example.com#owner",
            "type": "Secp256k1VerificationKey2018",
            "owner": "did:web:example.com",
-           "ethereumAddress": "${admin}"
+           "ethereumAddress": "${admin.address}"
       }],
       "authentication": [{
            "type": "Secp256k1SignatureAuthentication2018",
@@ -371,7 +380,7 @@ contract("ProofPointRegistry", () => {
            "id": "did:web:example.com#owner",
            "type": "wrongType",
            "owner": "did:web:example.com",
-           "ethereumAddress": "${admin}"
+           "ethereumAddress": "${admin.address}"
       }],
       "authentication": [{
            "type": "Secp256k1SignatureAuthentication2018",
@@ -396,7 +405,7 @@ contract("ProofPointRegistry", () => {
            "id": "did:web:example.com#owner",
            "type": "Secp256k1VerificationKey2018",
            "owner": "wrongOwner",
-           "ethereumAddress": "${admin}"
+           "ethereumAddress": "${admin.address}"
       }],
       "authentication": [{
            "type": "Secp256k1SignatureAuthentication2018",
@@ -503,8 +512,8 @@ contract("ProofPointRegistry", () => {
 
   it("getAll should not return duplicate values", async () => {
     // issue the same proof point multiple times
-    await subject.issue(type, admin, content);
-    await subject.issue(type, admin, content);
+    await subject.issue(type, admin.address, content);
+    await subject.issue(type, admin.address, content);
 
     const allIds = await subject.getAll();
 

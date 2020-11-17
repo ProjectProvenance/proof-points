@@ -1,4 +1,4 @@
-pragma solidity 0.5.16;
+pragma solidity 0.6.2;
 
 import "./ProofPointRegistryStorage1.sol";
 
@@ -16,7 +16,7 @@ contract ProofPointRegistry {
         eternalStorage1 = ProofPointRegistryStorage1(_eternalStorage1);
     }
     
-    function issue(bytes memory _claim) public {
+    function issue(bytes memory _claim) public virtual {
 
         bytes32 claimKey = keccak256(_claim);
         eternalStorage1.set(msg.sender, claimKey, true);
@@ -24,7 +24,7 @@ contract ProofPointRegistry {
         emit Issued(msg.sender, _claim);
     }
 
-    function commit(bytes memory _claim) public {
+    function commit(bytes memory _claim) public virtual {
 
         bytes32 claimKey = keccak256(_claim);
         eternalStorage1.commit(msg.sender, claimKey);

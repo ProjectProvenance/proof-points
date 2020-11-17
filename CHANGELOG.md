@@ -1,3 +1,17 @@
+# 5.0.0
+
+## New Features
+
+None
+
+## Bug Fixes
+
+None
+
+## Breaking Changes
+
+- Web3js dependency has been replaced by ethersjs dependency. The constructor of `ProofPointRegistryRoot` and that of `ProofPointRegistry` have changed to accept an `ethers.providers.JsonRpcProvider` instead of a `Web3` instance.
+
 # 4.0.1
 
 ## New Features
