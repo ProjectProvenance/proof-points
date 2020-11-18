@@ -1,3 +1,17 @@
+# 5.1.0
+
+## New Features
+
+None
+
+## Bug Fixes
+
+- The type `ProofPointId` which forms part of the public interface of the `ProofPointRegistry` was previously not exported.
+
+## Breaking Changes
+
+None
+
 # 5.0.0
 
 ## New Features
