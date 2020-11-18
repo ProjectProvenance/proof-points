@@ -8,6 +8,7 @@ import { ProofPointStatus } from "./proofPointStatus";
 import { ProofPointEventType } from "./proofPointEventType";
 import { ProofPointEvent } from "./proofPointEvent";
 import { ProofPointRegistryRoot } from "./proofPointRegistryRoot";
+import { ProofPointId } from "./proofPointId";
 import {
   StorageProvider,
   IpfsStorageProvider,
@@ -28,4 +29,5 @@ export {
   ProofPointEventType,
   ProofPointEvent,
   ProofPointRegistryRoot,
+  ProofPointId,
 };
