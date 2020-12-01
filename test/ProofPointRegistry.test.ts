@@ -106,7 +106,9 @@ describe("ProofPointRegistry", () => {
     };
   });
 
-  it("should use provenance IPFS for storage if not specified", async () => {
+  // Currently skipped because it depends on an external IPFS server and requires
+  // the browser based 'fetch' utility
+  it.skip("should use provenance IPFS for storage if not specified", async () => {
     const registryRoot = await ProofPointRegistryRoot.deploy(
       provider,
       EthereumAddress.parse(admin.address)
