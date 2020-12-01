@@ -1,3 +1,17 @@
+# 6.0.0
+
+## New Features
+
+- Compatible with IPFS version 0.7
+
+## Bug Fixes
+
+None
+
+## Breaking Changes
+
+- No longer compatible with IPFS versions prior to 0.7
+
 # 5.1.0
 
 ## New Features

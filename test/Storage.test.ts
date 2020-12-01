@@ -12,7 +12,9 @@ const IPFS_OPTIONS: IpfsStorageProviderSettings = {
 const digest = "QmemSCLVMGoqsC21mgJJh2FJAzvv5aRTeVnBXXnnKmQuXd";
 const docInBytes = '{"quantity":42,"name":"British Gladioli","unit":""}';
 
-describe("IPFSProvider", () => {
+// Currently skipped because these depend on an external IPFS server
+// and need the browser utility 'fetch'
+describe.skip("IPFSProvider", () => {
   let storageProvider: IpfsStorageProvider;
   beforeEach(() => {
     storageProvider = new IpfsStorageProvider(IPFS_OPTIONS);
