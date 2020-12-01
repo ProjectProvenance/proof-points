@@ -1,6 +1,3 @@
-// import fetch from "node-fetch";
-// import FormData from "form-data";
-
 interface StorageProviderAddResult {
   digest: string;
 }
@@ -40,17 +37,15 @@ class IpfsStorageProvider {
       body: formData,
     });
 
-    const x = await response.json();
+    const data = await response.json();
 
-    return { digest: x.Hash };
+    return { digest: data.Hash };
   }
 
   async get(digest: string): Promise<StorageProviderGetResult> {
     const url = `${this.settings.protocol || "http"}://${this.settings.host}:${
       this.settings.port
     }/api/v0/cat?arg=${digest}`;
-
-    console.log(`fetch: ${url}`);
 
     const response = await fetch(url, { method: "POST" });
 
