@@ -1,3 +1,17 @@
+# 6.1.0
+
+## New Features
+
+- Compatible with Node runtime
+
+## Bug Fixes
+
+None
+
+## Breaking Changes
+
+None
+
 # 6.0.0
 
 ## New Features
