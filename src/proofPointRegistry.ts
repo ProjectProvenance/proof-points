@@ -91,7 +91,8 @@ class ProofPointRegistry {
     issuer: string,
     content: unknown,
     validFromDate: Date | null = null,
-    validUntilDate: Date | null = null
+    validUntilDate: Date | null = null,
+    signer: ethers.Signer | null = null
   ): Promise<ProofPointIssueResult> {
     return this._issue(
       type,
@@ -99,7 +100,8 @@ class ProofPointRegistry {
       content,
       (c: ethers.Contract, d: any) => c.issue(d),
       validFromDate,
-      validUntilDate
+      validUntilDate,
+      signer
     );
   }
 
@@ -117,7 +119,8 @@ class ProofPointRegistry {
     issuerAddress: string,
     content: string,
     validFromDate: Date | null = null,
-    validUntilDate: Date | null = null
+    validUntilDate: Date | null = null,
+    signer: ethers.Signer | null = null
   ): Promise<ProofPointIssueResult> {
     return this._issue(
       type,
@@ -125,7 +128,8 @@ class ProofPointRegistry {
       content,
       (c: ethers.Contract, d: any) => c.commit(d),
       validFromDate,
-      validUntilDate
+      validUntilDate,
+      signer
     );
   }
 
@@ -133,17 +137,23 @@ class ProofPointRegistry {
    * Revoke a Proof Point identified by it's ID. You must control the account that originally issued the Proof Point. The account must be sufficiently funded to execute the revoke transaction.
    * @param proofPointId The ID of the Proof Point to revoke. This is the value returned in the @param proofPointId field of the {@link ProofPointIssueResult} when the Proof Point was issued.
    */
-  async revokeById(proofPointId: ProofPointId): Promise<void> {
+  async revokeById(
+    proofPointId: ProofPointId,
+    signer: ethers.Signer | null = null
+  ): Promise<void> {
     const storedData = await this._storage.get(proofPointId.toString());
     const proofPointObject = JSON.parse(storedData.data);
-    await this.revoke(proofPointObject);
+    await this.revoke(proofPointObject, signer);
   }
 
   /**
    * Revoke a Proof Point identified by its full data. You must control the account that originally issued the Proof Point. The account must be sufficiently funded to execute the revoke transaction.
    * @param proofPointObject The full Proof Point data as returned in the @param proofPointObject parameter of the {@link ProofPointIssueResult} when the Proof Point was issued.
    */
-  async revoke(proofPointObject: ProofPoint): Promise<void> {
+  async revoke(
+    proofPointObject: ProofPoint,
+    signer: ethers.Signer | null = null
+  ): Promise<void> {
     if (proofPointObject.proof.type !== PROOF_TYPE) {
       throw new Error("Unsupported proof type");
     }
@@ -161,7 +171,7 @@ class ProofPointRegistry {
 
     const { id } = await this._canonicalizeAndStoreObject(proofPointObject);
     const proofPointIdBytes = this.proofPointIdToBytes(id);
-    const signer = this._provider.getSigner(issuerAddress.toString());
+    signer = signer || this._provider.getSigner(issuerAddress.toString());
     const registryWithSigner = this._registry.connect(signer);
     await registryWithSigner.revoke(proofPointIdBytes);
   }
@@ -418,7 +428,8 @@ class ProofPointRegistry {
     content: unknown,
     issueFunction: any,
     validFromDate: Date | null = null,
-    validUntilDate: Date | null = null
+    validUntilDate: Date | null = null,
+    signer: ethers.Signer | null
   ): Promise<ProofPointIssueResult> {
     const issuerAddress = await this._resolveIssuerToEthereumAddress(issuer);
     if (issuerAddress === null) {
@@ -438,11 +449,11 @@ class ProofPointRegistry {
     );
 
     const proofPointIdBytes = this.proofPointIdToBytes(id);
-    const signer = this._provider.getSigner(issuerAddress.toString());
-    const connectedContract = this._registry.connect(signer);
+    signer = signer || this._provider.getSigner(issuerAddress.toString());
+    const registryWithSigner = this._registry.connect(signer);
 
     const transactionReceipt = await issueFunction(
-      connectedContract,
+      registryWithSigner,
       proofPointIdBytes
     );
 

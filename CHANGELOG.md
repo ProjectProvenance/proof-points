@@ -1,3 +1,17 @@
+# NEXT
+
+## New Features
+
+- When writing to the registry you can optionally provide your own signer, which can be useful when using a Provider that cannot provide a Signer.
+
+## Bug Fixes
+
+None
+
+## Breaking Changes
+
+None
+
 # 6.1.0
 
 ## New Features
