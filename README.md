@@ -81,7 +81,7 @@ await registry.revoke(proofPointObject);
 
 // revoke a Proof Point given its ID
 await registry.revokeById(proofPointId);
-```
+``` 
 
 ## Contribute
 
@@ -123,6 +123,12 @@ Run unit tests
 ```
 npm test
 ```
+
+#### Contribution Guidelines
+
+##### Node and Browser Compatibility
+
+The package is designed to be usable within either Node or a web browser context. Therefore avoid use of APIs specific to Node or the browser.
 
 ### Publishing NPM Package
 

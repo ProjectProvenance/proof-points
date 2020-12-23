@@ -1,3 +1,5 @@
+import fetch from "isomorphic-fetch";
+
 interface HttpClient {
   fetch(url: string): Promise<string>;
 }
