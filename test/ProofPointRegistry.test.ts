@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { Wallet } from "ethers";
+import { ethers, Wallet } from "ethers";
 import {
   ProofPointRegistryRoot,
   ProofPointStatus,
@@ -521,5 +521,54 @@ describe("ProofPointRegistry", () => {
 
     // The Proof Point Id should not be duplicated in getAll
     expect(allIds.length).to.eq(1);
+  });
+
+  it("Should be able to issue with a provided signer", async () => {
+    const signer = provider.getWallets()[1];
+    const results = await subject.issue(
+      type,
+      await signer.getAddress(),
+      content,
+      null,
+      null,
+      signer
+    );
+
+    expect(results.proofPointObject.issuer).to.eq(await signer.getAddress());
+    const validity = await subject.validate(results.proofPointObject);
+    expect(validity.isValid).to.be.true;
+    expect(validity.statusCode).to.eq(ProofPointStatus.Valid);
+  });
+
+  it("Should be able to commit with a provided signer", async () => {
+    const signer = provider.getWallets()[1];
+    const results = await subject.commit(
+      type,
+      await signer.getAddress(),
+      content,
+      null,
+      null,
+      signer
+    );
+
+    expect(results.proofPointObject.issuer).to.eq(await signer.getAddress());
+    const validity = await subject.validate(results.proofPointObject);
+    expect(validity.isValid).to.be.true;
+    expect(validity.statusCode).to.eq(ProofPointStatus.Valid);
+  });
+
+  it("Should be able to revoke with a provided signer", async () => {
+    const signer = provider.getWallets()[1];
+    const results = await subject.issue(
+      type,
+      await signer.getAddress(),
+      content
+    );
+
+    await subject.revoke(results.proofPointObject, signer);
+
+    const validity = await subject.validate(results.proofPointObject);
+    expect(validity.isValid).to.be.false;
+    expect(validity.statusCode).to.eq(ProofPointStatus.NotFound);
   });
 });
