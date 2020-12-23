@@ -1,3 +1,5 @@
+import fetch from "isomorphic-fetch";
+
 interface StorageProviderAddResult {
   digest: string;
 }
@@ -29,12 +31,13 @@ class IpfsStorageProvider {
       this.settings.port
     }/api/v0/add?pin=true&hash=sha2-256`;
 
-    const formData = new FormData();
-    formData.append("path", msg);
-
+    const formDataBoundary = "2758264728364323843263";
     const response = await fetch(url, {
       method: "POST",
-      body: formData,
+      headers: {
+        "Content-Type": `multipart/form-data; boundary=${formDataBoundary}`,
+      },
+      body: `--${formDataBoundary}\nContent-Disposition: form-data; name="path"\n\n${msg}\n--${formDataBoundary}--`,
     });
 
     const data = await response.json();

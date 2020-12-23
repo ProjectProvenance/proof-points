@@ -13,7 +13,6 @@ const digest = "QmemSCLVMGoqsC21mgJJh2FJAzvv5aRTeVnBXXnnKmQuXd";
 const docInBytes = '{"quantity":42,"name":"British Gladioli","unit":""}';
 
 // Currently skipped because these depend on an external IPFS server
-// and need the browser utility 'fetch'
 describe.skip("IPFSProvider", () => {
   let storageProvider: IpfsStorageProvider;
   beforeEach(() => {
