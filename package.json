@@ -28,7 +28,7 @@
   "dependencies": {
     "bignumber.js": "^9.0.0",
     "canonicalize": "^1.0.1",
-    "ethers": "^5.0.19",
+    "ethers": "^5.0.32",
     "isomorphic-fetch": "^3.0.0",
     "local-iso-dt": "^1.2.2",
     "multibase": "^3.0.1",
