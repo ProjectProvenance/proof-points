@@ -1,4 +1,20 @@
-> **TODO** support for the issuer to be separate from the blockchain transaction signer, so that we can act as a gas payer for people that want to issue claims on our system
+<!-- vscode-markdown-toc -->
+* 1. [Proof Point Document Format](#ProofPointDocumentFormat)
+* 2. [Proof Point Identifier](#ProofPointIdentifier)
+	* 2.1. [Generating the Proof Point Identifier](#GeneratingtheProofPointIdentifier)
+* 3. [The ProofPointRegistry Smart Contract](#TheProofPointRegistrySmartContract)
+* 4. [Proof Point Issuer](#ProofPointIssuer)
+* 5. [Issue](#Issue)
+* 6. [Commit](#Commit)
+* 7. [Revoke](#Revoke)
+* 8. [Validate](#Validate)
+* 9. [Locating the ProofPointRegistry](#LocatingtheProofPointRegistry)
+
+<!-- vscode-markdown-toc-config
+	numbering=true
+	autoSave=true
+	/vscode-markdown-toc-config -->
+<!-- /vscode-markdown-toc -->> **TODO** support for the issuer to be separate from the blockchain transaction signer, so that we can act as a gas payer for people that want to issue claims on our system
 
 > **TODO** support for [EIP-1056](https://github.com/ethereum/EIPs/issues/1056) so that the transaction submitter can be a delegate of the issuer
 
@@ -27,7 +43,7 @@ In general the system supports the following functionality:
 - Proof Points are tamper proof in that modifying the content of a valid Proof Point invalidates it.
 - There is a public, trustless, append-only log of all Proof Points that have ever been `issue`d or `commit`ed
 
-## Proof Point Document Format
+##  1. <a name='ProofPointDocumentFormat'></a>Proof Point Document Format
 
 The JSON document part of the Proof Point is an implementation of the [W3C Verifiable Credentials](https://www.w3.org/TR/vc-data-model/) with a special, Provenance specific `proof` type as defined here.
 
@@ -96,21 +112,21 @@ An example claim document:
 }
 ```
 
-## Proof Point Identifier
+##  2. <a name='ProofPointIdentifier'></a>Proof Point Identifier
 
 Each Proof Point has a unique identifier (or ID), which is a fixed length string that can be generated from the Proof Point JSON document using the following method. The ID is used to represent the Proof Point when interacting with the Proof Point Registry Smart Contract and may also be a convenient way to represent the 
 Proof Point in other situations.
 
 The Proof Point ID is designed to be a valid [IPFS](https://ipfs.io/) digest. When an `issuer` `issue`s a Proof Point they have the option to store the Proof Point document on IPFS. In this case it is possible to recover the Proof Point document from the Proof Point ID using an IPFS lookup.
 
-### Generating the Proof Point Identifier
+###  2.1. <a name='GeneratingtheProofPointIdentifier'></a>Generating the Proof Point Identifier
 
 The ID is generated from the Proof Point JSON document according to to the following method:
 
 1. Canonicalize the document according to the [draft-rundgren-json-canonicalization-scheme](https://tools.ietf.org/html/draft-rundgren-json-canonicalization-scheme-14). For example, by using [this NPM package](https://www.npmjs.com/package/canonicalize)
 2. Compute the base 58 encoding of the [multihash](https://github.com/multiformats/multihash) encoding of the 32 byte SHA-256 hash of the canonicalized document. Note that this the IPFS digest you will get if you add the file to IPFS and  specify the `sha2-256` hash method: `ipfs add --hash sha2-256 <file>`. The result is the Proof Point ID.
 
-## The ProofPointRegistry Smart Contract
+##  3. <a name='TheProofPointRegistrySmartContract'></a>The ProofPointRegistry Smart Contract
 
 The `ProofPointRegistry` smart contract is a singleton smart contract on the Ethereum blockchain that is used to support Proof Point functionality. The following is the API of the contract. We will see how it is used in later sections.
 
@@ -131,13 +147,13 @@ contract ProofPointRegistry {
 }
 ```
 
-## Proof Point Issuer
+##  4. <a name='ProofPointIssuer'></a>Proof Point Issuer
 
 Each Proof Point declares an `issuer` which is an Ethereum address represented either directly or using the [did:web](https://w3c-ccg.github.io/did-method-web/) protocol. Where the `issuer` is represented using a `did:web` URI it will be necessary to resolve this
 to an Ethereum address in order to either `issue`, `commit` or `validate` it. For more information on how to
 do this please see the [did:web Decentralized Identifier Method Specification](https://w3c-ccg.github.io/did-method-web/)
 
-## Issue
+##  5. <a name='Issue'></a>Issue
 
 To issue a new valid Proof Point the following process is used:
 
@@ -152,13 +168,13 @@ To issue a new valid Proof Point the following process is used:
 
 The document (both canonical, pre-canonical and ID form) is now a valid Proof Point and may be published or transmitted to a holder or validator.
 
-## Commit
+##  6. <a name='Commit'></a>Commit
 
 A commitment is a Proof Point that cannot be revoked. Once issued it is valid forever (within the `validFrom` to `validUntil` time range). To commit a new valid Proof Point the process for [issuing a claim](#issue) is followed except that the `commit` method of the `ProofPointRegistry` contract is called, instead of the `issue` method.
 
 > **Note** that this process involves a blockchain write, so can only be carried out by an `issuer` account with Ether funds and the process is subject to the normal block finalization delay.
 
-## Revoke
+##  7. <a name='Revoke'></a>Revoke
 
 To revoke a valid Proof Point the following process is used:
 
@@ -175,7 +191,7 @@ To revoke a valid Proof Point the following process is used:
 
 The Proof Point is no longer valid in any form.
 
-## Validate
+##  8. <a name='Validate'></a>Validate
 
 To check the validity of a given Proof Point the following process is used:
 
@@ -188,7 +204,7 @@ To check the validity of a given Proof Point the following process is used:
 5. [Locate the ProofPointRegistry](#locating-the-ProofPointRegistry)
 6. Call the `validate` method of the `ProofPointRegistry` contract with the `<issuer>` and the ID computed in 5. If the return value is `true` then the Proof Point is **valid**, otherwise it is **invalid**.
 
-## Locating the ProofPointRegistry
+##  9. <a name='LocatingtheProofPointRegistry'></a>Locating the ProofPointRegistry
 
 The `ProofPointRegistry` is a singleton smart contract on the Ethereum blockchain. In order to enable upgrades and bug fixes the [Eternal Storage Pattern](https://fravoll.github.io/solidity-patterns/eternal_storage.html) is used. This means that the address of the contract can change over time. Therefore the location of the `ProofPointRegistry` is not directly recorded in a claim. Instead the claim records `registryRoot`; the address of a permanent contract that can be used to look up the current address of the `ProofPointRegistry`.
 
