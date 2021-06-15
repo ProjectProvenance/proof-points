@@ -7,11 +7,8 @@ import ProofPointRegistry from "../build/ProofPointRegistry.json";
 use(solidity);
 
 describe("ProofPointRegistry", () => {
-  const [
-    adminWallet,
-    user1Wallet,
-    user2Wallet,
-  ] = new MockProvider().getWallets();
+  const [adminWallet, user1Wallet, user2Wallet] =
+    new MockProvider().getWallets();
 
   const pp1 = utils.hexlify(utils.randomBytes(32));
   const pp2 = utils.hexlify(utils.randomBytes(32));
