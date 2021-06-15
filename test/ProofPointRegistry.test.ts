@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { ethers, Wallet } from "ethers";
+import { Wallet } from "ethers";
 import {
   ProofPointRegistryRoot,
   ProofPointStatus,
