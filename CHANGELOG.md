@@ -1,3 +1,18 @@
+# 6.3.0
+
+JS dependencies upgraded
+
+## New Features
+
+None
+
+## Bug Fixes
+
+None
+
+## Breaking Changes
+
+None
 # 6.2.0
 
 ## New Features
