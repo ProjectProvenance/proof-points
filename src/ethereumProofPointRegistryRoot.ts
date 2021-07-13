@@ -1,13 +1,10 @@
 import { ethers, Contract } from "ethers";
-
 import ProofPointRegistryStorage1Abi from "../build/ProofPointRegistryStorage1.json";
-import { StorageProvider } from "./storage";
 import {
-  ProofPointRegistry,
+  EthereumProofPointRegistry,
   PROOF_POINT_REGISTRY_VERSION,
   ProofPointRegistryAbi,
-} from "./proofPointRegistry";
-import { HttpClient } from "./httpClient";
+} from "./ethereumProofPointRegistry";
 import { EthereumAddress } from "./proofPointEvent";
 
 /**
@@ -16,7 +13,7 @@ import { EthereumAddress } from "./proofPointEvent";
  * and provides methods to deploy and upgrade the logic contract as well as to get a proxy to the logic
  * contract by looking up its address in the eternal storage contract.
  */
-class ProofPointRegistryRoot {
+export class EthereumProofPointRegistryRoot {
   private _address: EthereumAddress;
   private _contract: Contract;
   private _provider: ethers.providers.JsonRpcProvider;
@@ -42,21 +39,14 @@ class ProofPointRegistryRoot {
   /**
    * Gets an instance of ProofPointRegistry representing the current logic contract that is controlling
    * this eternal storage contract.
-   * @param storage A @StorageProvider to use for storing and retrieving bulk data.
-   * @param httpClient An @HttpClient to use for fetching DID documents.
-   * @returns An instance of @ProofPointRegistry to use for interacting with proof points.
+   * @returns An instance of @EthereumProofPointRegistry to use for interacting with proof points.
    */
-  async getRegistry(
-    storage: StorageProvider | null = null,
-    httpClient: HttpClient | null = null
-  ): Promise<ProofPointRegistry> {
+  async getRegistry(): Promise<EthereumProofPointRegistry> {
     const logicAddress = EthereumAddress.parse(await this._contract.getOwner());
-    const registry = new ProofPointRegistry(
+    const registry = new EthereumProofPointRegistry(
       this._address,
       logicAddress,
-      this._provider,
-      storage,
-      httpClient
+      this._provider
     );
 
     return registry;
@@ -91,7 +81,7 @@ class ProofPointRegistryRoot {
   static async deploy(
     provider: ethers.providers.JsonRpcProvider,
     from: EthereumAddress
-  ): Promise<ProofPointRegistryRoot> {
+  ): Promise<EthereumProofPointRegistryRoot> {
     const signer = provider.getSigner(from.toString());
 
     // deploy eternal storage contract
@@ -114,7 +104,7 @@ class ProofPointRegistryRoot {
     await eternalStorage.setOwner(logic.address);
 
     // construct and return a ProofPointRegistry object for the newly deployed setup
-    const registryRoot = new ProofPointRegistryRoot(
+    const registryRoot = new EthereumProofPointRegistryRoot(
       EthereumAddress.parse(eternalStorage.address),
       provider
     );
@@ -169,5 +159,3 @@ class ProofPointRegistryRoot {
     }
   }
 }
-
-export { ProofPointRegistryRoot };
