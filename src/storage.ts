@@ -27,6 +27,7 @@ class IpfsStorageProvider {
   }
 
   async add(msg: string): Promise<StorageProviderAddResult> {
+    // Note: we enforce SHA-256 hash algorithm which is part of the Proof Point specification
     const url = `${this.settings.protocol || "http"}://${this.settings.host}:${
       this.settings.port
     }/api/v0/add?pin=true&hash=sha2-256`;
