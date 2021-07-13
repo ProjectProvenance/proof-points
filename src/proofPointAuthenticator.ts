@@ -1,8 +1,8 @@
-import { EthereumAddressResolver } from "./EthereumAddressResolver";
+import { EthereumAddressResolver } from "./ethereumAddressResolver";
 import {
   EthereumProofPointRegistry,
   ETHEREUM_PROOF_TYPE,
-} from "./EthereumProofPointRegistry";
+} from "./ethereumProofPointRegistry";
 import { ProofPoint } from "./proofPoint";
 import { ProofPointId, ProofPointIdType } from "./proofPointId";
 import { ProofPointStatus } from "./proofPointStatus";

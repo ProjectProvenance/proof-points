@@ -54,35 +54,43 @@ export class ProofPointValidator {
   }
 
   public async validate(id: ProofPointId): Promise<ProofPointValidateResult> {
-    const proofPoint = await this._resolver.resolve(id);
+    try {
+      const proofPoint = await this._resolver.resolve(id);
 
-    if (typeof proofPoint.validFrom !== "undefined") {
-      const validFromDate = Date.parse(proofPoint.validFrom);
-      if (validFromDate > Date.now()) {
-        return {
-          isValid: false,
-          statusCode: ProofPointStatus.Pending,
-          statusMessage: "The Proof Point will become valid at a later date.",
-        };
+      if (typeof proofPoint.validFrom !== "undefined") {
+        const validFromDate = Date.parse(proofPoint.validFrom);
+        if (validFromDate > Date.now()) {
+          return {
+            isValid: false,
+            statusCode: ProofPointStatus.Pending,
+            statusMessage: "The Proof Point will become valid at a later date.",
+          };
+        }
       }
-    }
 
-    if (typeof proofPoint.validUntil !== "undefined") {
-      const validUntilDate = Date.parse(proofPoint.validUntil);
-      if (validUntilDate < Date.now()) {
-        return {
-          isValid: false,
-          statusCode: ProofPointStatus.Expired,
-          statusMessage: "The Proof Point has expired.",
-        };
+      if (typeof proofPoint.validUntil !== "undefined") {
+        const validUntilDate = Date.parse(proofPoint.validUntil);
+        if (validUntilDate < Date.now()) {
+          return {
+            isValid: false,
+            statusCode: ProofPointStatus.Expired,
+            statusMessage: "The Proof Point has expired.",
+          };
+        }
       }
+
+      const authenticationResult = await this._authenticator.authenticate(
+        id,
+        proofPoint
+      );
+
+      return authenticationResult;
+    } catch (e) {
+      return {
+        isValid: false,
+        statusCode: ProofPointStatus.NotFound,
+        statusMessage: `The Proof Point ${id.toString()} could not be resolved.`,
+      };
     }
-
-    const authenticationResult = await this._authenticator.authenticate(
-      id,
-      proofPoint
-    );
-
-    return authenticationResult;
   }
 }
