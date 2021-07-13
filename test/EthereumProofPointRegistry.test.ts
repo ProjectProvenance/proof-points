@@ -13,7 +13,7 @@ import FakeHttpClient from "./fixtures/FakeHttpClient";
 import { MockProvider } from "ethereum-waffle";
 import { EthereumAddressResolver } from "../dist/src/EthereumAddressResolver";
 
-describe("ProofPointValidator", () => {
+describe("EthereumProofPointRegistry", () => {
   let storageProvider: StorageProvider;
   let subject: EthereumProofPointRegistry;
   let type: string;

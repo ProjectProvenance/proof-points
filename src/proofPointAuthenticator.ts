@@ -68,6 +68,17 @@ class WebProofPointAuthenticator {
     const sourceUrl = new URL(id.toString());
     const expectedIssuerId = `did:web:${sourceUrl.hostname}`;
     const actualIssuerId = proofPoint.issuer;
+    const actualVerificationMethod = proofPoint.proof.verificationMethod;
+
+    if (actualIssuerId !== actualVerificationMethod) {
+      return {
+        isValid: false,
+        statusCode: ProofPointStatus.BadlyFormed,
+        statusMessage:
+          "The issuer field does not match the proof.verificationMethod field.",
+      };
+    }
+
     const isAuthentic = actualIssuerId == expectedIssuerId;
 
     if (isAuthentic) {

@@ -47,5 +47,5 @@ export {
   EthereumProofPointRegistry,
   EthereumProofPointRegistryRoot,
   ProofPointIssuer,
-  EthereumProofPointIssuer
+  EthereumProofPointIssuer,
 };

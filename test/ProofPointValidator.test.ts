@@ -164,6 +164,28 @@ describe("ProofPointValidator", () => {
           "https://open.provenance.org/ontology/ptf/v2/CertificationCredential"
         ]
       }`,
+      "https://example.com/proof-point/wrong-verification-method": `
+      {
+        "@context": [
+          "https://www.w3.org/2018/credentials/v1",
+          "https://provenance.org/ontology/ptf/v2"
+        ],
+        "credentialSubject": {
+          "some": [ "data" ],
+          "more": [ "data" ],
+          "id": "https://provenance.org/subject1"
+        },
+        "issuer": "did:web:example.com",
+        "proof": {
+          "proofPurpose": "assertionMethod",
+          "type": "https://open.provenance.org/ontology/ptf/v2/ProvenanceProofTypeWeb1",
+          "verificationMethod": "did:web:example2.com"
+        },
+        "type": [
+          "VerifiableCredential",
+          "https://open.provenance.org/ontology/ptf/v2/CertificationCredential"
+        ]
+      }`,
     });
 
     const registryRoot = await EthereumProofPointRegistryRoot.deploy(
@@ -387,5 +409,14 @@ describe("ProofPointValidator", () => {
     const validity = await subject.validate(id);
     expect(validity.isValid).to.be.false;
     expect(validity.statusCode).to.eq(ProofPointStatus.NotFound);
+  });
+
+  it("web validation with wrong verification method is invalid", async () => {
+    const id = ProofPointId.parse(
+      "https://example.com/proof-point/wrong-verification-method"
+    );
+    const validity = await subject.validate(id);
+    expect(validity.isValid).to.be.false;
+    expect(validity.statusCode).to.eq(ProofPointStatus.BadlyFormed);
   });
 });
