@@ -2,7 +2,7 @@ import { ProofPointIssueResult } from "./proofPointIssueResult";
 import { ethers } from "ethers";
 import { EthereumAddress, ProofPointId } from "./proofPointEvent";
 import { ProofPoint } from "./proofPoint";
-import { StorageProvider } from "./storage";
+import { IpfsStorageProvider, IpfsStorageProviderSettings, StorageProvider } from "./storage";
 import canonicalizeJson from "canonicalize";
 import localISOdt = require("local-iso-dt");
 import { EthereumAddressResolver } from "./ethereumAddressResolver";
@@ -10,6 +10,8 @@ import {
   EthereumProofPointRegistry,
   ETHEREUM_PROOF_TYPE,
 } from "./ethereumProofPointRegistry";
+import { EthereumProofPointRegistryRoot } from "./ethereumProofPointRegistryRoot";
+import { RealHttpClient } from "./httpClient";
 
 export interface ProofPointIssuer {
   issue(
@@ -57,6 +59,27 @@ export class EthereumProofPointIssuer {
     this._ethereumAddressResolver = ethereumAddressResolver;
     this._storage = storage;
     this._registry = registry;
+  }
+
+  public static async production(
+    rootAddress: EthereumAddress,
+    ipfsSettings: IpfsStorageProviderSettings,
+    ethereumProvider: ethers.providers.JsonRpcProvider
+  ): Promise<EthereumProofPointIssuer> {
+    const registryRoot = new EthereumProofPointRegistryRoot(
+      rootAddress,
+      ethereumProvider
+    );
+    const registry = await registryRoot.getRegistry();
+    const httpClient = new RealHttpClient();
+    const ethereumAddressResolver = new EthereumAddressResolver(httpClient);
+    const storageProvider = new IpfsStorageProvider(ipfsSettings);
+    return new EthereumProofPointIssuer(
+      rootAddress,
+      ethereumAddressResolver,
+      storageProvider,
+      registry
+    );
   }
 
   /**
