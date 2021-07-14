@@ -2,7 +2,11 @@ import { ProofPointIssueResult } from "./proofPointIssueResult";
 import { ethers } from "ethers";
 import { EthereumAddress, ProofPointId } from "./proofPointEvent";
 import { ProofPoint } from "./proofPoint";
-import { IpfsStorageProvider, IpfsStorageProviderSettings, StorageProvider } from "./storage";
+import {
+  IpfsStorageProvider,
+  IpfsStorageProviderSettings,
+  StorageProvider,
+} from "./storage";
 import canonicalizeJson from "canonicalize";
 import localISOdt = require("local-iso-dt");
 import { EthereumAddressResolver } from "./ethereumAddressResolver";
