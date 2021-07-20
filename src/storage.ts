@@ -35,6 +35,7 @@ class IpfsStorageProvider {
     const formDataBoundary = "2758264728364323843263";
     const response = await fetch(url, {
       method: "POST",
+      mode: "cors",
       headers: {
         "Content-Type": `multipart/form-data; boundary=${formDataBoundary}`,
       },
