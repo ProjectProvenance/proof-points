@@ -1,3 +1,16 @@
+# NEXT
+
+## New Features
+
+- Enforce use CORS mode when POSTing to IPFS
+
+## Bug Fixes
+
+None
+
+## Breaking Changes
+
+None
 # 6.3.0
 
 JS dependencies upgraded
