@@ -1,5 +1,5 @@
 import { Contract, ethers } from "ethers";
-import { ProofPointEvent, ProofPointEventType } from ".";
+import { EthereumProofPointEvent, EthereumProofPointEventType } from ".";
 import ProofPointRegistryAbiV1 from "../build/ProofPointRegistry_v2.json";
 import ProofPointRegistryAbiV2 from "../build/ProofPointRegistry_v2.json";
 import { EthereumAddress } from "./ethereumAddress";
@@ -16,6 +16,7 @@ export const PROOF_POINT_REGISTRY_VERSION = 2;
 export const ETHEREUM_PROOF_TYPE =
   "https://open.provenance.org/ontology/ptf/v2/ProvenanceProofType1";
 
+// Javascript wrapper around the Proof Point Registry Ethereum contract.
 export class EthereumProofPointRegistry {
   private _rootAddress: EthereumAddress;
   private _address: EthereumAddress;
@@ -44,6 +45,11 @@ export class EthereumProofPointRegistry {
     );
   }
 
+  /**
+   * Determines whether the given proof point can be authenticated using this registry.
+   * @param proofPoint the proof point to check.
+   * @returns true if the given proof point can be authenticated using this registry.
+   */
   public isSameRegistry(proofPoint: ProofPoint): boolean {
     return (
       proofPoint.proof.registryRoot.toLowerCase() ===
@@ -51,6 +57,12 @@ export class EthereumProofPointRegistry {
     );
   }
 
+  /**
+   * Issues the given proof point in this registry from the given issuer. You must control the issuer account.
+   * @param id the ID of the proof point to issue.
+   * @param issuerAddress the account that is issuing the proof point.
+   * @returns the Ethereum transaction hash of the issuing transaction.
+   */
   public async issue(
     id: ProofPointId,
     issuerAddress: EthereumAddress
@@ -60,6 +72,12 @@ export class EthereumProofPointRegistry {
     );
   }
 
+  /**
+   * Commits the given proof point in this registry from the given issuer. You must control the issuer account.
+   * @param id the ID of the proof point to commit.
+   * @param issuerAddress the account that is committing the proof point.
+   * @returns the Ethereum transaction hash of the committing transaction.
+   */
   public async commit(
     id: ProofPointId,
     issuerAddress: EthereumAddress
@@ -69,16 +87,35 @@ export class EthereumProofPointRegistry {
     );
   }
 
+  /**
+   * Revokes the given proof point from this registry using the given issuer. You must control the issuer account.
+   * The issuer must be the original issuer of the proof point.
+   * @param id the ID of the proof point to revoke.
+   * @param issuerAddress the account that is issuing the proof point.
+   * @returns the Ethereum transaction hash of the revoking transaction.
+   */
   public async revoke(
     id: ProofPointId,
     revokerAddress: EthereumAddress
-  ): Promise<void> {
+  ): Promise<EthereumTransactionHash> {
     const proofPointIdBytes = this._proofPointIdToBytes(id);
     const signer = this._provider.getSigner(revokerAddress.toString());
     const registryWithSigner = this._registry.connect(signer);
-    await registryWithSigner.revoke(proofPointIdBytes);
+
+    const transactionReceipt = await registryWithSigner.revoke(
+      proofPointIdBytes
+    );
+
+    return EthereumTransactionHash.parse(transactionReceipt.hash);
   }
 
+  /**
+   * Determines whether the identified proof point is authentic, meaning is has been
+   * issued and not revoked by the given issuer, or has been committed by the given issuer.
+   * @param id The ID of proof point to check.
+   * @param issuerAddress The address of the expected issuer.
+   * @returns true if the proof point is issued and not revoked, or committed by the given issuer.
+   */
   public async isAuthentic(
     id: ProofPointId,
     issuerAddress: EthereumAddress
@@ -93,11 +130,11 @@ export class EthereumProofPointRegistry {
   /**
    * Gets a list of all events related to the given Proof Point, identified by its ID.
    * @param proofPointId the ID of the Proof Point.
-   * @returns a list of {@link ProofPointEvent} describing the history of the Proof Point.
+   * @returns a list of {@link EthereumProofPointEvent} describing the history of the Proof Point.
    */
   public async getHistory(
     proofPointId: ProofPointId
-  ): Promise<Array<ProofPointEvent>> {
+  ): Promise<Array<EthereumProofPointEvent>> {
     const version = await this._getVersion();
     const history = await this._getHistory(
       version,
@@ -148,13 +185,13 @@ export class EthereumProofPointRegistry {
     }
   }
 
-  private _topicToEventType(topic: string): ProofPointEventType {
+  private _topicToEventType(topic: string): EthereumProofPointEventType {
     if (topic === ethers.utils.id("Issued(address,bytes)"))
-      return ProofPointEventType.Issued;
+      return EthereumProofPointEventType.Issued;
     if (topic === ethers.utils.id("Committed(address,bytes)"))
-      return ProofPointEventType.Committed;
+      return EthereumProofPointEventType.Committed;
     if (topic === ethers.utils.id("Revoked(address,bytes)"))
-      return ProofPointEventType.Revoked;
+      return EthereumProofPointEventType.Revoked;
     throw new Error(`Invalid Proof Point event type topic: ${topic}`);
   }
 
@@ -162,7 +199,7 @@ export class EthereumProofPointRegistry {
     version: number,
     logicContractAddress: string,
     proofPointId: ProofPointId
-  ): Promise<ProofPointEvent[]> {
+  ): Promise<EthereumProofPointEvent[]> {
     // Prepare and store proxy object for the logic contract
     const registry = new ethers.Contract(
       logicContractAddress,
@@ -170,7 +207,7 @@ export class EthereumProofPointRegistry {
       this._provider
     );
 
-    const allEvents: ProofPointEvent[] = [];
+    const allEvents: EthereumProofPointEvent[] = [];
 
     allEvents.push(
       ...(await this._getEventsByFilter(
@@ -215,7 +252,7 @@ export class EthereumProofPointRegistry {
     registry: Contract,
     filterFactory: any,
     proofPointId: ProofPointId
-  ): Promise<ProofPointEvent[]> {
+  ): Promise<EthereumProofPointEvent[]> {
     const issuerFilter: any = null;
 
     const filter = filterFactory(

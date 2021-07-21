@@ -8,13 +8,27 @@ import { ProofPointId, ProofPointIdType } from "./proofPointId";
 import { ProofPointStatus } from "./proofPointStatus";
 import { ProofPointValidateResult } from "./proofPointValidateResult";
 
+/**
+ * Proof point authenticator
+ * An object capable of authenticating a proof point.
+ */
 export interface ProofPointAuthenticator {
+  /**
+   * Determines whether the given proof point is authentic.
+   * @param id The ID of the proof point to check.
+   * @param proofPoint The proof point to check.
+   * @returns trie of the proof point is authentic.
+   */
   authenticate(
     id: ProofPointId,
     proofPoint: ProofPoint
   ): Promise<ProofPointValidateResult>;
 }
 
+/**
+ * General proof point authenticator
+ * A @ProofPointAuthenticator capable of handling Ethereum based proof points and Web based proof points.
+ */
 export class GeneralProofPointAuthenticator {
   private _ethereumAuthenticator: EthereumProofPointAuthenticator;
   private _webAuthenticator: WebProofPointAuthenticator;
@@ -45,9 +59,13 @@ export class GeneralProofPointAuthenticator {
   }
 }
 
+/**
+ * Web proof point authenticator
+ * A @ProofPointAuthenticator capable of handling web authenticated proof points.
+ */
 class WebProofPointAuthenticator {
   private PROOF_TYPE =
-    "https://open.provenance.org/ontology/ptf/v2/ProvenanceProofTypeWeb1";
+    "https://open.provenance.org/ontology/ptf/v2/ProvenanceProofType2";
 
   public async authenticate(
     id: ProofPointId,
@@ -65,8 +83,16 @@ class WebProofPointAuthenticator {
       };
     }
 
+    if (proofPoint.id !== id.toString()) {
+      return {
+        isValid: false,
+        statusCode: ProofPointStatus.BadlyFormed,
+        statusMessage: "The Proof Point id does not match the source URL.",
+      };
+    }
+
     const sourceUrl = new URL(id.toString());
-    const expectedIssuerId = `did:web:${sourceUrl.hostname}`;
+    const expectedIssuerId = sourceUrl.hostname;
     const actualIssuerId = proofPoint.issuer;
     const actualVerificationMethod = proofPoint.proof.verificationMethod;
 
@@ -97,6 +123,10 @@ class WebProofPointAuthenticator {
   }
 }
 
+/**
+ * Ethereum proof point authenticator
+ * A @ProofPointAuthenticator capable of handling Ethereum authenticated proof points.
+ */
 class EthereumProofPointAuthenticator {
   private _registry: EthereumProofPointRegistry;
   private _ethereumAddressResolver: EthereumAddressResolver;

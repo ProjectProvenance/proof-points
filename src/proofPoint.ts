@@ -3,6 +3,7 @@
  * See `docs/specification.md` for more info.
  */
 interface ProofPoint {
+  id?: string;
   "@context": Array<string>;
   type: Array<string>;
   issuer: string;

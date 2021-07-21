@@ -1,6 +1,6 @@
 import { ProofPointIssueResult } from "./proofPointIssueResult";
 import { ethers } from "ethers";
-import { EthereumAddress, ProofPointId } from "./proofPointEvent";
+import { EthereumAddress, ProofPointId } from "./ethereumProofPointEvent";
 import { ProofPoint } from "./proofPoint";
 import {
   IpfsStorageProvider,
@@ -17,31 +17,10 @@ import {
 import { EthereumProofPointRegistryRoot } from "./ethereumProofPointRegistryRoot";
 import { RealHttpClient } from "./httpClient";
 
-export interface ProofPointIssuer {
-  issue(
-    type: string,
-    issuer: string,
-    content: unknown,
-    validFromDate: Date | null,
-    validUntilDate: Date | null,
-    signer: ethers.Signer | null
-  ): Promise<ProofPointIssueResult>;
-
-  commit(
-    type: string,
-    issuerAddress: string,
-    content: string,
-    validFromDate: Date | null,
-    validUntilDate: Date | null,
-    signer: ethers.Signer | null
-  ): Promise<ProofPointIssueResult>;
-
-  revoke(
-    proofPointId: ProofPointId,
-    signer: ethers.Signer | null
-  ): Promise<void>;
-}
-
+/**
+ * Ethereum proof point issuer
+ * Can issue, commit and revoke proof points in an @EthereumProofPointRegistry
+ */
 export class EthereumProofPointIssuer {
   private _rootAddress: EthereumAddress;
   private _registry: EthereumProofPointRegistry;
@@ -49,9 +28,11 @@ export class EthereumProofPointIssuer {
   private _ethereumAddressResolver: EthereumAddressResolver;
 
   /**
-   * Creates an instance of Proof Point registry for interacting with a pre-existing deployment of the registry contracts.
+   * Creates an instance of ethereum proof point issuer.
    * @param rootAddress the Ethereum address of the deployed eternal storage contract.
-   * @param storage a {@link StorageProvider} to use for storing/retrieving off-chain data or null to use the default implementation.
+   * @param ethereumAddressResolver A resolver used to resolve issuer IDs to Ethereum addresses.
+   * @param storage A storage provider used for storing and retrieving proof point documents.
+   * @param registry The @EthereumProofPointRegistry used to issue, commit and revoke.
    */
   constructor(
     rootAddress: EthereumAddress,
@@ -65,6 +46,13 @@ export class EthereumProofPointIssuer {
     this._registry = registry;
   }
 
+  /**
+   * Constructs an @EthereumProofPointIssuer set up for production use.
+   * @param rootAddress the Ethereum address of the deployed eternal storage contract.
+   * @param ipfsSettings Connection settings for the IPFS node to use for storage.
+   * @param ethereumProvider An Ethereum provider to use for Ethereum interactions.
+   * @returns a ready to use @EthereumProofPointIssuer
+   */
   public static async production(
     rootAddress: EthereumAddress,
     ipfsSettings: IpfsStorageProviderSettings,
@@ -93,7 +81,7 @@ export class EthereumProofPointIssuer {
    * @param content A javascript object representing the type specific content of the payload. The shape of the data should conform to the specification of the @param type parameter.
    * @param [validFromDate] Optional date from which the issued Proof Point will be valid. If null then there is no earliest date at which the Proof Point is valid.
    * @param [validUntilDate] Optional date until which the issued Proof Point will be valid. If null then there is no latest date at which the Proof Point is valid.
-   * @returns A ProofPointIssueResult describing the result of the action.
+   * @returns A @ProofPointIssueResult describing the result of the action.
    */
   async issue(
     type: string,
@@ -123,7 +111,7 @@ export class EthereumProofPointIssuer {
    * @param content A javascript object representing the type specific content of the payload. The shape of the data should conform to the specification of the @param type parameter.
    * @param [validFromDate] Optional date from which the issued Proof Point will be valid. If null then there is no earliest date at which the Proof Point is valid.
    * @param [validUntilDate] Optional date until which the issued Proof Point will be valid. If null then there is no latest date at which the Proof Point is valid.
-   * @returns A ProofPointIssueResult describing the result of the action.
+   * @returns A @ProofPointIssueResult describing the result of the action.
    */
   async commit(
     type: string,
@@ -173,7 +161,7 @@ export class EthereumProofPointIssuer {
     await this._registry.revoke(id, issuerAddress);
   }
 
-  private buildJson(
+  private _buildJson(
     type: string,
     issuer: string,
     content: unknown,
@@ -222,7 +210,7 @@ export class EthereumProofPointIssuer {
       throw new Error(`Cannot resolve issuer: ${issuer}`);
     }
 
-    const proofPointObject = this.buildJson(
+    const proofPointObject = this._buildJson(
       type,
       issuer,
       content,
@@ -255,7 +243,7 @@ export class EthereumProofPointIssuer {
     // Necessary because JSON.canonicalize produces invalid JSON if there
     // are fields with value undefined
     const cleanedDataObject =
-      EthereumProofPointIssuer.removeEmptyFields(dataObject);
+      EthereumProofPointIssuer._removeEmptyFields(dataObject);
 
     const dataStr = canonicalizeJson(cleanedDataObject);
     const storageResult = await this._storage.add(dataStr);
@@ -266,10 +254,10 @@ export class EthereumProofPointIssuer {
     };
   }
 
-  private static removeEmptyFields(obj: any): any {
+  private static _removeEmptyFields(obj: any): any {
     Object.keys(obj).forEach((key) => {
       if (obj[key] && typeof obj[key] === "object")
-        EthereumProofPointIssuer.removeEmptyFields(obj[key]);
+        EthereumProofPointIssuer._removeEmptyFields(obj[key]);
       // eslint-disable-next-line no-param-reassign
       else if (obj[key] === undefined) delete obj[key];
     });

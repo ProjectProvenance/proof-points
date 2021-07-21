@@ -4,8 +4,8 @@ import { ProofPoint } from "./proofPoint";
 import { ProofPointIssueResult } from "./proofPointIssueResult";
 import { ProofPointValidateResult } from "./proofPointValidateResult";
 import { ProofPointStatus } from "./proofPointStatus";
-import { ProofPointEventType } from "./proofPointEventType";
-import { ProofPointEvent } from "./proofPointEvent";
+import { EthereumProofPointEventType } from "./ethereumProofPointEventType";
+import { EthereumProofPointEvent } from "./ethereumProofPointEvent";
 import { EthereumProofPointRegistryRoot } from "./ethereumProofPointRegistryRoot";
 import { ProofPointId } from "./proofPointId";
 import {
@@ -23,7 +23,7 @@ import {
   GeneralProofPointResolver,
 } from "./proofPointResolver";
 import { EthereumProofPointRegistry } from "./ethereumProofPointRegistry";
-import { ProofPointIssuer, EthereumProofPointIssuer } from "./proofPointIssuer";
+import { EthereumProofPointIssuer } from "./proofPointIssuer";
 
 export {
   EthereumAddress,
@@ -36,8 +36,8 @@ export {
   ProofPointIssueResult,
   ProofPointValidateResult,
   ProofPointStatus,
-  ProofPointEventType,
-  ProofPointEvent,
+  EthereumProofPointEventType,
+  EthereumProofPointEvent,
   ProofPointId,
   ProofPointValidator,
   ProofPointAuthenticator,
@@ -46,6 +46,5 @@ export {
   GeneralProofPointResolver,
   EthereumProofPointRegistry,
   EthereumProofPointRegistryRoot,
-  ProofPointIssuer,
   EthereumProofPointIssuer,
 };

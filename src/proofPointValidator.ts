@@ -1,4 +1,4 @@
-import { EthereumAddress, ProofPointId } from "./proofPointEvent";
+import { EthereumAddress, ProofPointId } from "./ethereumProofPointEvent";
 import { ProofPointValidateResult } from "./proofPointValidateResult";
 import {
   GeneralProofPointResolver,
@@ -15,10 +15,21 @@ import { RealHttpClient } from "./httpClient";
 import { EthereumAddressResolver } from "./ethereumAddressResolver";
 import { IpfsStorageProvider, IpfsStorageProviderSettings } from "./storage";
 
+/**
+ * Proof point validator
+ * Used to validate proof points.
+ */
 export class ProofPointValidator {
   _resolver: ProofPointResolver;
   _authenticator: ProofPointAuthenticator;
 
+  /**
+   * Construct a @ProofPointValidator for production use
+   * @param registryRootAddress The Ethereum address of a proof point registry
+   * @param ethereumProvider A provider to use for Ethereum interactions
+   * @param ipfsSettings connection settings for an IPFS node to use for storage
+   * @returns a ready to use @ProofPointValidator capable of validating all types of proof point.
+   */
   public static async production(
     registryRootAddress: EthereumAddress,
     ethereumProvider: ethers.providers.JsonRpcProvider,
@@ -53,6 +64,11 @@ export class ProofPointValidator {
     this._authenticator = authenticator;
   }
 
+  /**
+   * Determines the validity of a given proof point
+   * @param id the ID of the proof point to validate.
+   * @returns a @ProofPointValidateResult representing the validity of the given proof point.
+   */
   public async validate(id: ProofPointId): Promise<ProofPointValidateResult> {
     try {
       const proofPoint = await this._resolver.resolve(id);

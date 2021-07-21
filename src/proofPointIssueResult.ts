@@ -1,5 +1,8 @@
 import { ProofPoint } from "./proofPoint";
-import { EthereumTransactionHash, ProofPointId } from "./proofPointEvent";
+import {
+  EthereumTransactionHash,
+  ProofPointId,
+} from "./ethereumProofPointEvent";
 
 interface ProofPointIssueResult {
   proofPointId: ProofPointId;

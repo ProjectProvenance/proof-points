@@ -5,7 +5,7 @@ import {
   PROOF_POINT_REGISTRY_VERSION,
   ProofPointRegistryAbi,
 } from "./ethereumProofPointRegistry";
-import { EthereumAddress } from "./proofPointEvent";
+import { EthereumAddress } from "./ethereumProofPointEvent";
 
 /**
  * Proof point registry root
@@ -37,7 +37,7 @@ export class EthereumProofPointRegistryRoot {
   }
 
   /**
-   * Gets an instance of ProofPointRegistry representing the current logic contract that is controlling
+   * Gets an instance of @EthereumProofPointRegistry representing the current logic contract that is controlling
    * this eternal storage contract.
    * @returns An instance of @EthereumProofPointRegistry to use for interacting with proof points.
    */
@@ -74,9 +74,9 @@ export class EthereumProofPointRegistryRoot {
   /**
    * Deploys an instance of the Proof Point registry, including an eternal storage contract and a logic
    * contract.
-   * @param fromAddress the Ethereum account to use for signing transactions. This will become the admin account that must be used for all future smart contract upgrades.
-   * @param web3 a web3 instance to use for interacting with the Ethereum blockchain.
-   * @returns a {@link ProofPointRegistryRoot} for interacting with the newly deployed contracts.
+   * @param from the Ethereum account to use for signing transactions. This will become the admin account that must be used for all future smart contract upgrades.
+   * @param provider a provider instance to use for interacting with the Ethereum blockchain.
+   * @returns a @EthereumProofPointRegistryRoot for interacting with the newly deployed contracts.
    */
   static async deploy(
     provider: ethers.providers.JsonRpcProvider,

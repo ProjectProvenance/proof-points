@@ -1,8 +1,17 @@
+/**
+ * Proof point id type
+ */
 enum ProofPointIdType {
+  // The ID is an IPFS document ID. The proof point will be authenticated using Ethereum authentication.
   Ipfs,
+  // The ID is an HTTPS based web URL. The proof point will be authenticated using Web authentication
   Web,
 }
 
+/**
+ * Proof point id
+ * A unique identifier for a proof point.
+ */
 class ProofPointId {
   private _id: string;
   private _type: ProofPointIdType;

@@ -14,7 +14,8 @@
 	numbering=true
 	autoSave=true
 	/vscode-markdown-toc-config -->
-<!-- /vscode-markdown-toc -->> **TODO** support for the issuer to be separate from the blockchain transaction signer, so that we can act as a gas payer for people that want to issue claims on our system
+<!-- /vscode-markdown-toc -->
+> **TODO** support for the issuer to be separate from the blockchain transaction signer, so that we can act as a gas payer for people that want to issue claims on our system
 
 > **TODO** support for [EIP-1056](https://github.com/ethereum/EIPs/issues/1056) so that the transaction submitter can be a delegate of the issuer
 
@@ -65,7 +66,7 @@ The JSON document part of the Proof Point is an implementation of the [W3C Verif
     ...
   ], ,
   "proof": {
-    "type": "ProvenanceProofType1",
+    "type": "https://open.provenance.org/ontology/ptf/v2#ProvenanceProofType1",
     "registryRoot": <registry-root>,
     "proofPurpose": "assertionMethod",
     "verificationMethod": "<issuer>"
@@ -76,12 +77,12 @@ The JSON document part of the Proof Point is an implementation of the [W3C Verif
 | Token | Meaning |
 |-------|---------|
 | `type` | An IRI representing the type of claim being made. This defines the meaning of the claim as well as defining what fields should be expected in the `type-specific-data` |
-| `issuer` | The Ethereum address of the issuer of the claim. This is the account that must be used to `issue`, `commit` and `revoke` the claim. The address may be represented either directly or using the did:web URI scheme. See [Proof Point Issuer](#proof-point-issuer) |
+| `issuer` | The Ethereum address of the issuer of the claim. This is the account that must be used to `issue`, `commit` and `revoke` the claim. The address may be represented either directly or using the did:web URI scheme. See [Proof Point Issuer](#ProofPointIssuer) |
 | `valid-from-date` | Optional, the date from which the claim is valid, in [RFC3339](https://tools.ietf.org/html/rfc3339) format. If present this will be checked as part of validation |
 | `valid-until-date` | Optional, the date until which the claim is valid, in [RFC3339](https://tools.ietf.org/html/rfc3339) format. If present this will be checked as part of validation |
 | `subject` | A URL identifying the subject of the claim. For business, product and ingredient claims it could be the address of the corresponding page within `provenance.org`. A claim with multiple subjects such as a connection claim should include one `credentialSubject` entry for each subject |
 | `type-specific-data` | Data fields specific to the `type` which serve to further specify the meaning of the claim |
-| `registry-root` | The Ethereum address of the `RegistryRoot` instance which indirectly specifies the `ProofPointRegistry` contract that should be used to `issue`, `commit`, `revoke` and `validate` this claim. See [Locating the Claims Registry](#locating-the-claims-registry). |
+| `registry-root` | The Ethereum address of the `RegistryRoot` instance which indirectly specifies the `ProofPointRegistry` contract that should be used to `issue`, `commit`, `revoke` and `validate` this claim. See [Locating the Claims Registry](#LocatingtheProofPointRegistry). |
 
 > **Note** The `method` field of the `proof` is what makes this W3C Verifiable Credential a Proof Point. The identifier `https://open.provenance.org/ontology/ptf/v2#ProvenanceProofType1` specifies the proof method defined in this document.
 
@@ -160,10 +161,10 @@ To issue a new valid Proof Point the following process is used:
 > **Note** This process involves a blockchain write, so can only be carried out by an `issuer` account with Ether funds and the process is subject to the normal block finalization delay.
 
 1. Determine the `<issuer>`, `<subject>`, `<type>`, `<type-specific-data>`, `<valid-from-date>` (optional), `<valid-until-date>` (optional) and `<registry-root>`. The `<issuer>` must be an Ethereum account that you control. The issued claim will only be valid between the `<valid-from-date>` and `<valid-until-date>` if present.
-2. Construct a JSON document according to the [Claim Data Format](#claim-data-format)
-3. [Compute the Proof Point ID](#generating-the-proof-point-identifier)
+2. Construct a JSON document according to the [Proof Point Document Format](#ProofPointDocumentFormat)
+3. [Compute the Proof Point ID](#GeneratingtheProofPointIdentifier)
 4. (Optional) Store the canonicalized Proof Point document on IPFS
-5. [Locate the ProofPointRegistry](#locating-the-ProofPointRegistry)
+5. [Locate the ProofPointRegistry](#LocatingtheProofPointRegistry)
 6. Using the `<issuer>` account, call the `issue` method of the `ProofPointRegistry` contract with the ID generated in 3.
 
 The document (both canonical, pre-canonical and ID form) is now a valid Proof Point and may be published or transmitted to a holder or validator.
@@ -185,8 +186,8 @@ To revoke a valid Proof Point the following process is used:
 > **Note** Revoking a `commit`ed claim has no effect
 
 1. Start with the JSON document that was issued
-2. [Compute the Proof Point ID](#generating-the-proof-point-identifier)
-3. [Locate the ProofPointRegistry](#locating-the-ProofPointRegistry)
+2. [Compute the Proof Point ID](#GeneratingtheProofPointIdentifier)
+3. [Locate the ProofPointRegistry](#LocatingtheProofPointRegistry)
 4. Using the `issuer` account, call the `revoke` method of the `ProofPointRegistry` contract with the ID computed in 2.
 
 The Proof Point is no longer valid in any form.
@@ -200,8 +201,8 @@ To check the validity of a given Proof Point the following process is used:
 1. Start with the JSON document that you want to validate. This may have been directly transmitted to you, or may be recovered from the ID using an IPFS lookup.
 2. If the `validFrom` field is present and is in the future then the claim is **invalid**
 3. If the `validUntil` field is present and is in the past then the claim is **invalid**
-4. [Compute the Proof Point ID](#generating-the-proof-point-identifier) if you don't already have it.
-5. [Locate the ProofPointRegistry](#locating-the-ProofPointRegistry)
+4. [Compute the Proof Point ID](#GeneratingtheProofPointIdentifier) if you don't already have it.
+5. [Locate the ProofPointRegistry](#LocatingtheProofPointRegistry)
 6. Call the `validate` method of the `ProofPointRegistry` contract with the `<issuer>` and the ID computed in 5. If the return value is `true` then the Proof Point is **valid**, otherwise it is **invalid**.
 
 ##  9. <a name='LocatingtheProofPointRegistry'></a>Locating the ProofPointRegistry

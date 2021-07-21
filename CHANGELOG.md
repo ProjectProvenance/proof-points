@@ -2,6 +2,8 @@
 
 ## New Features
 
+- Fix some errors in v1 specification document
+- Added web based validation
 - Enforce use CORS mode when POSTing to IPFS
 
 ## Bug Fixes
@@ -157,7 +159,7 @@ None
 
 ## New Features
 
-- `transactionHash` field added to `ProofPointEvent` type.
+- `transactionHash` field added to `EthereumProofPointEvent` type.
 - Added support for `did:web` issuer. This is now possible: `await api.issue(<type>, 'did:web:example.com', <content>);`.
 
 ## Bug Fixes

@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { Wallet } from "ethers";
 import {
   EthereumProofPointRegistryRoot,
-  ProofPointEventType,
+  EthereumProofPointEventType,
   EthereumAddress,
   EthereumProofPointRegistry,
   StorageProvider,
@@ -149,13 +149,13 @@ describe("EthereumProofPointRegistry", () => {
 
     // should be Issue, Revoke, Commit and not include the other pp
     expect(history.length).to.eq(3);
-    expect(history[0].type).to.eq(ProofPointEventType.Issued);
+    expect(history[0].type).to.eq(EthereumProofPointEventType.Issued);
     expect(history[0].issuer.toString()).to.eq(admin.address);
     expect(history[0].transactionHash).to.not.be.null;
-    expect(history[1].type).to.eq(ProofPointEventType.Revoked);
+    expect(history[1].type).to.eq(EthereumProofPointEventType.Revoked);
     expect(history[1].issuer.toString()).to.eq(admin.address);
     expect(history[1].transactionHash).to.not.be.null;
-    expect(history[2].type).to.eq(ProofPointEventType.Committed);
+    expect(history[2].type).to.eq(EthereumProofPointEventType.Committed);
     expect(history[2].issuer.toString()).to.eq(admin.address);
     expect(history[2].transactionHash).to.not.be.null;
   });
