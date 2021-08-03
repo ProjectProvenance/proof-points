@@ -51,18 +51,27 @@ export class EthereumProofPointIssuer {
    * @param rootAddress the Ethereum address of the deployed eternal storage contract.
    * @param ipfsSettings Connection settings for the IPFS node to use for storage.
    * @param ethereumProvider An Ethereum provider to use for Ethereum interactions.
+   * @param registryAddress Optional, if provided will be used as the registry address, meaning
+   * the address will not be looked up in the storage contract, saving one Ethereum call.
    * @returns a ready to use @EthereumProofPointIssuer
    */
   public static async production(
     rootAddress: EthereumAddress,
     ipfsSettings: IpfsStorageProviderSettings,
-    ethereumProvider: ethers.providers.JsonRpcProvider
+    ethereumProvider: ethers.providers.JsonRpcProvider,
+    registryAddress?: EthereumAddress
   ): Promise<EthereumProofPointIssuer> {
     const registryRoot = new EthereumProofPointRegistryRoot(
       rootAddress,
       ethereumProvider
     );
-    const registry = await registryRoot.getRegistry();
+    const registry = registryAddress
+      ? new EthereumProofPointRegistry(
+          rootAddress,
+          registryAddress,
+          ethereumProvider
+        )
+      : await registryRoot.getRegistry();
     const httpClient = new RealHttpClient();
     const ethereumAddressResolver = new EthereumAddressResolver(httpClient);
     const storageProvider = new IpfsStorageProvider(ipfsSettings);

@@ -78,6 +78,7 @@ class WebProofPointAuthenticator {
     if (proofPoint.proof.type !== this.PROOF_TYPE) {
       return {
         isValid: false,
+        proofPoint: proofPoint,
         statusCode: ProofPointStatus.BadlyFormed,
         statusMessage: "The Proof Point uses an unsupported proof type.",
       };
@@ -86,6 +87,7 @@ class WebProofPointAuthenticator {
     if (proofPoint.id !== id.toString()) {
       return {
         isValid: false,
+        proofPoint: proofPoint,
         statusCode: ProofPointStatus.BadlyFormed,
         statusMessage: "The Proof Point id does not match the source URL.",
       };
@@ -99,6 +101,7 @@ class WebProofPointAuthenticator {
     if (actualIssuerId !== actualVerificationMethod) {
       return {
         isValid: false,
+        proofPoint: proofPoint,
         statusCode: ProofPointStatus.BadlyFormed,
         statusMessage:
           "The issuer field does not match the proof.verificationMethod field.",
@@ -110,12 +113,14 @@ class WebProofPointAuthenticator {
     if (isAuthentic) {
       return {
         isValid: true,
+        proofPoint: proofPoint,
         statusCode: ProofPointStatus.Valid,
         statusMessage: null,
       };
     } else {
       return {
         isValid: false,
+        proofPoint: proofPoint,
         statusCode: ProofPointStatus.NotFound,
         statusMessage: "The Proof Point cannot be authenticated.",
       };
@@ -146,6 +151,7 @@ class EthereumProofPointAuthenticator {
     if (proofPoint.proof.type !== ETHEREUM_PROOF_TYPE) {
       return {
         isValid: false,
+        proofPoint: proofPoint,
         statusCode: ProofPointStatus.BadlyFormed,
         statusMessage: "The Proof Point uses an unsupported proof type.",
       };
@@ -154,6 +160,7 @@ class EthereumProofPointAuthenticator {
     if (!this._registry.isSameRegistry(proofPoint)) {
       return {
         isValid: false,
+        proofPoint: proofPoint,
         statusCode: ProofPointStatus.NonTrustedRegistry,
         statusMessage:
           "The Proof Point is issued using a registry that is not trusted in this context.",
@@ -167,6 +174,7 @@ class EthereumProofPointAuthenticator {
     if (issuerAddress === null) {
       return {
         isValid: false,
+        proofPoint: proofPoint,
         statusCode: ProofPointStatus.UnknownIssuer,
         statusMessage: `The issuer '${proofPoint.issuer}' could not be resolved to an Ethereum address.`,
       };
@@ -177,12 +185,14 @@ class EthereumProofPointAuthenticator {
     if (isAuthentic) {
       return {
         isValid: true,
+        proofPoint: proofPoint,
         statusCode: ProofPointStatus.Valid,
         statusMessage: null,
       };
     } else {
       return {
         isValid: false,
+        proofPoint: proofPoint,
         statusCode: ProofPointStatus.NotFound,
         statusMessage: "The Proof Point cannot be authenticated.",
       };

@@ -23,7 +23,7 @@ import {
   GeneralProofPointResolver,
 } from "./proofPointResolver";
 import { EthereumProofPointRegistry } from "./ethereumProofPointRegistry";
-import { EthereumProofPointIssuer } from "./proofPointIssuer";
+import { EthereumProofPointIssuer } from "./ethereumProofPointIssuer";
 
 export {
   EthereumAddress,

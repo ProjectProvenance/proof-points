@@ -14,6 +14,7 @@ import { EthereumProofPointRegistryRoot } from ".";
 import { RealHttpClient } from "./httpClient";
 import { EthereumAddressResolver } from "./ethereumAddressResolver";
 import { IpfsStorageProvider, IpfsStorageProviderSettings } from "./storage";
+import { EthereumProofPointRegistry } from "./ethereumProofPointRegistry";
 
 /**
  * Proof point validator
@@ -28,18 +29,27 @@ export class ProofPointValidator {
    * @param registryRootAddress The Ethereum address of a proof point registry
    * @param ethereumProvider A provider to use for Ethereum interactions
    * @param ipfsSettings connection settings for an IPFS node to use for storage
+   * @param registryAddress Optional, if provided will be used as the registry address, meaning
+   * the address will not be looked up in the storage contract, saving one Ethereum call.
    * @returns a ready to use @ProofPointValidator capable of validating all types of proof point.
    */
   public static async production(
     registryRootAddress: EthereumAddress,
     ethereumProvider: ethers.providers.JsonRpcProvider,
-    ipfsSettings: IpfsStorageProviderSettings
+    ipfsSettings: IpfsStorageProviderSettings,
+    registryAddress?: EthereumAddress
   ): Promise<ProofPointValidator> {
     const registryRoot = new EthereumProofPointRegistryRoot(
       registryRootAddress,
       ethereumProvider
     );
-    const registry = await registryRoot.getRegistry();
+    const registry = registryAddress
+      ? new EthereumProofPointRegistry(
+          registryRootAddress,
+          registryAddress,
+          ethereumProvider
+        )
+      : await registryRoot.getRegistry();
     const httpClient = new RealHttpClient();
     const ethereumAddressResolver = new EthereumAddressResolver(httpClient);
     const ipfs = new IpfsStorageProvider(ipfsSettings);
@@ -78,6 +88,7 @@ export class ProofPointValidator {
         if (validFromDate > Date.now()) {
           return {
             isValid: false,
+            proofPoint: proofPoint,
             statusCode: ProofPointStatus.Pending,
             statusMessage: "The Proof Point will become valid at a later date.",
           };
@@ -89,6 +100,7 @@ export class ProofPointValidator {
         if (validUntilDate < Date.now()) {
           return {
             isValid: false,
+            proofPoint: proofPoint,
             statusCode: ProofPointStatus.Expired,
             statusMessage: "The Proof Point has expired.",
           };
