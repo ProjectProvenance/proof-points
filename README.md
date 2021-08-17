@@ -29,7 +29,7 @@ Install required NPM packages:
 $ npm i @provenance/proof-points ethers
 ```
 
-### Validate
+### Validate a Proof Point
 
 ```js
 import { ProofPointId, EthereumAddress, ProofPointValidator } from '@provenance/proof-points';
@@ -59,8 +59,7 @@ const {
 } = await proofPointValidator.validate(proofPointId)
 ```
 
-### Issue or Revoke
-
+### Issue or Revoke a Proof Point
 ```js
 import { EthereumAddress, EthereumProofPointIssuer } from '@provenance/proof-points';
 import { ethers } from ethers;
