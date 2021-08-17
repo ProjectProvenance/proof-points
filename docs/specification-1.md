@@ -66,7 +66,7 @@ The JSON document part of the Proof Point is an implementation of the [W3C Verif
     ...
   ], ,
   "proof": {
-    "type": "https://open.provenance.org/ontology/ptf/v2#ProvenanceProofType1",
+    "type": "ProvenanceProofType1",
     "registryRoot": <registry-root>,
     "proofPurpose": "assertionMethod",
     "verificationMethod": "<issuer>"
