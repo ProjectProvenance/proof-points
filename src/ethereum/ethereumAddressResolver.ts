@@ -1,5 +1,5 @@
 import { EthereumAddress } from "./ethereumAddress";
-import { HttpClient } from "./httpClient";
+import { HttpClient } from "../httpClient";
 
 export class EthereumAddressResolver {
   private _httpClient: HttpClient;

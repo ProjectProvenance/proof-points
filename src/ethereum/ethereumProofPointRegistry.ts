@@ -1,11 +1,12 @@
 import { Contract, ethers } from "ethers";
-import { EthereumProofPointEvent, EthereumProofPointEventType } from ".";
-import ProofPointRegistryAbiV1 from "../build/ProofPointRegistry_v2.json";
-import ProofPointRegistryAbiV2 from "../build/ProofPointRegistry_v2.json";
+import { EthereumProofPointEvent } from "./ethereumProofPointEvent";
+import { EthereumProofPointEventType } from "./ethereumProofPointEventType";
+import ProofPointRegistryAbiV1 from "../../build/ProofPointRegistry_v2.json";
+import ProofPointRegistryAbiV2 from "../../build/ProofPointRegistry_v2.json";
 import { EthereumAddress } from "./ethereumAddress";
 import { EthereumTransactionHash } from "./ethereumTransactionHash";
-import { ProofPoint } from "./proofPoint";
-import { ProofPointId } from "./proofPointId";
+import { ProofPoint } from "../proofPoint";
+import { ProofPointId } from "../proofPointId";
 
 export const ProofPointRegistryAbi = [
   undefined,

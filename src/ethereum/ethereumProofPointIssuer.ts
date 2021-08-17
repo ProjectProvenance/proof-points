@@ -1,21 +1,21 @@
-import { ProofPointIssueResult } from "./proofPointIssueResult";
-import { ethers } from "ethers";
-import { EthereumAddress, ProofPointId } from "./ethereumProofPointEvent";
-import { ProofPoint } from "./proofPoint";
-import {
-  IpfsStorageProvider,
-  IpfsStorageProviderSettings,
-  StorageProvider,
-} from "./storage";
 import canonicalizeJson from "canonicalize";
 import localISOdt = require("local-iso-dt");
+
+import { EthereumProofPointIssueResult } from "./ethereumProofPointIssueResult";
+import { ethers } from "ethers";
+import { ProofPoint } from "../proofPoint";
+import { StorageProvider } from "../storage";
 import { EthereumAddressResolver } from "./ethereumAddressResolver";
 import {
   EthereumProofPointRegistry,
   ETHEREUM_PROOF_TYPE,
 } from "./ethereumProofPointRegistry";
 import { EthereumProofPointRegistryRoot } from "./ethereumProofPointRegistryRoot";
-import { RealHttpClient } from "./httpClient";
+import { RealHttpClient } from "../httpClient";
+import { IpfsStorageProviderSettings } from "../ipfs/ipfsStorageProviderSettings";
+import { IpfsStorageProvider } from "../ipfs/ipfsStorageProvider";
+import { EthereumAddress } from "./ethereumAddress";
+import { ProofPointId } from "../proofPointId";
 
 /**
  * Ethereum proof point issuer
@@ -55,7 +55,7 @@ export class EthereumProofPointIssuer {
    * the address will not be looked up in the storage contract, saving one Ethereum call.
    * @returns a ready to use @EthereumProofPointIssuer
    */
-  public static async production(
+  public static async init(
     rootAddress: EthereumAddress,
     ipfsSettings: IpfsStorageProviderSettings,
     ethereumProvider: ethers.providers.JsonRpcProvider,
@@ -98,7 +98,7 @@ export class EthereumProofPointIssuer {
     content: unknown,
     validFromDate: Date | null = null,
     validUntilDate: Date | null = null
-  ): Promise<ProofPointIssueResult> {
+  ): Promise<EthereumProofPointIssueResult> {
     return this._issue(
       type,
       issuer,
@@ -128,7 +128,7 @@ export class EthereumProofPointIssuer {
     content: unknown,
     validFromDate: Date | null = null,
     validUntilDate: Date | null = null
-  ): Promise<ProofPointIssueResult> {
+  ): Promise<EthereumProofPointIssueResult> {
     return this._issue(
       type,
       issuer,
@@ -213,7 +213,7 @@ export class EthereumProofPointIssuer {
     issueFunction: any,
     validFromDate: Date | null = null,
     validUntilDate: Date | null = null
-  ): Promise<ProofPointIssueResult> {
+  ): Promise<EthereumProofPointIssueResult> {
     const issuerAddress = await this._ethereumAddressResolver.resolve(issuer);
     if (issuerAddress === null) {
       throw new Error(`Cannot resolve issuer: ${issuer}`);

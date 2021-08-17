@@ -1,4 +1,4 @@
-enum ProofPointStatus {
+export enum ProofPointStatus {
   /**
    * The Proof Point object is badly formed. The Proof Point is invalid.
    */
@@ -32,5 +32,3 @@ enum ProofPointStatus {
    */
   Valid,
 }
-
-export { ProofPointStatus };

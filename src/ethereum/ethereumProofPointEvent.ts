@@ -1,12 +1,12 @@
 import { EthereumProofPointEventType } from "./ethereumProofPointEventType";
 import { EthereumAddress } from "./ethereumAddress";
-import { ProofPointId } from "./proofPointId";
+import { ProofPointId } from "../proofPointId";
 import { EthereumTransactionHash } from "./ethereumTransactionHash";
 
 /**
  * Proof Point event, describes a single event in the history of a Proof Point.
  */
-interface EthereumProofPointEvent {
+export interface EthereumProofPointEvent {
   /**
    * The blockchain block number at which the event occurred.
    * */
@@ -28,10 +28,3 @@ interface EthereumProofPointEvent {
    */
   transactionHash: EthereumTransactionHash;
 }
-
-export {
-  EthereumProofPointEvent,
-  EthereumAddress,
-  ProofPointId,
-  EthereumTransactionHash,
-};

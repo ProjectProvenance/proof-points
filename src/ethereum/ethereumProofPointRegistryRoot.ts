@@ -1,11 +1,12 @@
 import { ethers, Contract } from "ethers";
-import ProofPointRegistryStorage1Abi from "../build/ProofPointRegistryStorage1.json";
+
+import ProofPointRegistryStorage1Abi from "../../build/ProofPointRegistryStorage1.json";
+import { EthereumAddress } from "./ethereumAddress";
 import {
   EthereumProofPointRegistry,
   PROOF_POINT_REGISTRY_VERSION,
   ProofPointRegistryAbi,
 } from "./ethereumProofPointRegistry";
-import { EthereumAddress } from "./ethereumProofPointEvent";
 
 /**
  * Proof point registry root

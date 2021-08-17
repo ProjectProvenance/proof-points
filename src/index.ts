@@ -1,50 +1,44 @@
-import { EthereumAddress } from "./ethereumAddress";
+import { EthereumAddress } from "./ethereum/ethereumAddress";
 import { HttpClient, RealHttpClient } from "./httpClient";
 import { ProofPoint } from "./proofPoint";
-import { ProofPointIssueResult } from "./proofPointIssueResult";
 import { ProofPointValidateResult } from "./proofPointValidateResult";
 import { ProofPointStatus } from "./proofPointStatus";
-import { EthereumProofPointEventType } from "./ethereumProofPointEventType";
-import { EthereumProofPointEvent } from "./ethereumProofPointEvent";
-import { EthereumProofPointRegistryRoot } from "./ethereumProofPointRegistryRoot";
 import { ProofPointId } from "./proofPointId";
-import {
-  StorageProvider,
-  IpfsStorageProvider,
-  IpfsStorageProviderSettings,
-} from "./storage";
+import { EthereumProofPointEventType } from "./ethereum/ethereumProofPointEventType";
+import { EthereumProofPointEvent } from "./ethereum/ethereumProofPointEvent";
+import { EthereumProofPointRegistryRoot } from "./ethereum/ethereumProofPointRegistryRoot";
+import { EthereumProofPointRegistry } from "./ethereum/ethereumProofPointRegistry";
+import { EthereumProofPointIssuer } from "./ethereum/ethereumProofPointIssuer";
+import { EthereumProofPointAuthenticator } from "./ethereum/ethereumProofPointAuthenticator";
+import { StorageProvider } from "./storage";
 import { ProofPointValidator } from "./proofPointValidator";
-import {
-  ProofPointAuthenticator,
-  EthereumProofPointAuthenticator,
-} from "./proofPointAuthenticator";
-import {
-  ProofPointResolver,
-  IpfsProofPointResolver,
-} from "./proofPointResolver";
-import { EthereumProofPointRegistry } from "./ethereumProofPointRegistry";
-import { EthereumProofPointIssuer } from "./ethereumProofPointIssuer";
+import { ProofPointAuthenticator } from "./proofPointAuthenticator";
+import { ProofPointResolver } from "./proofPointResolver";
+import { IpfsStorageProvider } from "./ipfs/ipfsStorageProvider";
+import { IpfsStorageProviderSettings } from "./ipfs/ipfsStorageProviderSettings";
+import { IpfsProofPointResolver } from "./ipfs/ipfsProofPointResolver";
+import { EthereumProofPointIssueResult } from "./ethereum/ethereumProofPointIssueResult";
 
 export {
-  EthereumAddress,
   HttpClient,
   RealHttpClient,
   StorageProvider,
+  ProofPointId,
+  ProofPoint,
+  ProofPointStatus,
+  EthereumProofPointIssueResult,
+  ProofPointValidateResult,
+  ProofPointResolver,
+  ProofPointAuthenticator,
+  ProofPointValidator,
   IpfsStorageProvider,
   IpfsStorageProviderSettings,
-  ProofPoint,
-  ProofPointIssueResult,
-  ProofPointValidateResult,
-  ProofPointStatus,
+  IpfsProofPointResolver,
+  EthereumAddress,
   EthereumProofPointEventType,
   EthereumProofPointEvent,
-  ProofPointId,
-  ProofPointValidator,
-  ProofPointAuthenticator,
-  EthereumProofPointAuthenticator,
-  ProofPointResolver,
-  IpfsProofPointResolver,
   EthereumProofPointRegistry,
   EthereumProofPointRegistryRoot,
   EthereumProofPointIssuer,
+  EthereumProofPointAuthenticator,
 };
