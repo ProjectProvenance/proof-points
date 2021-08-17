@@ -43,7 +43,7 @@ const ipfsSettings = {
 }
 const ethereumProvider = new ethers.providers.JsonRpcProvider();
 
-const proofPointValidator = ProofPointValidator.production(
+const proofPointValidator = ProofPointValidator.init(
     registryRootAddress,
     ethereumProvider,
     ipfsSettings
@@ -72,7 +72,7 @@ const ipfsSettings = {
 }
 const ethereumProvider = new ethers.providers.JsonRpcProvider();
 
-const ethereumProofPointIssuer = await EthereumProofPointIssuer.production(
+const ethereumProofPointIssuer = await EthereumProofPointIssuer.init(
     registryRootAddress,
     ipfsSettings,
     ethereumProvider
