@@ -1,4 +1,5 @@
 import { Contract, ethers } from "ethers";
+
 import { EthereumProofPointEvent } from "./ethereumProofPointEvent";
 import { EthereumProofPointEventType } from "./ethereumProofPointEventType";
 import ProofPointRegistryAbiV1 from "../../build/ProofPointRegistry_v2.json";
@@ -26,9 +27,9 @@ export class EthereumProofPointRegistry {
 
   /**
    * Creates an instance of Proof Point registry for interacting with a pre-existing deployment of the registry contracts.
-   * @param rootAddress the Ethereum address of the deployed eternal storage contract.
-   * @param address the Ethereum address of the current deployed logic contract.
-   * @param provider an ethers.providers.JsonRpcProvider to use for interacting with the blockchain.
+   * @param rootAddress The Ethereum address of the deployed eternal storage contract.
+   * @param address The Ethereum address of the current deployed logic contract.
+   * @param provider An ethers.providers.JsonRpcProvider to use for interacting with the blockchain.
    */
   constructor(
     rootAddress: EthereumAddress,
@@ -48,8 +49,8 @@ export class EthereumProofPointRegistry {
 
   /**
    * Determines whether the given proof point can be authenticated using this registry.
-   * @param proofPoint the proof point to check.
-   * @returns true if the given proof point can be authenticated using this registry.
+   * @param proofPoint The proof point to check.
+   * @returns True if the given proof point can be authenticated using this registry.
    */
   public isSameRegistry(proofPoint: ProofPoint): boolean {
     return (
@@ -60,9 +61,9 @@ export class EthereumProofPointRegistry {
 
   /**
    * Issues the given proof point in this registry from the given issuer. You must control the issuer account.
-   * @param id the ID of the proof point to issue.
-   * @param issuerAddress the account that is issuing the proof point.
-   * @returns the Ethereum transaction hash of the issuing transaction.
+   * @param id The ID of the proof point to issue.
+   * @param issuerAddress The account that is issuing the proof point.
+   * @returns The Ethereum transaction hash of the issuing transaction.
    */
   public async issue(
     id: ProofPointId,
@@ -75,9 +76,9 @@ export class EthereumProofPointRegistry {
 
   /**
    * Commits the given proof point in this registry from the given issuer. You must control the issuer account.
-   * @param id the ID of the proof point to commit.
-   * @param issuerAddress the account that is committing the proof point.
-   * @returns the Ethereum transaction hash of the committing transaction.
+   * @param id The ID of the proof point to commit.
+   * @param issuerAddress The account that is committing the proof point.
+   * @returns The Ethereum transaction hash of the committing transaction.
    */
   public async commit(
     id: ProofPointId,
@@ -91,9 +92,9 @@ export class EthereumProofPointRegistry {
   /**
    * Revokes the given proof point from this registry using the given issuer. You must control the issuer account.
    * The issuer must be the original issuer of the proof point.
-   * @param id the ID of the proof point to revoke.
-   * @param issuerAddress the account that is issuing the proof point.
-   * @returns the Ethereum transaction hash of the revoking transaction.
+   * @param id The ID of the proof point to revoke.
+   * @param issuerAddress The account that is issuing the proof point.
+   * @returns The Ethereum transaction hash of the revoking transaction.
    */
   public async revoke(
     id: ProofPointId,
@@ -115,7 +116,7 @@ export class EthereumProofPointRegistry {
    * issued and not revoked by the given issuer, or has been committed by the given issuer.
    * @param id The ID of proof point to check.
    * @param issuerAddress The address of the expected issuer.
-   * @returns true if the proof point is issued and not revoked, or committed by the given issuer.
+   * @returns True if the proof point is issued and not revoked, or committed by the given issuer.
    */
   public async isAuthentic(
     id: ProofPointId,
@@ -130,8 +131,8 @@ export class EthereumProofPointRegistry {
 
   /**
    * Gets a list of all events related to the given Proof Point, identified by its ID.
-   * @param proofPointId the ID of the Proof Point.
-   * @returns a list of {@link EthereumProofPointEvent} describing the history of the Proof Point.
+   * @param proofPointId The ID of the Proof Point.
+   * @returns A list of {@link EthereumProofPointEvent} describing the history of the Proof Point.
    */
   public async getHistory(
     proofPointId: ProofPointId

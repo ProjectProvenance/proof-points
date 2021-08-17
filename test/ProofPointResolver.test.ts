@@ -6,11 +6,11 @@ import {
   StorageProvider,
   IpfsProofPointResolver,
   EthereumProofPointIssuer,
-} from "../dist/src/index";
+  EthereumAddressResolver,
+} from "../src/index";
 import FakeStorageProvider from "./fixtures/FakeStorageProvider";
 import FakeHttpClient from "./fixtures/FakeHttpClient";
 import { MockProvider } from "ethereum-waffle";
-import { EthereumAddressResolver } from "../dist/src/ethereumAddressResolver";
 
 describe("ProofPointResolver", () => {
   let storageProvider: StorageProvider;

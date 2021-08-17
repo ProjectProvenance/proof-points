@@ -78,7 +78,7 @@ const ethereumProofPointIssuer = await EthereumProofPointIssuer.init(
     ethereumProvider
 );
 
-const type = 'https://example.com/1';
+const type = 'https://open.provenance.org/ontology/ptf/v2/CertificationCredential';
 const issuer = 'did:web:example.com';
 const content = { 'a': 'b' };
 const validFromDate = new Date();
@@ -139,8 +139,6 @@ Run unit tests
 ```
 npm test
 ```
-
-#### Contribution Guidelines
 
 ### Publishing NPM Package
 

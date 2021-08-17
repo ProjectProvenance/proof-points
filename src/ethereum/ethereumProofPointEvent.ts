@@ -4,7 +4,7 @@ import { ProofPointId } from "../proofPointId";
 import { EthereumTransactionHash } from "./ethereumTransactionHash";
 
 /**
- * Proof Point event, describes a single event in the history of a Proof Point.
+ * Describes a single event in the history of a Proof Point.
  */
 export interface EthereumProofPointEvent {
   /**

@@ -21,8 +21,8 @@ export class EthereumProofPointRegistryRoot {
 
   /**
    * Creates an instance of proof point registry root.
-   * @param address the well-known address of the deployed eternal storage contract.
-   * @param provider an ethers.providers.JsonRpcProvider to use for interacting with the blockchain.
+   * @param address The well-known address of the deployed eternal storage contract.
+   * @param provider An ethers.providers.JsonRpcProvider to use for interacting with the blockchain.
    */
   constructor(
     address: EthereumAddress,
@@ -55,7 +55,7 @@ export class EthereumProofPointRegistryRoot {
 
   /**
    * Gets the address of the registry root - which is the address of the eternal storage contract.
-   * @returns address of registry root.
+   * @returns Address of registry root.
    */
   getAddress(): EthereumAddress {
     return this._address;
@@ -65,7 +65,7 @@ export class EthereumProofPointRegistryRoot {
    * Determines whether the deployed logic contract is the latest known version. If not then the
    * {@link upgrade} method can be called to deploy the latest logic contract and update the plumbing
    * so that the latest version will be used for future interactions.
-   * @returns true if the {@link upgrade} method can be called to upgrade the logic contract.
+   * @returns True if the {@link upgrade} method can be called to upgrade the logic contract.
    */
   async canUpgrade(): Promise<boolean> {
     const version = await this.getLogicContractVersion();
@@ -75,9 +75,9 @@ export class EthereumProofPointRegistryRoot {
   /**
    * Deploys an instance of the Proof Point registry, including an eternal storage contract and a logic
    * contract.
-   * @param from the Ethereum account to use for signing transactions. This will become the admin account that must be used for all future smart contract upgrades.
-   * @param provider a provider instance to use for interacting with the Ethereum blockchain.
-   * @returns a @EthereumProofPointRegistryRoot for interacting with the newly deployed contracts.
+   * @param from The Ethereum account to use for signing transactions. This will become the admin account that must be used for all future smart contract upgrades.
+   * @param provider A provider instance to use for interacting with the Ethereum blockchain.
+   * @returns A @EthereumProofPointRegistryRoot for interacting with the newly deployed contracts.
    */
   static async deploy(
     provider: ethers.providers.JsonRpcProvider,

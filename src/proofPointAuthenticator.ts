@@ -11,7 +11,7 @@ export interface ProofPointAuthenticator {
    * Determines whether the given proof point is authentic.
    * @param id The ID of the proof point to check.
    * @param proofPoint The proof point to check.
-   * @returns true if the proof point is authentic.
+   * @returns True if the proof point is authentic.
    */
   authenticate(
     id: ProofPointId,

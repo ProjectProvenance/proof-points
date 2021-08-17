@@ -10,7 +10,7 @@ export class EthereumAddressResolver {
 
   /* Resolve a string ID to an Ethereum address.
    * The string must be either an Ethereum address or a did:web identifier
-   * that can be resolved to an Ethereum address
+   * that can be resolved to an Ethereum address.
    */
   public async resolve(addr: string): Promise<EthereumAddress> {
     if (/^0x[a-fA-F0-9]{40}$/.test(addr)) {

@@ -1,5 +1,5 @@
 /**
- * Proof Point event type, the type of an {@link EthereumProofPointEvent}.
+ * The type of an {@link EthereumProofPointEvent}.
  */
 enum EthereumProofPointEventType {
   Issued,

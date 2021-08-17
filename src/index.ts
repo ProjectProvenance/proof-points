@@ -18,6 +18,7 @@ import { IpfsStorageProvider } from "./ipfs/ipfsStorageProvider";
 import { IpfsStorageProviderSettings } from "./ipfs/ipfsStorageProviderSettings";
 import { IpfsProofPointResolver } from "./ipfs/ipfsProofPointResolver";
 import { EthereumProofPointIssueResult } from "./ethereum/ethereumProofPointIssueResult";
+import { EthereumAddressResolver } from "./ethereum/ethereumAddressResolver";
 
 export {
   HttpClient,
@@ -26,7 +27,6 @@ export {
   ProofPointId,
   ProofPoint,
   ProofPointStatus,
-  EthereumProofPointIssueResult,
   ProofPointValidateResult,
   ProofPointResolver,
   ProofPointAuthenticator,
@@ -41,4 +41,6 @@ export {
   EthereumProofPointRegistryRoot,
   EthereumProofPointIssuer,
   EthereumProofPointAuthenticator,
+  EthereumAddressResolver,
+  EthereumProofPointIssueResult,
 };

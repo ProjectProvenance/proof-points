@@ -18,8 +18,8 @@ import { EthereumAddress } from "./ethereumAddress";
 import { ProofPointId } from "../proofPointId";
 
 /**
- * Ethereum proof point issuer
- * Can issue, commit and revoke proof points in an @EthereumProofPointRegistry
+ * Ethereum Proof Point Issuer
+ * Can issue, commit and revoke Proof Points in an @EthereumProofPointRegistry
  */
 export class EthereumProofPointIssuer {
   private _rootAddress: EthereumAddress;
@@ -28,8 +28,8 @@ export class EthereumProofPointIssuer {
   private _ethereumAddressResolver: EthereumAddressResolver;
 
   /**
-   * Creates an instance of ethereum proof point issuer.
-   * @param rootAddress the Ethereum address of the deployed eternal storage contract.
+   * Creates an instance of @EthereumProofPointIssuer
+   * @param rootAddress The Ethereum address of the deployed eternal storage contract.
    * @param ethereumAddressResolver A resolver used to resolve issuer IDs to Ethereum addresses.
    * @param storage A storage provider used for storing and retrieving proof point documents.
    * @param registry The @EthereumProofPointRegistry used to issue, commit and revoke.
@@ -166,8 +166,7 @@ export class EthereumProofPointIssuer {
       throw new Error(`Cannot resolve issuer: ${proofPointObject.issuer}`);
     }
 
-    const { id } = await this._canonicalizeAndStoreObject(proofPointObject);
-    await this._registry.revoke(id, issuerAddress);
+    await this._registry.revoke(proofPointId, issuerAddress);
   }
 
   private _buildJson(
@@ -247,8 +246,6 @@ export class EthereumProofPointIssuer {
   private async _canonicalizeAndStoreObject(
     dataObject: any
   ): Promise<{ id: ProofPointId; canonicalisedObject: any }> {
-    // TODO add method to compute hash without storing
-
     // Necessary because JSON.canonicalize produces invalid JSON if there
     // are fields with value undefined
     const cleanedDataObject =

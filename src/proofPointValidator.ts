@@ -25,10 +25,10 @@ export class ProofPointValidator {
    * Construct a @ProofPointValidator for production use
    * @param registryRootAddress The Ethereum address of a proof point registry
    * @param ethereumProvider A provider to use for Ethereum interactions
-   * @param ipfsSettings connection settings for an IPFS node to use for storage
+   * @param ipfsSettings Connection settings for an IPFS node to use for storage
    * @param registryAddress Optional, if provided will be used as the registry address, meaning
    * the address will not be looked up in the storage contract, saving one Ethereum call.
-   * @returns a ready to use @ProofPointValidator capable of validating all types of proof point.
+   * @returns A ready to use @ProofPointValidator capable of validating all types of proof point.
    */
   public static async init(
     registryRootAddress: EthereumAddress,
