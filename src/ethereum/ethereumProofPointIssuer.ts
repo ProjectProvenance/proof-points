@@ -85,7 +85,7 @@ export class EthereumProofPointIssuer {
 
   /**
    * Issue a new Proof Point
-   * @param type A URI string identifying the type of Proof Point to issue. This may be one of the values defined in the Provenance ontology.
+   * @param type A URI string identifying the type of Proof Point to issue. This may be any URL but there are some useful types defined defined in the Provenance ontology.
    * @param issuer A string identifying the Ethereum address from which to issue the Proof Point. This may be either an Ethereum address or a did:web URI. It must represent an account that you control and must be sufficiently funded to pay for the issuance transaction.
    * @param content A javascript object representing the type specific content of the payload. The shape of the data should conform to the specification of the @param type parameter.
    * @param [validFromDate] Optional date from which the issued Proof Point will be valid. If null then there is no earliest date at which the Proof Point is valid.
@@ -115,7 +115,7 @@ export class EthereumProofPointIssuer {
 
   /**
    * Commit a new Proof Point
-   * @param type A URI string identifying the type of Proof Point to issue. This may be one of the values defined in the Provenance ontology.
+   * @param type A URI string identifying the type of Proof Point to issue. This may be any URL but there are some useful types defined defined in the Provenance ontology.
    * @param issuer A string identifying the Ethereum address from which to commit the Proof Point. This may be either an Ethereum address or a did:web URI. It must represent an account that you control and must be sufficiently funded to pay for the issuance transaction.
    * @param content A javascript object representing the type specific content of the payload. The shape of the data should conform to the specification of the @param type parameter.
    * @param [validFromDate] Optional date from which the issued Proof Point will be valid. If null then there is no earliest date at which the Proof Point is valid.
@@ -169,7 +169,7 @@ export class EthereumProofPointIssuer {
     await this._registry.revoke(proofPointId, issuerAddress);
   }
 
-  private _buildJson(
+  private _buildProofPoint(
     type: string,
     issuer: string,
     content: unknown,
@@ -218,7 +218,7 @@ export class EthereumProofPointIssuer {
       throw new Error(`Cannot resolve issuer: ${issuer}`);
     }
 
-    const proofPointObject = this._buildJson(
+    const proofPointObject = this._buildProofPoint(
       type,
       issuer,
       content,
