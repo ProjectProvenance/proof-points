@@ -6,8 +6,8 @@ import {
   ProofPointStatus,
   EthereumAddress,
   StorageProvider,
-  GeneralProofPointResolver,
-  GeneralProofPointAuthenticator,
+  IpfsProofPointResolver,
+  EthereumProofPointAuthenticator,
   EthereumProofPointIssuer,
   ProofPointResolver,
 } from "../dist/src/index";
@@ -104,9 +104,9 @@ describe("EthereumProofPointIssuer", () => {
     );
     rootAddress = registryRoot.getAddress();
     const registry = await registryRoot.getRegistry();
-    resolver = new GeneralProofPointResolver(storageProvider);
+    resolver = new IpfsProofPointResolver(storageProvider);
     ethereumAddressResolver = new EthereumAddressResolver(httpClient);
-    const authenticator = new GeneralProofPointAuthenticator(
+    const authenticator = new EthereumProofPointAuthenticator(
       registry,
       ethereumAddressResolver
     );

@@ -16,31 +16,10 @@ export interface ProofPointResolver {
 }
 
 /**
- * General proof point resolver
- * A @ProofPointResolver capable of handling all types of @ProofPointId
- */
-export class GeneralProofPointResolver {
-  private _ipfsResolver: IpfsProofPointResolver;
-
-  public constructor(ipfs: StorageProvider) {
-    this._ipfsResolver = new IpfsProofPointResolver(ipfs);
-  }
-
-  resolve(id: ProofPointId): Promise<ProofPoint> {
-    switch (id.getType()) {
-      case ProofPointIdType.Ipfs:
-        return this._ipfsResolver.resolve(id);
-      default:
-        throw `Unexpected ID type: ${id.getType()}`;
-    }
-  }
-}
-
-/**
  * Ipfs proof point resolver
  * A @ProofPointResolver capable of handling @ProofPointId of type Ipfs
  */
-class IpfsProofPointResolver {
+export class IpfsProofPointResolver {
   private _storage: StorageProvider;
 
   public constructor(storage: StorageProvider) {

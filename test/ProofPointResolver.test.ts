@@ -4,7 +4,7 @@ import {
   EthereumProofPointRegistryRoot,
   EthereumAddress,
   StorageProvider,
-  GeneralProofPointResolver,
+  IpfsProofPointResolver,
   EthereumProofPointIssuer,
 } from "../dist/src/index";
 import FakeStorageProvider from "./fixtures/FakeStorageProvider";
@@ -14,7 +14,7 @@ import { EthereumAddressResolver } from "../dist/src/ethereumAddressResolver";
 
 describe("ProofPointResolver", () => {
   let storageProvider: StorageProvider;
-  let subject: GeneralProofPointResolver;
+  let subject: IpfsProofPointResolver;
   let type: string;
   let content: any;
   let provider: MockProvider;
@@ -99,7 +99,7 @@ describe("ProofPointResolver", () => {
     );
     rootAddress = registryRoot.getAddress();
     const registry = await registryRoot.getRegistry();
-    subject = new GeneralProofPointResolver(storageProvider);
+    subject = new IpfsProofPointResolver(storageProvider);
     ethereumAddressResolver = new EthereumAddressResolver(httpClient);
 
     type = "http://open.provenance.org/ontology/ptf/v1/TestProofPoint";

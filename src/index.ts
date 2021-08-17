@@ -16,11 +16,11 @@ import {
 import { ProofPointValidator } from "./proofPointValidator";
 import {
   ProofPointAuthenticator,
-  GeneralProofPointAuthenticator,
+  EthereumProofPointAuthenticator,
 } from "./proofPointAuthenticator";
 import {
   ProofPointResolver,
-  GeneralProofPointResolver,
+  IpfsProofPointResolver,
 } from "./proofPointResolver";
 import { EthereumProofPointRegistry } from "./ethereumProofPointRegistry";
 import { EthereumProofPointIssuer } from "./ethereumProofPointIssuer";
@@ -41,9 +41,9 @@ export {
   ProofPointId,
   ProofPointValidator,
   ProofPointAuthenticator,
-  GeneralProofPointAuthenticator,
+  EthereumProofPointAuthenticator,
   ProofPointResolver,
-  GeneralProofPointResolver,
+  IpfsProofPointResolver,
   EthereumProofPointRegistry,
   EthereumProofPointRegistryRoot,
   EthereumProofPointIssuer,

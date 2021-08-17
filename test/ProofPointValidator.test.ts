@@ -6,11 +6,10 @@ import {
   ProofPointStatus,
   EthereumAddress,
   StorageProvider,
-  GeneralProofPointResolver,
-  GeneralProofPointAuthenticator,
+  IpfsProofPointResolver,
+  EthereumProofPointAuthenticator,
   EthereumProofPointIssuer,
   ProofPointResolver,
-  ProofPointId,
 } from "../dist/src/index";
 import FakeStorageProvider from "./fixtures/FakeStorageProvider";
 import FakeHttpClient from "./fixtures/FakeHttpClient";
@@ -105,9 +104,9 @@ describe("ProofPointValidator", () => {
     );
     rootAddress = registryRoot.getAddress();
     const registry = await registryRoot.getRegistry();
-    resolver = new GeneralProofPointResolver(storageProvider);
+    resolver = new IpfsProofPointResolver(storageProvider);
     ethereumAddressResolver = new EthereumAddressResolver(httpClient);
-    const authenticator = new GeneralProofPointAuthenticator(
+    const authenticator = new EthereumProofPointAuthenticator(
       registry,
       ethereumAddressResolver
     );
@@ -178,7 +177,7 @@ describe("ProofPointValidator", () => {
       EthereumAddress.parse(admin.address)
     );
     const altRegistry = await altRegistryRoot.getRegistry();
-    const altAuthenticator = new GeneralProofPointAuthenticator(
+    const altAuthenticator = new EthereumProofPointAuthenticator(
       altRegistry,
       ethereumAddressResolver
     );

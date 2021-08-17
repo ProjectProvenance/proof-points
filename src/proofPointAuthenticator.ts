@@ -4,7 +4,7 @@ import {
   ETHEREUM_PROOF_TYPE,
 } from "./ethereumProofPointRegistry";
 import { ProofPoint } from "./proofPoint";
-import { ProofPointId, ProofPointIdType } from "./proofPointId";
+import { ProofPointId } from "./proofPointId";
 import { ProofPointStatus } from "./proofPointStatus";
 import { ProofPointValidateResult } from "./proofPointValidateResult";
 
@@ -26,40 +26,10 @@ export interface ProofPointAuthenticator {
 }
 
 /**
- * General proof point authenticator
- * A @ProofPointAuthenticator capable of handling Ethereum based proof points and Web based proof points.
- */
-export class GeneralProofPointAuthenticator {
-  private _ethereumAuthenticator: EthereumProofPointAuthenticator;
-
-  constructor(
-    registry: EthereumProofPointRegistry,
-    ethereumAddressResolver: EthereumAddressResolver
-  ) {
-    this._ethereumAuthenticator = new EthereumProofPointAuthenticator(
-      registry,
-      ethereumAddressResolver
-    );
-  }
-
-  authenticate(
-    id: ProofPointId,
-    proofPoint: ProofPoint
-  ): Promise<ProofPointValidateResult> {
-    switch (id.getType()) {
-      case ProofPointIdType.Ipfs:
-        return this._ethereumAuthenticator.authenticate(id, proofPoint);
-      default:
-        throw `Unexpected ID type: ${id.getType()}`;
-    }
-  }
-}
-
-/**
  * Ethereum proof point authenticator
  * A @ProofPointAuthenticator capable of handling Ethereum authenticated proof points.
  */
-class EthereumProofPointAuthenticator {
+export class EthereumProofPointAuthenticator {
   private _registry: EthereumProofPointRegistry;
   private _ethereumAddressResolver: EthereumAddressResolver;
 

@@ -1,12 +1,12 @@
 import { EthereumAddress, ProofPointId } from "./ethereumProofPointEvent";
 import { ProofPointValidateResult } from "./proofPointValidateResult";
 import {
-  GeneralProofPointResolver,
+  IpfsProofPointResolver,
   ProofPointResolver,
 } from "./proofPointResolver";
 import { ProofPointStatus } from "./proofPointStatus";
 import {
-  GeneralProofPointAuthenticator,
+  EthereumProofPointAuthenticator,
   ProofPointAuthenticator,
 } from "./proofPointAuthenticator";
 import { ethers } from "ethers";
@@ -33,7 +33,7 @@ export class ProofPointValidator {
    * the address will not be looked up in the storage contract, saving one Ethereum call.
    * @returns a ready to use @ProofPointValidator capable of validating all types of proof point.
    */
-  public static async production(
+  public static async init(
     registryRootAddress: EthereumAddress,
     ethereumProvider: ethers.providers.JsonRpcProvider,
     ipfsSettings: IpfsStorageProviderSettings,
@@ -53,8 +53,8 @@ export class ProofPointValidator {
     const httpClient = new RealHttpClient();
     const ethereumAddressResolver = new EthereumAddressResolver(httpClient);
     const ipfs = new IpfsStorageProvider(ipfsSettings);
-    const proofPointResolver = new GeneralProofPointResolver(ipfs);
-    const proofPointAuthenticator = new GeneralProofPointAuthenticator(
+    const proofPointResolver = new IpfsProofPointResolver(ipfs);
+    const proofPointAuthenticator = new EthereumProofPointAuthenticator(
       registry,
       ethereumAddressResolver
     );
