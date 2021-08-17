@@ -104,7 +104,7 @@ describe("EthereumProofPointIssuer", () => {
     );
     rootAddress = registryRoot.getAddress();
     const registry = await registryRoot.getRegistry();
-    resolver = new GeneralProofPointResolver(httpClient, storageProvider);
+    resolver = new GeneralProofPointResolver(storageProvider);
     ethereumAddressResolver = new EthereumAddressResolver(httpClient);
     const authenticator = new GeneralProofPointAuthenticator(
       registry,

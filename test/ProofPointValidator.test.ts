@@ -97,122 +97,6 @@ describe("ProofPointValidator", () => {
             "publicKey": "did:web:example.com%3A1234:subpath#owner"
         }]
       }`,
-      "https://example.com/proof-point/1": `
-      {
-        "id": "https://example.com/proof-point/1",
-        "@context": [
-          "https://www.w3.org/2018/credentials/v1",
-          "https://provenance.org/ontology/ptf/v2"
-        ],
-        "credentialSubject": {
-          "some": [ "data" ],
-          "more": [ "data" ],
-          "id": "https://provenance.org/subject1"
-        },
-        "issuer": "example.com",
-        "proof": {
-          "proofPurpose": "assertionMethod",
-          "type": "https://open.provenance.org/ontology/ptf/v2/ProvenanceProofType2",
-          "verificationMethod": "example.com"
-        },
-        "type": [
-          "VerifiableCredential",
-          "https://open.provenance.org/ontology/ptf/v2/CertificationCredential"
-        ]
-      }`,
-      "https://example.com/proof-point/wrong-id": `
-      {
-        "id": "https://example2.com/proof-point/1",
-        "@context": [
-          "https://www.w3.org/2018/credentials/v1",
-          "https://provenance.org/ontology/ptf/v2"
-        ],
-        "credentialSubject": {
-          "some": [ "data" ],
-          "more": [ "data" ],
-          "id": "https://provenance.org/subject1"
-        },
-        "issuer": "example.com",
-        "proof": {
-          "proofPurpose": "assertionMethod",
-          "type": "https://open.provenance.org/ontology/ptf/v2/ProvenanceProofType2",
-          "verificationMethod": "example.com"
-        },
-        "type": [
-          "VerifiableCredential",
-          "https://open.provenance.org/ontology/ptf/v2/CertificationCredential"
-        ]
-      }`,
-      "https://example.com/proof-point/invalid": "404 not found",
-      "https://example.com/proof-point/wrong-proof-type": `
-      {
-        "id": "https://example.com/proof-point/wrong-proof-type",
-        "@context": [
-          "https://www.w3.org/2018/credentials/v1",
-          "https://provenance.org/ontology/ptf/v2"
-        ],
-        "credentialSubject": {
-          "some": [ "data" ],
-          "more": [ "data" ],
-          "id": "https://provenance.org/subject1"
-        },
-        "issuer": "example.com",
-        "proof": {
-          "proofPurpose": "assertionMethod",
-          "type": "https://open.provenance.org/ontology/ptf/v2/ProvenanceProofType1",
-          "verificationMethod": "example.com"
-        },
-        "type": [
-          "VerifiableCredential",
-          "https://open.provenance.org/ontology/ptf/v2/CertificationCredential"
-        ]
-      }`,
-      "https://example.com/proof-point/wrong-issuer": `
-      {
-        "id": "https://example.com/proof-point/wrong-issuer",
-        "@context": [
-          "https://www.w3.org/2018/credentials/v1",
-          "https://provenance.org/ontology/ptf/v2"
-        ],
-        "credentialSubject": {
-          "some": [ "data" ],
-          "more": [ "data" ],
-          "id": "https://provenance.org/subject1"
-        },
-        "issuer": "example2.com",
-        "proof": {
-          "proofPurpose": "assertionMethod",
-          "type": "https://open.provenance.org/ontology/ptf/v2/ProvenanceProofType2",
-          "verificationMethod": "example2.com"
-        },
-        "type": [
-          "VerifiableCredential",
-          "https://open.provenance.org/ontology/ptf/v2/CertificationCredential"
-        ]
-      }`,
-      "https://example.com/proof-point/wrong-verification-method": `
-      {
-        "id": "https://example.com/proof-point/wrong-verification-method",
-        "@context": [
-          "https://www.w3.org/2018/credentials/v1",
-          "https://provenance.org/ontology/ptf/v2"
-        ],
-        "credentialSubject": {
-          "some": [ "data" ],
-          "more": [ "data" ],
-          "id": "https://provenance.org/subject1"
-        },
-        "issuer": "example.com",
-        "proof": {
-          "proofPurpose": "assertionMethod",
-          "type": "https://open.provenance.org/ontology/ptf/v2/ProvenanceProofType2",
-          "verificationMethod": "example2.com"
-        },
-        "type": [
-          "VerifiableCredential",
-          "https://open.provenance.org/ontology/ptf/v2/CertificationCredential"
-        ]
-      }`,
     });
 
     const registryRoot = await EthereumProofPointRegistryRoot.deploy(
@@ -221,7 +105,7 @@ describe("ProofPointValidator", () => {
     );
     rootAddress = registryRoot.getAddress();
     const registry = await registryRoot.getRegistry();
-    resolver = new GeneralProofPointResolver(httpClient, storageProvider);
+    resolver = new GeneralProofPointResolver(storageProvider);
     ethereumAddressResolver = new EthereumAddressResolver(httpClient);
     const authenticator = new GeneralProofPointAuthenticator(
       registry,
@@ -403,69 +287,6 @@ describe("ProofPointValidator", () => {
     expect(validity.isValid).to.be.false;
     expect(validity.statusMessage).to.eq(
       `The issuer 'did:web:example.com' could not be resolved to an Ethereum address.`
-    );
-  });
-
-  it("web validation happy path", async () => {
-    const id = ProofPointId.parse("https://example.com/proof-point/1");
-    const validity = await subject.validate(id);
-    expect(validity.isValid).to.be.true;
-    expect(validity.statusCode).to.eq(ProofPointStatus.Valid);
-  });
-
-  it("web validation with unparseable pp is invalid", async () => {
-    const id = ProofPointId.parse("https://example.com/proof-point/invalid");
-    const validity = await subject.validate(id);
-    expect(validity.isValid).to.be.false;
-    expect(validity.statusCode).to.eq(ProofPointStatus.NotFound);
-    expect(validity.statusMessage).to.eq(
-      "The Proof Point https://example.com/proof-point/invalid could not be resolved."
-    );
-  });
-
-  it("web validation with wrong proof type is invalid", async () => {
-    const id = ProofPointId.parse(
-      "https://example.com/proof-point/wrong-proof-type"
-    );
-    const validity = await subject.validate(id);
-    expect(validity.isValid).to.be.false;
-    expect(validity.statusCode).to.eq(ProofPointStatus.BadlyFormed);
-    expect(validity.statusMessage).to.eq(
-      "The Proof Point uses an unsupported proof type."
-    );
-  });
-
-  it("web validation with wrong issuer is invalid", async () => {
-    const id = ProofPointId.parse(
-      "https://example.com/proof-point/wrong-issuer"
-    );
-    const validity = await subject.validate(id);
-    expect(validity.isValid).to.be.false;
-    expect(validity.statusCode).to.eq(ProofPointStatus.NotFound);
-    expect(validity.statusMessage).to.eq(
-      "The Proof Point cannot be authenticated."
-    );
-  });
-
-  it("web validation with wrong verification method is invalid", async () => {
-    const id = ProofPointId.parse(
-      "https://example.com/proof-point/wrong-verification-method"
-    );
-    const validity = await subject.validate(id);
-    expect(validity.isValid).to.be.false;
-    expect(validity.statusCode).to.eq(ProofPointStatus.BadlyFormed);
-    expect(validity.statusMessage).to.eq(
-      "The issuer field does not match the proof.verificationMethod field."
-    );
-  });
-
-  it("web validation with wrong id is invalid", async () => {
-    const id = ProofPointId.parse("https://example.com/proof-point/wrong-id");
-    const validity = await subject.validate(id);
-    expect(validity.isValid).to.be.false;
-    expect(validity.statusCode).to.eq(ProofPointStatus.BadlyFormed);
-    expect(validity.statusMessage).to.eq(
-      "The Proof Point id does not match the source URL."
     );
   });
 });

@@ -4,8 +4,6 @@
 enum ProofPointIdType {
   // The ID is an IPFS document ID. The proof point will be authenticated using Ethereum authentication.
   Ipfs,
-  // The ID is an HTTPS based web URL. The proof point will be authenticated using Web authentication
-  Web,
 }
 
 /**
@@ -21,19 +19,7 @@ class ProofPointId {
       return new ProofPointId(input, ProofPointIdType.Ipfs);
     }
 
-    try {
-      const url = new URL(input);
-      if (url.protocol !== "https:") {
-        throw new Error(`Invalid Proof Point ID: ${input}`);
-      }
-
-      return new ProofPointId(input, ProofPointIdType.Web);
-    } catch (e) {
-      if (e instanceof TypeError) {
-        throw new Error(`Invalid Proof Point ID: ${input}`);
-      }
-      throw e;
-    }
+    throw new Error(`Invalid Proof Point ID: ${input}`);
   }
 
   getType(): ProofPointIdType {

@@ -53,7 +53,7 @@ export class ProofPointValidator {
     const httpClient = new RealHttpClient();
     const ethereumAddressResolver = new EthereumAddressResolver(httpClient);
     const ipfs = new IpfsStorageProvider(ipfsSettings);
-    const proofPointResolver = new GeneralProofPointResolver(httpClient, ipfs);
+    const proofPointResolver = new GeneralProofPointResolver(ipfs);
     const proofPointAuthenticator = new GeneralProofPointAuthenticator(
       registry,
       ethereumAddressResolver

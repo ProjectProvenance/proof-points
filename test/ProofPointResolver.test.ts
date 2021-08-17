@@ -6,7 +6,6 @@ import {
   StorageProvider,
   GeneralProofPointResolver,
   EthereumProofPointIssuer,
-  ProofPointId,
 } from "../dist/src/index";
 import FakeStorageProvider from "./fixtures/FakeStorageProvider";
 import FakeHttpClient from "./fixtures/FakeHttpClient";
@@ -92,28 +91,6 @@ describe("ProofPointResolver", () => {
             "publicKey": "did:web:example.com%3A1234:subpath#owner"
         }]
       }`,
-      "https://example.com/proof-point/1": `
-      {
-        "@context": [
-          "https://www.w3.org/2018/credentials/v1",
-          "https://provenance.org/ontology/ptf/v2"
-        ],
-        "credentialSubject": {
-          "some": [ "data" ],
-          "more": [ "data" ],
-          "id": "https://provenance.org/subject1"
-        },
-        "issuer": "did:web:example.com",
-        "proof": {
-          "proofPurpose": "assertionMethod",
-          "type": "https://open.provenance.org/ontology/ptf/v2/ProvenanceProofTypeWeb1",
-          "verificationMethod": "did:web:example.com"
-        },
-        "type": [
-          "VerifiableCredential",
-          "https://open.provenance.org/ontology/ptf/v2/CertificationCredential"
-        ]
-      }`,
     });
 
     const registryRoot = await EthereumProofPointRegistryRoot.deploy(
@@ -122,7 +99,7 @@ describe("ProofPointResolver", () => {
     );
     rootAddress = registryRoot.getAddress();
     const registry = await registryRoot.getRegistry();
-    subject = new GeneralProofPointResolver(httpClient, storageProvider);
+    subject = new GeneralProofPointResolver(storageProvider);
     ethereumAddressResolver = new EthereumAddressResolver(httpClient);
 
     type = "http://open.provenance.org/ontology/ptf/v1/TestProofPoint";
@@ -147,11 +124,5 @@ describe("ProofPointResolver", () => {
     expect(JSON.stringify(fetched)).to.eq(
       JSON.stringify(results.proofPointObject)
     );
-  });
-
-  it("can resolve web", async () => {
-    const id = ProofPointId.parse("https://example.com/proof-point/1");
-    const fetched = await subject.resolve(id);
-    expect(fetched.issuer).to.eq("did:web:example.com");
   });
 });
