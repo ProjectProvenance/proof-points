@@ -8,7 +8,7 @@ import {
   EthereumAddress,
   EthereumProofPointRegistryRoot,
   ProofPointId,
-} from "../dist/src/index";
+} from "../src/index";
 
 describe("ProofPointRegistryRoot", () => {
   let subject: EthereumProofPointRegistryRoot;

@@ -1,8 +1,5 @@
 import { expect } from "chai";
-import {
-  IpfsStorageProvider,
-  IpfsStorageProviderSettings,
-} from "../dist/src/storage";
+import { IpfsStorageProvider, IpfsStorageProviderSettings } from "../src/index";
 
 const IPFS_OPTIONS: IpfsStorageProviderSettings = {
   host: "localhost",

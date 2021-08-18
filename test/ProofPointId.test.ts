@@ -1,6 +1,6 @@
 import { expect } from "chai";
-import { ProofPointId } from "../dist/src/index";
-import { ProofPointIdType } from "../dist/src/proofPointId";
+import { ProofPointId } from "../src/index";
+import { ProofPointIdType } from "../src/proofPointId";
 
 describe("ProofPointId", () => {
   it("Can be constructed from IPFS address", () => {
