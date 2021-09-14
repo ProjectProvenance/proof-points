@@ -43,7 +43,7 @@ const ipfsSettings = {
 }
 const ethereumProvider = new ethers.providers.JsonRpcProvider();
 
-const proofPointValidator = ProofPointValidator.init(
+const proofPointValidator = await ProofPointValidator.init(
     registryRootAddress,
     ethereumProvider,
     ipfsSettings
@@ -61,7 +61,10 @@ const {
 
 ### Issue or Revoke a Proof Point
 ```js
-import { EthereumAddress, EthereumProofPointIssuer } from '@provenance/proof-points';
+import { 
+  EthereumAddress, 
+  EthereumProofPointIssuer
+} from '@provenance/proof-points';
 import { ethers } from ethers;
 
 const registryRootAddress = EthereumAddress.parse('0x...');
