@@ -80,7 +80,10 @@ const ethereumProofPointIssuer = await EthereumProofPointIssuer.init(
 
 const type = 'https://open.provenance.org/ontology/ptf/v2/CertificationCredential';
 const issuer = 'did:web:example.com';
-const content = { 'a': 'b' };
+const content = { 
+    id: "https://provenance.org/users/example",
+    hasCertification: "https://provenance.org/certifications/example" 
+};
 const validFromDate = new Date();
 const validUntilDate = new Date();
 
