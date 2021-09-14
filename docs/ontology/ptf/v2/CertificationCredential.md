@@ -7,5 +7,8 @@ Asserts that the subject holds an instance of the specified certificate type.
 `credentialSubject`:
 
 ```
-{ "hasCertification": "https://provenance.org/certifications/example" }
+{ 
+    id: "https://provenance.org/users/example",
+    "hasCertification": "https://provenance.org/certifications/example" 
+}
 ```

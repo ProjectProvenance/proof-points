@@ -1,14 +1,12 @@
 import { ethers, Contract } from "ethers";
 
-import ProofPointRegistryStorage1Abi from "../build/ProofPointRegistryStorage1.json";
-import { StorageProvider } from "./storage";
+import ProofPointRegistryStorage1Abi from "../../build/ProofPointRegistryStorage1.json";
+import { EthereumAddress } from "./ethereumAddress";
 import {
-  ProofPointRegistry,
+  EthereumProofPointRegistry,
   PROOF_POINT_REGISTRY_VERSION,
   ProofPointRegistryAbi,
-} from "./proofPointRegistry";
-import { HttpClient } from "./httpClient";
-import { EthereumAddress } from "./proofPointEvent";
+} from "./ethereumProofPointRegistry";
 
 /**
  * Proof point registry root
@@ -16,15 +14,15 @@ import { EthereumAddress } from "./proofPointEvent";
  * and provides methods to deploy and upgrade the logic contract as well as to get a proxy to the logic
  * contract by looking up its address in the eternal storage contract.
  */
-class ProofPointRegistryRoot {
+export class EthereumProofPointRegistryRoot {
   private _address: EthereumAddress;
   private _contract: Contract;
   private _provider: ethers.providers.JsonRpcProvider;
 
   /**
    * Creates an instance of proof point registry root.
-   * @param address the well-known address of the deployed eternal storage contract.
-   * @param provider an ethers.providers.JsonRpcProvider to use for interacting with the blockchain.
+   * @param address The well-known address of the deployed eternal storage contract.
+   * @param provider An ethers.providers.JsonRpcProvider to use for interacting with the blockchain.
    */
   constructor(
     address: EthereumAddress,
@@ -40,23 +38,16 @@ class ProofPointRegistryRoot {
   }
 
   /**
-   * Gets an instance of ProofPointRegistry representing the current logic contract that is controlling
+   * Gets an instance of @EthereumProofPointRegistry representing the current logic contract that is controlling
    * this eternal storage contract.
-   * @param storage A @StorageProvider to use for storing and retrieving bulk data.
-   * @param httpClient An @HttpClient to use for fetching DID documents.
-   * @returns An instance of @ProofPointRegistry to use for interacting with proof points.
+   * @returns An instance of @EthereumProofPointRegistry to use for interacting with proof points.
    */
-  async getRegistry(
-    storage: StorageProvider | null = null,
-    httpClient: HttpClient | null = null
-  ): Promise<ProofPointRegistry> {
+  async getRegistry(): Promise<EthereumProofPointRegistry> {
     const logicAddress = EthereumAddress.parse(await this._contract.getOwner());
-    const registry = new ProofPointRegistry(
+    const registry = new EthereumProofPointRegistry(
       this._address,
       logicAddress,
-      this._provider,
-      storage,
-      httpClient
+      this._provider
     );
 
     return registry;
@@ -64,7 +55,7 @@ class ProofPointRegistryRoot {
 
   /**
    * Gets the address of the registry root - which is the address of the eternal storage contract.
-   * @returns address of registry root.
+   * @returns Address of registry root.
    */
   getAddress(): EthereumAddress {
     return this._address;
@@ -74,7 +65,7 @@ class ProofPointRegistryRoot {
    * Determines whether the deployed logic contract is the latest known version. If not then the
    * {@link upgrade} method can be called to deploy the latest logic contract and update the plumbing
    * so that the latest version will be used for future interactions.
-   * @returns true if the {@link upgrade} method can be called to upgrade the logic contract.
+   * @returns True if the {@link upgrade} method can be called to upgrade the logic contract.
    */
   async canUpgrade(): Promise<boolean> {
     const version = await this.getLogicContractVersion();
@@ -84,14 +75,14 @@ class ProofPointRegistryRoot {
   /**
    * Deploys an instance of the Proof Point registry, including an eternal storage contract and a logic
    * contract.
-   * @param fromAddress the Ethereum account to use for signing transactions. This will become the admin account that must be used for all future smart contract upgrades.
-   * @param web3 a web3 instance to use for interacting with the Ethereum blockchain.
-   * @returns a {@link ProofPointRegistryRoot} for interacting with the newly deployed contracts.
+   * @param from The Ethereum account to use for signing transactions. This will become the admin account that must be used for all future smart contract upgrades.
+   * @param provider A provider instance to use for interacting with the Ethereum blockchain.
+   * @returns A @EthereumProofPointRegistryRoot for interacting with the newly deployed contracts.
    */
   static async deploy(
     provider: ethers.providers.JsonRpcProvider,
     from: EthereumAddress
-  ): Promise<ProofPointRegistryRoot> {
+  ): Promise<EthereumProofPointRegistryRoot> {
     const signer = provider.getSigner(from.toString());
 
     // deploy eternal storage contract
@@ -114,7 +105,7 @@ class ProofPointRegistryRoot {
     await eternalStorage.setOwner(logic.address);
 
     // construct and return a ProofPointRegistry object for the newly deployed setup
-    const registryRoot = new ProofPointRegistryRoot(
+    const registryRoot = new EthereumProofPointRegistryRoot(
       EthereumAddress.parse(eternalStorage.address),
       provider
     );
@@ -169,5 +160,3 @@ class ProofPointRegistryRoot {
     }
   }
 }
-
-export { ProofPointRegistryRoot };

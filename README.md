@@ -14,9 +14,14 @@ This repo contains everything you need to work with [Provenance Proof Points](ht
 
 This section covers how to use the NPM package to issue, revoke and validate Proof Points.
 
-All Proof Point functionality is accessed through an instance of the `ProofPointRegistry` object. To construct a `ProofPointRegistry` object you will need an `ethers.providers.JsonRpcProvider` instance and the address of a `ProofPointRegistryStorage1` contract. The production instance of the `ProofPointRegistryStorage1` contract is deployed on kovan and its address is published at https://open.provenance.org/developers . If you want to `issue` a Proof Point you will also need a funded Ethereum account.
+Functionality is split into two areas:
 
-> If you want to deploy your own instance of the Proof Point registry contracts you can use the static `ProofPointRegistryRoot.deploy(...)` method.
+- Issuing and revoking proof points is accomplished using an instance of `EthereumProofPointIssuer`
+- Validating proof points is done using an instance of `ProofPointValidator`
+
+To construct a `EthereumProofPointIssuer` or `ProofPointValidator` object you will need an `ethers.providers.JsonRpcProvider` instance and the address of a `ProofPointRegistryStorage1` contract. The production instance of the `ProofPointRegistryStorage1` contract is deployed on kovan and its address is published at https://open.provenance.org/developers . If you want to `issue` a Proof Point you will also need a funded Ethereum account.
+
+> If you want to deploy your own instance of the Proof Point registry contracts you can use the static `EthereumProofPointRegistryRoot.deploy(...)` method.
 
 Install required NPM packages:
 
@@ -24,64 +29,81 @@ Install required NPM packages:
 $ npm i @provenance/proof-points ethers
 ```
 
-Import the packages in your Javascript
-
-```
-import { EthereumAddress, ProofPointRegistryRoot, ProofPointRegistry } from '@provenance/proof-points';
-import { ethers } from ethers;
-```
-
-Construct a `ProofPointRegistry` object
-
-```
-const provider = new ethers.providers.JsonRpcProvider();
-const registryRootAddress = EthereumAddress.parse('0x...');
-const registryRoot = new ProofPointRegistryRoot(registryRootAddress, provider);
-const registry = await registryRoot.getRegistry();
-```
-
-### Issue a Proof Point
-
-Each Proof Point has a type, an issuer and some data. The issuer should be a funded Ethereum account that you control. The type should be a type identifying string, for example one of the types documented [here](https://open.provenance.org/developers/specification/). The data can be any javascript object but when serialized to JSON should meet any specification for the type.
-
-```
-// issue a Proof Point
-const result = await registry.issue(
-    'https://open.provenance.org/ontology/ptf/v2/...', // A type identifying URL, such as one from the Provenance ontology
-    '0x...', // The issuer account, a funded account that you control or a did:web identifier that maps to such an account
-    { a: 'b' }, // The data payload of the Proof Point, should match the schema defined by the type
-    '2020-01-01', // Optional valid from date,
-    '2030-01-01', // optional valid until date
-);
-```
-
-The returned `result` has three fields:
-
-| Field | Notes |
-|-------|-------|
-| `proofPointId` | A unique identifier (ID) for the Proof Point that is also the IPFS address of the Proof Point document |
-| `proofPointObject` | A javascript object that can be serialized to JSON to form the self describing JSON representation of the Proof Point |
-| `transactionHash` | The Ethereum transaction hash of the transaction that issued the Proof Point |
-
 ### Validate a Proof Point
 
+```js
+import { ProofPointId, EthereumAddress, ProofPointValidator } from '@provenance/proof-points';
+import { ethers } from ethers;
+
+const registryRootAddress = EthereumAddress.parse('0x...');
+const ipfsSettings = {
+  host: 'example.com',
+  port: 443,
+  protocol: 'https'
+}
+const ethereumProvider = new ethers.providers.JsonRpcProvider();
+
+const proofPointValidator = await ProofPointValidator.init(
+    registryRootAddress,
+    ethereumProvider,
+    ipfsSettings
+);
+
+const proofPointId = ProofPointId.parse('Qm...');
+
+const {  
+    isValid,
+    proofPoint,
+    statusCode,
+    statusMessage
+} = await proofPointValidator.validate(proofPointId)
 ```
-// validate a Proof Point object
-const isValid = await registry.validate(proofPointObject);
 
-// validate a Proof Point given its ID
-const isValid = await registry.validateById(proofPointId);
+### Issue or Revoke a Proof Point
+```js
+import { 
+  EthereumAddress, 
+  EthereumProofPointIssuer
+} from '@provenance/proof-points';
+import { ethers } from ethers;
+
+const registryRootAddress = EthereumAddress.parse('0x...');
+const ipfsSettings = {
+  host: 'example.com',
+  port: 443,
+  protocol: 'https'
+}
+const ethereumProvider = new ethers.providers.JsonRpcProvider();
+
+const ethereumProofPointIssuer = await EthereumProofPointIssuer.init(
+    registryRootAddress,
+    ipfsSettings,
+    ethereumProvider
+);
+
+const type = 'https://open.provenance.org/ontology/ptf/v2/CertificationCredential';
+const issuer = 'did:web:example.com';
+const content = { 
+    id: "https://provenance.org/users/example",
+    hasCertification: "https://provenance.org/certifications/example" 
+};
+const validFromDate = new Date();
+const validUntilDate = new Date();
+
+const {
+  proofPointId;
+  transactionHash;
+  proofPointObject;
+} = await ethereumProofPointIssuer.issue(
+    type,
+    issuer,
+    content,
+    validFromDate,
+    validUntilDate
+);
+
+await ethereumProofPointIssuer.revoke(proofPointId);
 ```
-
-### Revoke a Proof Point
-
-```
-// revoke a Proof Point object
-await registry.revoke(proofPointObject);
-
-// revoke a Proof Point given its ID
-await registry.revokeById(proofPointId);
-``` 
 
 ## Contribute
 
@@ -123,12 +145,6 @@ Run unit tests
 ```
 npm test
 ```
-
-#### Contribution Guidelines
-
-##### Node and Browser Compatibility
-
-The package is designed to be usable within either Node or a web browser context. Therefore avoid use of APIs specific to Node or the browser.
 
 ### Publishing NPM Package
 

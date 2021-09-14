@@ -6,20 +6,14 @@ import ProofPointRegistryV1Abi from "../build/ProofPointRegistry.json";
 import { Wallet } from "ethers";
 import {
   EthereumAddress,
-  ProofPointRegistryRoot,
-  StorageProvider,
-} from "../dist/src/index";
-import FakeStorageProvider from "./fixtures/FakeStorageProvider";
-import FakeHttpClient from "./fixtures/FakeHttpClient";
+  EthereumProofPointRegistryRoot,
+  ProofPointId,
+} from "../src/index";
 
 describe("ProofPointRegistryRoot", () => {
-  let storageProvider: StorageProvider;
-  let subject: ProofPointRegistryRoot;
-  let type: string;
-  let content: any;
+  let subject: EthereumProofPointRegistryRoot;
   let provider: MockProvider;
   let admin: Wallet;
-  let httpClient: FakeHttpClient;
 
   async function deployV1(): Promise<void> {
     // deploy eternal storage contract
@@ -42,30 +36,19 @@ describe("ProofPointRegistryRoot", () => {
     await eternalStorage.setOwner(logic.address);
 
     // construct and return a ProofPointRegistry object for the newly deployed setup
-    subject = new ProofPointRegistryRoot(
+    subject = new EthereumProofPointRegistryRoot(
       EthereumAddress.parse(eternalStorage.address),
       provider
     );
   }
 
   beforeEach(async () => {
-    storageProvider = new FakeStorageProvider();
-    httpClient = new FakeHttpClient({});
-
     provider = new MockProvider();
     admin = provider.getWallets()[0];
-
-    subject = await ProofPointRegistryRoot.deploy(
+    subject = await EthereumProofPointRegistryRoot.deploy(
       provider,
       EthereumAddress.parse(admin.address)
     );
-
-    type = "http://open.provenance.org/ontology/ptf/v1/TestProofPoint";
-    content = {
-      id: "https://provenance.org/subject1",
-      some: ["pp", "data"],
-      more: ["pp", "data"],
-    };
   });
 
   it("should not upgrade a latest version repo", async () => {
@@ -97,22 +80,24 @@ describe("ProofPointRegistryRoot", () => {
     // deploy v1 registry
     await deployV1();
 
-    const registry = await subject.getRegistry(storageProvider, httpClient);
+    const registry = await subject.getRegistry();
+
+    const id = ProofPointId.parse(
+      "QmPyAqBVEgEt9VP7sBwMKmfAsUnZRYJ4YMKzsMk4ASpjfi"
+    );
+    const issuerAddress = EthereumAddress.parse(admin.address);
 
     // create some history activity
-    const { proofPointId } = await registry.issue(type, admin.address, content);
-    await registry.revokeById(proofPointId);
+    await registry.issue(id, issuerAddress);
+    await registry.revoke(id, issuerAddress);
 
     // upgrade the registry contract
     await subject.upgrade();
 
-    const upgradedRegistry = await subject.getRegistry(
-      storageProvider,
-      httpClient
-    );
+    const upgradedRegistry = await subject.getRegistry();
 
     // get the history of the pp issued before the upgrade
-    const history = await upgradedRegistry.getHistoryById(proofPointId);
+    const history = await upgradedRegistry.getHistory(id);
 
     // events from before the upgrade should be present
     expect(history.length).to.eq(2);
