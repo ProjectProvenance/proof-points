@@ -17,12 +17,13 @@ export class IpfsStorageProvider {
     }/api/v0/add?pin=true&hash=sha2-256`;
 
     const formDataBoundary = "2758264728364323843263";
+
     const response = await fetch(url, {
       method: "POST",
       mode: "cors",
-      headers: {
-        "Content-Type": `multipart/form-data; boundary=${formDataBoundary}`,
-      },
+      headers: this.addAuthHeader({
+        "Content-Type": `multipart/form-data; boundary=${formDataBoundary}`
+      }),
       body: `--${formDataBoundary}\nContent-Disposition: form-data; name="path"\n\n${msg}\n--${formDataBoundary}--`,
     });
 
@@ -36,10 +37,24 @@ export class IpfsStorageProvider {
       this.settings.port
     }/api/v0/cat?arg=${digest}`;
 
-    const response = await fetch(url, { method: "POST" });
+    const response = await fetch(url, {
+      method: "POST",
+      headers: this.addAuthHeader({}),
+    });
 
     const data = await response.text();
 
     return { data };
+  }
+
+  addAuthHeader(headers: any): any {
+    if (this.settings.basicAuthenticationToken) {
+      const encodedAuthToken = Buffer.from(
+        this.settings.basicAuthenticationToken
+      ).toString("base64");
+
+      headers.Authorization = `Basic ${encodedAuthToken}`;
+    }
+    return headers;
   }
 }
