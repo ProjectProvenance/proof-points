@@ -1,4 +1,4 @@
-# UNRELEASED
+# 7.1.0
 
 ## New Features
 
