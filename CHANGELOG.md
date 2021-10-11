@@ -1,3 +1,17 @@
+# UNRELEASED
+
+## New Features
+
+- Added support for basic authentication when using IPFS.
+
+## Bug Fixes
+
+None
+
+## Breaking Changes
+
+None
+
 # 7.0.0
 
 ## New Features
