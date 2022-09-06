@@ -12,4 +12,19 @@ class RealHttpClient {
   }
 }
 
-export { HttpClient, RealHttpClient };
+class CachingHttpClient {
+  private _cache: Map<string, string> = new Map();
+  private _client: RealHttpClient = new RealHttpClient();
+
+  async fetch(url: string): Promise<string> {
+    if (this._cache.has(url)) {
+      return this._cache.get(url);
+    } else {
+      const response = await this._client.fetch(url);
+      this._cache.set(url, response);
+      return response;
+    }
+  }
+}
+
+export { HttpClient, RealHttpClient, CachingHttpClient };

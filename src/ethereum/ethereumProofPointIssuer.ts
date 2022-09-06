@@ -11,7 +11,7 @@ import {
   ETHEREUM_PROOF_TYPE,
 } from "./ethereumProofPointRegistry";
 import { EthereumProofPointRegistryRoot } from "./ethereumProofPointRegistryRoot";
-import { RealHttpClient } from "../httpClient";
+import { CachingHttpClient } from "../httpClient";
 import { IpfsStorageProviderSettings } from "../ipfs/ipfsStorageProviderSettings";
 import { IpfsStorageProvider } from "../ipfs/ipfsStorageProvider";
 import { EthereumAddress } from "./ethereumAddress";
@@ -72,7 +72,7 @@ export class EthereumProofPointIssuer {
           ethereumProvider
         )
       : await registryRoot.getRegistry();
-    const httpClient = new RealHttpClient();
+    const httpClient = new CachingHttpClient();
     const ethereumAddressResolver = new EthereumAddressResolver(httpClient);
     const storageProvider = new IpfsStorageProvider(ipfsSettings);
     return new EthereumProofPointIssuer(

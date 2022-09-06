@@ -1,5 +1,5 @@
 import { EthereumAddress } from "./ethereum/ethereumAddress";
-import { HttpClient, RealHttpClient } from "./httpClient";
+import { HttpClient, RealHttpClient, CachingHttpClient } from "./httpClient";
 import { ProofPoint } from "./proofPoint";
 import { ProofPointValidateResult } from "./proofPointValidateResult";
 import { ProofPointStatus } from "./proofPointStatus";
@@ -23,6 +23,7 @@ import { EthereumAddressResolver } from "./ethereum/ethereumAddressResolver";
 export {
   HttpClient,
   RealHttpClient,
+  CachingHttpClient,
   StorageProvider,
   ProofPointId,
   ProofPoint,

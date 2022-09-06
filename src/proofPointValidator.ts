@@ -6,7 +6,7 @@ import { EthereumProofPointAuthenticator } from "./ethereum/ethereumProofPointAu
 import { EthereumProofPointRegistryRoot } from "./ethereum/ethereumProofPointRegistryRoot";
 import { ethers } from "ethers";
 import { ProofPointAuthenticator, ProofPointId } from ".";
-import { RealHttpClient } from "./httpClient";
+import { CachingHttpClient } from "./httpClient";
 import { EthereumAddressResolver } from "./ethereum/ethereumAddressResolver";
 import { IpfsStorageProvider } from "./ipfs/ipfsStorageProvider";
 import { IpfsStorageProviderSettings } from "./ipfs/ipfsStorageProviderSettings";
@@ -47,7 +47,7 @@ export class ProofPointValidator {
           ethereumProvider
         )
       : await registryRoot.getRegistry();
-    const httpClient = new RealHttpClient();
+    const httpClient = new CachingHttpClient();
     const ethereumAddressResolver = new EthereumAddressResolver(httpClient);
     const ipfs = new IpfsStorageProvider(ipfsSettings);
     const proofPointResolver = new IpfsProofPointResolver(ipfs);
