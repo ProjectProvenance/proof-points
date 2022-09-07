@@ -14,7 +14,11 @@ class RealHttpClient {
 
 class CachingHttpClient {
   private _cache: Map<string, string> = new Map();
-  private _client: RealHttpClient = new RealHttpClient();
+  private _client: RealHttpClient; // = new RealHttpClient();
+
+  constructor(client: HttpClient) {
+    this._client = client;
+  }
 
   async fetch(url: string): Promise<string> {
     if (this._cache.has(url)) {
