@@ -1,3 +1,11 @@
+# 7.2.0
+
+## New Features
+
+- Web requests to resolve the DID of the issuer are cached.
+
+## Bug Fixes
+
 # 7.1.0
 
 ## New Features
