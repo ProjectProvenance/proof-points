@@ -1,3 +1,11 @@
+# 7.3.0
+
+## New Features
+
+- Add DummyProofPointAuthenticator
+
+## Bug Fixes
+
 # 7.2.0
 
 ## New Features
