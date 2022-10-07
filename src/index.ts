@@ -12,7 +12,10 @@ import { EthereumProofPointIssuer } from "./ethereum/ethereumProofPointIssuer";
 import { EthereumProofPointAuthenticator } from "./ethereum/ethereumProofPointAuthenticator";
 import { StorageProvider } from "./storage";
 import { ProofPointValidator } from "./proofPointValidator";
-import { ProofPointAuthenticator } from "./proofPointAuthenticator";
+import {
+  ProofPointAuthenticator,
+  DummyProofPointAuthenticator,
+} from "./proofPointAuthenticator";
 import { ProofPointResolver } from "./proofPointResolver";
 import { IpfsStorageProvider } from "./ipfs/ipfsStorageProvider";
 import { IpfsStorageProviderSettings } from "./ipfs/ipfsStorageProviderSettings";
@@ -31,6 +34,7 @@ export {
   ProofPointValidateResult,
   ProofPointResolver,
   ProofPointAuthenticator,
+  DummyProofPointAuthenticator,
   ProofPointValidator,
   IpfsStorageProvider,
   IpfsStorageProviderSettings,
