@@ -10,7 +10,6 @@ A generic Proof Point type that can be used to describe many types of claim, as 
 [{
   id: "https://provenance.org/users/example",
   category: "example category",
-  statement: "example statement",
   initiatives: [
     "example initiative 1",
     "example initiative 2"
