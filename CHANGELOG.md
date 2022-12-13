@@ -1,3 +1,13 @@
+# 7.4.0
+
+## New Features
+
+## Bug Fixes
+
+## Changes
+
+- Updated some dependencies to include security fixes
+
 # 7.3.0
 
 ## New Features
